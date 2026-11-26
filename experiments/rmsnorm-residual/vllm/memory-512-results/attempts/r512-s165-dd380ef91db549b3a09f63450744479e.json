@@ -1,0 +1,12 @@
+{
+  "attempt_id": "dd380ef91db549b3a09f63450744479e",
+  "rows": 512,
+  "seed": 165,
+  "code_revision": "321c7c52c5ff022fb56efd0df079d1614d9c066d",
+  "started_utc": "2026-11-26T11:46:47.466536+00:00",
+  "outcome": "failed",
+  "error_type": "CalledProcessError",
+  "exit_code": 1,
+  "finished_utc": "2026-11-26T11:47:15.112801+00:00",
+  "elapsed_s": 27.645612750086002
+}

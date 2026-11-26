@@ -157,6 +157,35 @@ def inplace_fixture(fn):
     return call
 
 
+@dataclass
+class VerifiedGraphs:
+    works: list
+    weight: object
+    runner: base.Replay
+    graphs: dict
+    reference: list
+    numerical: dict
+
+
+def verify_input_graphs(torch, seed, device, workload, methods, vllm):
+    fixtures = verify_fixtures(torch, {REFERENCE: vllm, **{name: inplace_fixture(fn) for name, fn in methods.items()}},
+                               seed, device, workload.rows)
+    works, weight, buffers = base.make_work(torch, seed, device, rows=workload.rows)
+    original_weight = weight.view(torch.int16).clone()
+    fingerprints = base.input_fingerprints(works, weight)
+    guards = {name: direct.verify_alias_guards(fn, works[0], weight) for name, fn in methods.items()}
+    runner = base.Replay(torch, works)
+    graphs = {REFERENCE: [base.capture(torch, vllm, work, weight) for work in works]}
+    graphs.update({name: [direct.capture_candidate(torch, fn, work, weight) for work in works]
+                   for name, fn in methods.items()})
+    reference, checks = base.verify_graphs(torch, runner, graphs, works, weight, original_weight,
+                                           backends=workload.backends, check_inputs=True)
+    numerical = {"fixtures": fixtures, "graph_checks": checks, "buffers": buffers,
+                 "source_fingerprints": fingerprints, "alias_guards": guards,
+                 "inputs_unchanged": base.input_fingerprints(works, weight) == fingerprints}
+    return VerifiedGraphs(works, weight, runner, graphs, reference, numerical)
+
+
 def diagnose_boundary(torch, vllm, seed, device, works, weight, runner, reference, anchor):
     from sixteen_warp_kernel import fused_out_of_place
 
@@ -212,24 +241,13 @@ def checkpoint(seed, asset_dir, qualification, revision, *, workload=DEFAULT):
         ):
             raise ValueError("A copy-free kernel changed after qualification.")
 
-        fixtures = verify_fixtures(torch, {REFERENCE: vllm, **{name: inplace_fixture(fn) for name, fn in methods.items()}},
-                                   seed, device, rows)
-        works, weight, buffers = base.make_work(torch, seed, device, rows=rows)
-        original_weight = weight.view(torch.int16).clone()
-        fingerprints = base.input_fingerprints(works, weight)
-        guards = {name: direct.verify_alias_guards(fn, works[0], weight) for name, fn in methods.items()}
-        runner = base.Replay(torch, works)
-        graphs = {REFERENCE: [base.capture(torch, vllm, work, weight) for work in works]}
-        graphs.update({name: [direct.capture_candidate(torch, fn, work, weight) for work in works]
-                       for name, fn in methods.items()})
-        reference, checks = base.verify_graphs(torch, runner, graphs, works, weight, original_weight,
-                                               backends=backends, check_inputs=True)
-        numeric = {"fixtures": fixtures, "graph_checks": checks, "buffers": buffers,
-                   "source_fingerprints": fingerprints, "alias_guards": guards,
-                   "inputs_unchanged": base.input_fingerprints(works, weight) == fingerprints}
+        verified = verify_input_graphs(torch, seed, device, workload, methods, vllm)
+        numeric = verified.numerical
+        fingerprints = numeric["source_fingerprints"]
         if workload == BOUNDARY and seed == workload.numeric_seed:
             numeric["prior_16warps"] = diagnose_boundary(
-                torch, vllm, seed, device, works, weight, runner, reference, anchor["codegen"][CANDIDATE],
+                torch, vllm, seed, device, verified.works, verified.weight, verified.runner, verified.reference,
+                anchor["codegen"][CANDIDATE],
             )
             if numeric["prior_16warps"]["source_fingerprints"] != fingerprints:
                 raise ValueError("The diagnostic changed an original source buffer.")
@@ -237,9 +255,9 @@ def checkpoint(seed, asset_dir, qualification, revision, *, workload=DEFAULT):
         timing = None
         if eligible and timed:
             uuid = getattr(torch.cuda.get_device_properties(device), "uuid", None)
-            timing = base.measure(torch, seed, runner, graphs, works, reference, uuid,
+            timing = base.measure(torch, seed, verified.runner, verified.graphs, verified.works, verified.reference, uuid,
                                   backends=backends, period_s=PERIOD_S, rows=rows)
-            timing["inputs_unchanged_after_timing"] = base.input_fingerprints(works, weight) == fingerprints
+            timing["inputs_unchanged_after_timing"] = base.input_fingerprints(verified.works, verified.weight) == fingerprints
             timing["outputs_match_after_timing"] = all(base.outputs_match(b["post_graph_checks"]) for b in timing["blocks"])
     return {"seed": seed, "rows": rows, "width": WIDTH, "code_revision": revision, "source_sha256": sources,
             "environment": environment, "asset": anchor["asset"], "codegen": codegen,
