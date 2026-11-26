@@ -1,0 +1,13 @@
+{
+  "kind": "prefill_gemm",
+  "id": "prefill-gemm",
+  "hypothesis": "Increasing the synthetic prefill token count at fixed projection widths will raise sustained dense BF16 throughput until the H100 is saturated. Compare per-shape wall TFLOP/s and device activity over repeated measured windows.",
+  "shapes": [
+    {"m": 8192, "k": 4096, "n": 11008},
+    {"m": 16384, "k": 4096, "n": 11008},
+    {"m": 4096, "k": 4096, "n": 11008},
+    {"m": 2048, "k": 4096, "n": 11008}
+  ],
+  "seeds": [44, 45, 46, 47, 48],
+  "seconds": 45
+}
