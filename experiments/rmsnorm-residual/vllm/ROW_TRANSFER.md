@@ -1,0 +1,7 @@
+# Test portability across the vLLM row-count boundary
+
+At 1,024 rows and width 4,096, the ordered warp-shuffle candidate matches the released vLLM 0.10.0 operator and lowers latency by 7.43–7.58%. The source dispatch uses a block of up to 1,024 threads below 256 rows and up to 256 threads at or above that boundary. The Triton candidate's own 256-thread configuration stays fixed. Test whether that configuration preserves the vLLM output and the latency reduction at other row counts. [Previous result](SHUFFLE_REPORT.md) · [vLLM dispatch](https://github.com/vllm-project/vllm/blob/v0.10.0/csrc/layernorm_kernels.cu#L167-L198)
+
+Predeclare row counts 128, 256, 512 and 2,048 with width 4,096. Use seed 125 for one accuracy checkpoint per shape. Keep the eight distributions, stored residual, signed-zero and exact weight-rounding probes, and the validated FP32 boundary rule. Track bit differences across each entire shape. Evaluate the 128-row control even if the arithmetic gate fails there.
+
+Only rows that pass accuracy proceed to three independent timing seeds 126–128. Keep 32 disjoint pairs, untimed resets, 21 shuffled rounds and identical inputs across vLLM and shuffle Triton. Require a latency reduction of at least 5% in every timing seed for a shape to qualify. Record results and numerical exclusions per shape. Preserve the previously verified 1,024-row data at its original revision.

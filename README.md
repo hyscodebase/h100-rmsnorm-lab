@@ -48,6 +48,8 @@ For a single shape, add `--rows 1 --widths 4096`. To regenerate the figure, inst
 
 The next experiment fused two operations at width 4,096. At 1,024 rows, three H100 seeds measured 10.068–10.113 µs for Triton and 115.666–115.844 µs for eager PyTorch. A regression discovered in review showed that intermediate BF16 rounding matters. All four compiled comparators missed that strict numerical contract in every checkpoint. [Kernel report](experiments/rmsnorm-residual/REPORT.md) · [Code review](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/8)
 
+The in-place follow-up matched the released vLLM 0.10.0 CUDA operator at width 4,096. At 1,024 rows, the ordered warp-shuffle implementation lowered latency by 7.43–7.58% over three independent seeds with matching output bits. [Operator comparison, raw evidence and chart](experiments/rmsnorm-residual/vllm/SHUFFLE_REPORT.md)
+
 ## Sustained H100 compute
 
 In 20 runs of a BF16 prefill projection, the H100 completed 1.50 million matrix products over 902.18 measured seconds. The 16,384-row shape reached a median of 682.19 TFLOP/s. Gaps in device sampling limited confirmation of sustained activity to eight runs. [Full results, throughput and resource charts](experiments/prefill-gemm/REPORT.md) · [Workload and protocol](experiments/prefill-gemm/README.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/3)

@@ -1,0 +1,5996 @@
+{
+  "seed": 122,
+  "rows": 1024,
+  "width": 4096,
+  "code_revision": "74ae704d32fa87587a1757873e0db7a3633d21c1",
+  "source_sha256": {
+    "experiments/rmsnorm-residual/vllm/PLAN.md": "8bf7df499b2931cecb93c423bc829a5813577df8710857155492023b1d5c6480",
+    "experiments/rmsnorm-residual/vllm/run.py": "24e88100728d67e14494106a888a26ffdf5b49d6f5da7b48bd76f1aa7f551ed5",
+    "experiments/rmsnorm-residual/vllm/kernel.py": "b9d6f67e0c5e6e9cfc9da78def0ccec046d3b609bf1c7862ac407a3becffb8cd",
+    "experiments/rmsnorm-residual/vllm/wheel.py": "9b8956435559569d88d0a5b9f9e32db55d33f9b4f494638a1c8d010c7e73ae52",
+    "experiments/rmsnorm-residual/benchmark.py": "a2be59cd09dcbf15ed279df860e8220944a7bddeedc2e7f1c74cf655c5da6f05",
+    "experiments/rmsnorm-residual/check.py": "06fc94defcc7b4223a1675db0f5eadff52215236681922c9890a1b5112d5a7df",
+    "experiments/rmsnorm-residual/vllm/PRECISION_PLAN.md": "9044cc966bf098e23513234cfdcdc0c7ea2b07ef576576b5f34f8df97bed2e97",
+    "experiments/rmsnorm-residual/vllm/float32_gate.py": "a7f9de4c5cb8b859c1addc911ff694f20203171f49dc583fbe553d9c6518eaf9",
+    "experiments/rmsnorm-residual/vllm/bounded_preflight.py": "cc23b30e47936066c58503d972cf1c1fc0fb48e9dfb7e18d70c6a2db01eb934d",
+    "experiments/rmsnorm-residual/vllm/bounded_timing.py": "e15519edb5609325616fffbc307af3480a45bffb709e82ce6ed2bc3af56a9d76",
+    "experiments/rmsnorm-residual/vllm/grouped_kernel.py": "aac1b46f1e644bf454c05ac47e95cd9118b221085aed9dedae1f40f5aa785c27",
+    "experiments/rmsnorm-residual/vllm/grouped_run.py": "7cdd077162b62123387e242af0502b004efa8aca18855d1787119de731389583",
+    "experiments/rmsnorm-residual/vllm/REDUCTION_PLAN.md": "b9e968dd6efa1e63e65b695cba441e2c7870852691fb1765df6a7dc3ffc815f9",
+    "experiments/rmsnorm-residual/vllm/shuffle_run.py": "0dada13af8f6e12668e21d7c528add476d9465344f56d4cdc4b9fe2bdd891636",
+    "experiments/rmsnorm-residual/vllm/shuffle_kernel.py": "d6bcff1669b46fea47cee1736012fbb6c62570874ff7e93ff4585bc34159ba71",
+    "experiments/rmsnorm-residual/vllm/SHUFFLE_PLAN.md": "30c506614837256406c628890a9cd16fc8415ef7259ef3239f9b86e1ad6b6d5f"
+  },
+  "environment": {
+    "gpu": "NVIDIA H100 80GB HBM3",
+    "compute_capability": [
+      9,
+      0
+    ],
+    "total_memory_bytes": 84929216512,
+    "sm_count": 132,
+    "driver": "550.144.03",
+    "cuda": "12.8",
+    "torch": "2.7.1+cu128",
+    "triton": "3.3.1",
+    "python": "3.12.16"
+  },
+  "asset": {
+    "version": "0.10.0",
+    "wheel": "vllm-0.10.0-cp38-abi3-manylinux1_x86_64.whl",
+    "wheel_sha256": "8ca37559d82b43b5e8c8248d2e4a1ecb51d6d4e5d517491d656df6491ed93dab",
+    "extension": "_C.abi3.so",
+    "extension_sha256": "0bdeda3d6ef7f1df23bcbd128f27c003dc2750475632d8d1d5658e5af15a1e74",
+    "extension_size_bytes": 339450440
+  },
+  "codegen": {
+    "num_warps": 8,
+    "shared_bytes": 0,
+    "registers_per_thread": 32,
+    "spill_count": 0,
+    "ttgir_sha256": "cb6e81321b75157f981d47384137ae29e2bedf0fbd6aef6bd8e5350cab4ec2bd",
+    "ptx_sha256": "a9f26f03ddc630ca6708b9f41892b4e718439b8d3f8c71be226ab52e551ffa28",
+    "ptx_instruction_sha256": "2cdd4eb0ae9a261ad6b2f9fba0f5d569cb11f66ab4097e158af6cc347bffdfc6",
+    "ptx_opcodes": {
+      "add.rn.bf16x2": 8,
+      "add.rn.f32": 28,
+      "add.s64": 6,
+      "add.u64": 1,
+      "and.b32": 1,
+      "bar.sync": 1,
+      "cvt.f32.bf16": 16,
+      "cvt.rn.bf16x2.f32": 8,
+      "div.full.f32": 1,
+      "ld.global.v4.b32": 6,
+      "ld.param.u64": 3,
+      "ld.shared.v4.f32": 2,
+      "mov.b32": 8,
+      "mov.f32": 3,
+      "mov.u32": 28,
+      "mov.u64": 1,
+      "mul.rn.bf16x2": 8,
+      "mul.rn.f32": 32,
+      "mul.wide.s32": 1,
+      "mul.wide.u32": 2,
+      "or.b32": 1,
+      "rsqrt.approx.ftz.f32": 1,
+      "setp.eq.u32": 1,
+      "setp.ne.u32": 1,
+      "shfl.sync.bfly.b32": 5,
+      "shl.b32": 2,
+      "shr.u32": 1,
+      "st.global.v4.b32": 4
+    },
+    "fp_fusion": false,
+    "logical_group_width": 8,
+    "warp_shuffle_offsets": [
+      1,
+      2,
+      4,
+      8,
+      16
+    ],
+    "emitted_shared_loads": 2,
+    "inline_cta_shared_bytes": 32,
+    "logical_thread_guard": true,
+    "binary_sha256": "8f822a868693989b9c316de69925dff2359744cd4891024813924651ecb0e895",
+    "reduction_instructions": [
+      "shfl.sync.bfly.b32 peer, total, 1, 31, -1;",
+      "shfl.sync.bfly.b32 peer, total, 2, 31, -1;",
+      "shfl.sync.bfly.b32 peer, total, 4, 31, -1;",
+      "shfl.sync.bfly.b32 peer, total, 8, 31, -1;",
+      "shfl.sync.bfly.b32 peer, total, 16, 31, -1;",
+      "@leader st.shared.f32 [slot], total;",
+      "bar.sync 0;",
+      "ld.shared.v4.f32 {w0, w1, w2, w3}, [base];",
+      "ld.shared.v4.f32 {w4, w5, w6, w7}, [base+16];"
+    ]
+  },
+  "gate_passed": true,
+  "previous_coordinates": [],
+  "fixtures": [
+    {
+      "fixture": "random",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "random",
+          "elements": 4194304,
+          "strict_outside_tolerance": 73,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              10,
+              300
+            ],
+            [
+              10,
+              329
+            ],
+            [
+              10,
+              772
+            ],
+            [
+              10,
+              813
+            ],
+            [
+              10,
+              1090
+            ],
+            [
+              10,
+              1568
+            ],
+            [
+              10,
+              2222
+            ],
+            [
+              10,
+              3324
+            ],
+            [
+              10,
+              3361
+            ],
+            [
+              10,
+              3392
+            ],
+            [
+              10,
+              3599
+            ],
+            [
+              254,
+              179
+            ],
+            [
+              254,
+              230
+            ],
+            [
+              254,
+              483
+            ],
+            [
+              254,
+              507
+            ],
+            [
+              254,
+              547
+            ],
+            [
+              254,
+              601
+            ],
+            [
+              254,
+              709
+            ],
+            [
+              254,
+              1277
+            ],
+            [
+              254,
+              1288
+            ],
+            [
+              254,
+              1473
+            ],
+            [
+              254,
+              1696
+            ],
+            [
+              254,
+              1938
+            ],
+            [
+              254,
+              2570
+            ],
+            [
+              254,
+              2664
+            ],
+            [
+              254,
+              2895
+            ],
+            [
+              254,
+              2966
+            ],
+            [
+              254,
+              2970
+            ],
+            [
+              254,
+              3172
+            ],
+            [
+              254,
+              3310
+            ],
+            [
+              254,
+              3555
+            ],
+            [
+              254,
+              3610
+            ],
+            [
+              414,
+              363
+            ],
+            [
+              414,
+              735
+            ],
+            [
+              414,
+              795
+            ],
+            [
+              414,
+              1604
+            ],
+            [
+              414,
+              2261
+            ],
+            [
+              414,
+              2382
+            ],
+            [
+              414,
+              2483
+            ],
+            [
+              414,
+              2876
+            ],
+            [
+              414,
+              3211
+            ],
+            [
+              847,
+              296
+            ],
+            [
+              847,
+              299
+            ],
+            [
+              847,
+              396
+            ],
+            [
+              847,
+              537
+            ],
+            [
+              847,
+              720
+            ],
+            [
+              847,
+              724
+            ],
+            [
+              847,
+              739
+            ],
+            [
+              847,
+              780
+            ],
+            [
+              847,
+              905
+            ],
+            [
+              847,
+              1033
+            ],
+            [
+              847,
+              1035
+            ],
+            [
+              847,
+              1307
+            ],
+            [
+              847,
+              1465
+            ],
+            [
+              847,
+              1560
+            ],
+            [
+              847,
+              1663
+            ],
+            [
+              847,
+              1962
+            ],
+            [
+              847,
+              1974
+            ],
+            [
+              847,
+              2114
+            ],
+            [
+              847,
+              2303
+            ],
+            [
+              847,
+              2420
+            ],
+            [
+              847,
+              2481
+            ],
+            [
+              847,
+              2484
+            ],
+            [
+              847,
+              2552
+            ],
+            [
+              847,
+              2581
+            ],
+            [
+              847,
+              2649
+            ],
+            [
+              847,
+              2655
+            ],
+            [
+              847,
+              2921
+            ],
+            [
+              847,
+              3133
+            ],
+            [
+              847,
+              3269
+            ],
+            [
+              847,
+              3337
+            ],
+            [
+              847,
+              3482
+            ],
+            [
+              847,
+              3706
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "random",
+          "elements": 4194304,
+          "strict_outside_tolerance": 73,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              10,
+              300
+            ],
+            [
+              10,
+              329
+            ],
+            [
+              10,
+              772
+            ],
+            [
+              10,
+              813
+            ],
+            [
+              10,
+              1090
+            ],
+            [
+              10,
+              1568
+            ],
+            [
+              10,
+              2222
+            ],
+            [
+              10,
+              3324
+            ],
+            [
+              10,
+              3361
+            ],
+            [
+              10,
+              3392
+            ],
+            [
+              10,
+              3599
+            ],
+            [
+              254,
+              179
+            ],
+            [
+              254,
+              230
+            ],
+            [
+              254,
+              483
+            ],
+            [
+              254,
+              507
+            ],
+            [
+              254,
+              547
+            ],
+            [
+              254,
+              601
+            ],
+            [
+              254,
+              709
+            ],
+            [
+              254,
+              1277
+            ],
+            [
+              254,
+              1288
+            ],
+            [
+              254,
+              1473
+            ],
+            [
+              254,
+              1696
+            ],
+            [
+              254,
+              1938
+            ],
+            [
+              254,
+              2570
+            ],
+            [
+              254,
+              2664
+            ],
+            [
+              254,
+              2895
+            ],
+            [
+              254,
+              2966
+            ],
+            [
+              254,
+              2970
+            ],
+            [
+              254,
+              3172
+            ],
+            [
+              254,
+              3310
+            ],
+            [
+              254,
+              3555
+            ],
+            [
+              254,
+              3610
+            ],
+            [
+              414,
+              363
+            ],
+            [
+              414,
+              735
+            ],
+            [
+              414,
+              795
+            ],
+            [
+              414,
+              1604
+            ],
+            [
+              414,
+              2261
+            ],
+            [
+              414,
+              2382
+            ],
+            [
+              414,
+              2483
+            ],
+            [
+              414,
+              2876
+            ],
+            [
+              414,
+              3211
+            ],
+            [
+              847,
+              296
+            ],
+            [
+              847,
+              299
+            ],
+            [
+              847,
+              396
+            ],
+            [
+              847,
+              537
+            ],
+            [
+              847,
+              720
+            ],
+            [
+              847,
+              724
+            ],
+            [
+              847,
+              739
+            ],
+            [
+              847,
+              780
+            ],
+            [
+              847,
+              905
+            ],
+            [
+              847,
+              1033
+            ],
+            [
+              847,
+              1035
+            ],
+            [
+              847,
+              1307
+            ],
+            [
+              847,
+              1465
+            ],
+            [
+              847,
+              1560
+            ],
+            [
+              847,
+              1663
+            ],
+            [
+              847,
+              1962
+            ],
+            [
+              847,
+              1974
+            ],
+            [
+              847,
+              2114
+            ],
+            [
+              847,
+              2303
+            ],
+            [
+              847,
+              2420
+            ],
+            [
+              847,
+              2481
+            ],
+            [
+              847,
+              2484
+            ],
+            [
+              847,
+              2552
+            ],
+            [
+              847,
+              2581
+            ],
+            [
+              847,
+              2649
+            ],
+            [
+              847,
+              2655
+            ],
+            [
+              847,
+              2921
+            ],
+            [
+              847,
+              3133
+            ],
+            [
+              847,
+              3269
+            ],
+            [
+              847,
+              3337
+            ],
+            [
+              847,
+              3482
+            ],
+            [
+              847,
+              3706
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "zero_rows",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "zero_rows",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "zero_rows",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "cancellation",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "cancellation",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.05859375,
+            0.05859375
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "cancellation",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.05859375,
+            0.05859375
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "tiny",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "tiny",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.00048828125,
+            0.00048828125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "tiny",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.00048828125,
+            0.00048828125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "bf16_ties",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "bf16_ties",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.00390625,
+            0.00390625
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "bf16_ties",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.00390625,
+            0.00390625
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "bf16_denominator_tie",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "bf16_denominator_tie",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0,
+            0.0
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "bf16_denominator_tie",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0,
+            0.0
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "weight_rounding",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "weight_rounding",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.00390625,
+            0.00390625
+          ],
+          "passed": true,
+          "weight_probe": [
+            1.46875,
+            1.46875
+          ]
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "weight_rounding",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.00390625,
+            0.00390625
+          ],
+          "passed": true,
+          "weight_probe": [
+            1.46875,
+            1.46875
+          ]
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "signed_zero",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "signed_zero",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0,
+            0.0
+          ],
+          "passed": true,
+          "normalized_zero_bits": [
+            [
+              32768,
+              0
+            ],
+            [
+              32768,
+              0
+            ]
+          ]
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "signed_zero",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0,
+            0.0
+          ],
+          "passed": true,
+          "normalized_zero_bits": [
+            [
+              32768,
+              0
+            ],
+            [
+              32768,
+              0
+            ]
+          ]
+        }
+      },
+      "passed": true
+    }
+  ],
+  "replay_checks": [
+    {
+      "fixture": "captured_0",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_0",
+          "elements": 4194304,
+          "strict_outside_tolerance": 31,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              103,
+              120
+            ],
+            [
+              103,
+              304
+            ],
+            [
+              103,
+              364
+            ],
+            [
+              103,
+              655
+            ],
+            [
+              103,
+              717
+            ],
+            [
+              103,
+              733
+            ],
+            [
+              103,
+              970
+            ],
+            [
+              103,
+              985
+            ],
+            [
+              103,
+              1035
+            ],
+            [
+              103,
+              1133
+            ],
+            [
+              103,
+              1406
+            ],
+            [
+              103,
+              1538
+            ],
+            [
+              103,
+              1730
+            ],
+            [
+              103,
+              1836
+            ],
+            [
+              103,
+              1930
+            ],
+            [
+              103,
+              2130
+            ],
+            [
+              103,
+              2242
+            ],
+            [
+              103,
+              2290
+            ],
+            [
+              103,
+              2473
+            ],
+            [
+              103,
+              2808
+            ],
+            [
+              103,
+              3093
+            ],
+            [
+              103,
+              3234
+            ],
+            [
+              103,
+              3250
+            ],
+            [
+              103,
+              3251
+            ],
+            [
+              103,
+              3431
+            ],
+            [
+              103,
+              3490
+            ],
+            [
+              103,
+              3577
+            ],
+            [
+              103,
+              3720
+            ],
+            [
+              103,
+              3767
+            ],
+            [
+              103,
+              3983
+            ],
+            [
+              103,
+              4052
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_0",
+          "elements": 4194304,
+          "strict_outside_tolerance": 31,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              103,
+              120
+            ],
+            [
+              103,
+              304
+            ],
+            [
+              103,
+              364
+            ],
+            [
+              103,
+              655
+            ],
+            [
+              103,
+              717
+            ],
+            [
+              103,
+              733
+            ],
+            [
+              103,
+              970
+            ],
+            [
+              103,
+              985
+            ],
+            [
+              103,
+              1035
+            ],
+            [
+              103,
+              1133
+            ],
+            [
+              103,
+              1406
+            ],
+            [
+              103,
+              1538
+            ],
+            [
+              103,
+              1730
+            ],
+            [
+              103,
+              1836
+            ],
+            [
+              103,
+              1930
+            ],
+            [
+              103,
+              2130
+            ],
+            [
+              103,
+              2242
+            ],
+            [
+              103,
+              2290
+            ],
+            [
+              103,
+              2473
+            ],
+            [
+              103,
+              2808
+            ],
+            [
+              103,
+              3093
+            ],
+            [
+              103,
+              3234
+            ],
+            [
+              103,
+              3250
+            ],
+            [
+              103,
+              3251
+            ],
+            [
+              103,
+              3431
+            ],
+            [
+              103,
+              3490
+            ],
+            [
+              103,
+              3577
+            ],
+            [
+              103,
+              3720
+            ],
+            [
+              103,
+              3767
+            ],
+            [
+              103,
+              3983
+            ],
+            [
+              103,
+              4052
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_1",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_1",
+          "elements": 4194304,
+          "strict_outside_tolerance": 11,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              254,
+              177
+            ],
+            [
+              254,
+              516
+            ],
+            [
+              254,
+              798
+            ],
+            [
+              254,
+              2078
+            ],
+            [
+              254,
+              2762
+            ],
+            [
+              254,
+              3021
+            ],
+            [
+              254,
+              3071
+            ],
+            [
+              254,
+              3244
+            ],
+            [
+              254,
+              3699
+            ],
+            [
+              254,
+              3833
+            ],
+            [
+              254,
+              4076
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_1",
+          "elements": 4194304,
+          "strict_outside_tolerance": 11,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              254,
+              177
+            ],
+            [
+              254,
+              516
+            ],
+            [
+              254,
+              798
+            ],
+            [
+              254,
+              2078
+            ],
+            [
+              254,
+              2762
+            ],
+            [
+              254,
+              3021
+            ],
+            [
+              254,
+              3071
+            ],
+            [
+              254,
+              3244
+            ],
+            [
+              254,
+              3699
+            ],
+            [
+              254,
+              3833
+            ],
+            [
+              254,
+              4076
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_2",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_2",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_2",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_3",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_3",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_3",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_4",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_4",
+          "elements": 4194304,
+          "strict_outside_tolerance": 35,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              987,
+              74
+            ],
+            [
+              987,
+              282
+            ],
+            [
+              987,
+              323
+            ],
+            [
+              987,
+              336
+            ],
+            [
+              987,
+              478
+            ],
+            [
+              987,
+              479
+            ],
+            [
+              987,
+              531
+            ],
+            [
+              987,
+              552
+            ],
+            [
+              987,
+              598
+            ],
+            [
+              987,
+              641
+            ],
+            [
+              987,
+              840
+            ],
+            [
+              987,
+              841
+            ],
+            [
+              987,
+              859
+            ],
+            [
+              987,
+              924
+            ],
+            [
+              987,
+              1171
+            ],
+            [
+              987,
+              1219
+            ],
+            [
+              987,
+              1225
+            ],
+            [
+              987,
+              1346
+            ],
+            [
+              987,
+              1706
+            ],
+            [
+              987,
+              1751
+            ],
+            [
+              987,
+              2265
+            ],
+            [
+              987,
+              2273
+            ],
+            [
+              987,
+              2328
+            ],
+            [
+              987,
+              2338
+            ],
+            [
+              987,
+              2629
+            ],
+            [
+              987,
+              2677
+            ],
+            [
+              987,
+              2780
+            ],
+            [
+              987,
+              2888
+            ],
+            [
+              987,
+              2965
+            ],
+            [
+              987,
+              2976
+            ],
+            [
+              987,
+              3007
+            ],
+            [
+              987,
+              3321
+            ],
+            [
+              987,
+              3451
+            ],
+            [
+              987,
+              3547
+            ],
+            [
+              987,
+              3673
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_4",
+          "elements": 4194304,
+          "strict_outside_tolerance": 35,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              987,
+              74
+            ],
+            [
+              987,
+              282
+            ],
+            [
+              987,
+              323
+            ],
+            [
+              987,
+              336
+            ],
+            [
+              987,
+              478
+            ],
+            [
+              987,
+              479
+            ],
+            [
+              987,
+              531
+            ],
+            [
+              987,
+              552
+            ],
+            [
+              987,
+              598
+            ],
+            [
+              987,
+              641
+            ],
+            [
+              987,
+              840
+            ],
+            [
+              987,
+              841
+            ],
+            [
+              987,
+              859
+            ],
+            [
+              987,
+              924
+            ],
+            [
+              987,
+              1171
+            ],
+            [
+              987,
+              1219
+            ],
+            [
+              987,
+              1225
+            ],
+            [
+              987,
+              1346
+            ],
+            [
+              987,
+              1706
+            ],
+            [
+              987,
+              1751
+            ],
+            [
+              987,
+              2265
+            ],
+            [
+              987,
+              2273
+            ],
+            [
+              987,
+              2328
+            ],
+            [
+              987,
+              2338
+            ],
+            [
+              987,
+              2629
+            ],
+            [
+              987,
+              2677
+            ],
+            [
+              987,
+              2780
+            ],
+            [
+              987,
+              2888
+            ],
+            [
+              987,
+              2965
+            ],
+            [
+              987,
+              2976
+            ],
+            [
+              987,
+              3007
+            ],
+            [
+              987,
+              3321
+            ],
+            [
+              987,
+              3451
+            ],
+            [
+              987,
+              3547
+            ],
+            [
+              987,
+              3673
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_5",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_5",
+          "elements": 4194304,
+          "strict_outside_tolerance": 48,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              135,
+              70
+            ],
+            [
+              135,
+              175
+            ],
+            [
+              135,
+              196
+            ],
+            [
+              135,
+              503
+            ],
+            [
+              135,
+              636
+            ],
+            [
+              135,
+              724
+            ],
+            [
+              135,
+              1482
+            ],
+            [
+              135,
+              2063
+            ],
+            [
+              135,
+              2151
+            ],
+            [
+              135,
+              2299
+            ],
+            [
+              135,
+              2671
+            ],
+            [
+              135,
+              2736
+            ],
+            [
+              135,
+              3037
+            ],
+            [
+              135,
+              3225
+            ],
+            [
+              135,
+              3319
+            ],
+            [
+              135,
+              3322
+            ],
+            [
+              135,
+              3835
+            ],
+            [
+              487,
+              78
+            ],
+            [
+              487,
+              355
+            ],
+            [
+              487,
+              425
+            ],
+            [
+              487,
+              564
+            ],
+            [
+              487,
+              817
+            ],
+            [
+              487,
+              829
+            ],
+            [
+              487,
+              1007
+            ],
+            [
+              487,
+              1072
+            ],
+            [
+              487,
+              1112
+            ],
+            [
+              487,
+              1236
+            ],
+            [
+              487,
+              1514
+            ],
+            [
+              487,
+              1640
+            ],
+            [
+              487,
+              1693
+            ],
+            [
+              487,
+              2018
+            ],
+            [
+              487,
+              2096
+            ],
+            [
+              487,
+              2322
+            ],
+            [
+              487,
+              2656
+            ],
+            [
+              487,
+              2862
+            ],
+            [
+              487,
+              2881
+            ],
+            [
+              487,
+              2967
+            ],
+            [
+              487,
+              3161
+            ],
+            [
+              487,
+              3205
+            ],
+            [
+              487,
+              3257
+            ],
+            [
+              487,
+              3264
+            ],
+            [
+              487,
+              3357
+            ],
+            [
+              487,
+              3564
+            ],
+            [
+              487,
+              3736
+            ],
+            [
+              487,
+              3741
+            ],
+            [
+              487,
+              3762
+            ],
+            [
+              487,
+              3799
+            ],
+            [
+              487,
+              3812
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_5",
+          "elements": 4194304,
+          "strict_outside_tolerance": 48,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              135,
+              70
+            ],
+            [
+              135,
+              175
+            ],
+            [
+              135,
+              196
+            ],
+            [
+              135,
+              503
+            ],
+            [
+              135,
+              636
+            ],
+            [
+              135,
+              724
+            ],
+            [
+              135,
+              1482
+            ],
+            [
+              135,
+              2063
+            ],
+            [
+              135,
+              2151
+            ],
+            [
+              135,
+              2299
+            ],
+            [
+              135,
+              2671
+            ],
+            [
+              135,
+              2736
+            ],
+            [
+              135,
+              3037
+            ],
+            [
+              135,
+              3225
+            ],
+            [
+              135,
+              3319
+            ],
+            [
+              135,
+              3322
+            ],
+            [
+              135,
+              3835
+            ],
+            [
+              487,
+              78
+            ],
+            [
+              487,
+              355
+            ],
+            [
+              487,
+              425
+            ],
+            [
+              487,
+              564
+            ],
+            [
+              487,
+              817
+            ],
+            [
+              487,
+              829
+            ],
+            [
+              487,
+              1007
+            ],
+            [
+              487,
+              1072
+            ],
+            [
+              487,
+              1112
+            ],
+            [
+              487,
+              1236
+            ],
+            [
+              487,
+              1514
+            ],
+            [
+              487,
+              1640
+            ],
+            [
+              487,
+              1693
+            ],
+            [
+              487,
+              2018
+            ],
+            [
+              487,
+              2096
+            ],
+            [
+              487,
+              2322
+            ],
+            [
+              487,
+              2656
+            ],
+            [
+              487,
+              2862
+            ],
+            [
+              487,
+              2881
+            ],
+            [
+              487,
+              2967
+            ],
+            [
+              487,
+              3161
+            ],
+            [
+              487,
+              3205
+            ],
+            [
+              487,
+              3257
+            ],
+            [
+              487,
+              3264
+            ],
+            [
+              487,
+              3357
+            ],
+            [
+              487,
+              3564
+            ],
+            [
+              487,
+              3736
+            ],
+            [
+              487,
+              3741
+            ],
+            [
+              487,
+              3762
+            ],
+            [
+              487,
+              3799
+            ],
+            [
+              487,
+              3812
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_6",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_6",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_6",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_7",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_7",
+          "elements": 4194304,
+          "strict_outside_tolerance": 22,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              26,
+              505
+            ],
+            [
+              26,
+              2214
+            ],
+            [
+              26,
+              3024
+            ],
+            [
+              26,
+              3344
+            ],
+            [
+              566,
+              33
+            ],
+            [
+              566,
+              372
+            ],
+            [
+              566,
+              820
+            ],
+            [
+              566,
+              829
+            ],
+            [
+              566,
+              1117
+            ],
+            [
+              566,
+              1134
+            ],
+            [
+              566,
+              1270
+            ],
+            [
+              566,
+              1753
+            ],
+            [
+              566,
+              2143
+            ],
+            [
+              566,
+              2223
+            ],
+            [
+              566,
+              2365
+            ],
+            [
+              566,
+              2736
+            ],
+            [
+              566,
+              2920
+            ],
+            [
+              566,
+              3255
+            ],
+            [
+              566,
+              3706
+            ],
+            [
+              566,
+              3708
+            ],
+            [
+              566,
+              3712
+            ],
+            [
+              566,
+              4003
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_7",
+          "elements": 4194304,
+          "strict_outside_tolerance": 22,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              26,
+              505
+            ],
+            [
+              26,
+              2214
+            ],
+            [
+              26,
+              3024
+            ],
+            [
+              26,
+              3344
+            ],
+            [
+              566,
+              33
+            ],
+            [
+              566,
+              372
+            ],
+            [
+              566,
+              820
+            ],
+            [
+              566,
+              829
+            ],
+            [
+              566,
+              1117
+            ],
+            [
+              566,
+              1134
+            ],
+            [
+              566,
+              1270
+            ],
+            [
+              566,
+              1753
+            ],
+            [
+              566,
+              2143
+            ],
+            [
+              566,
+              2223
+            ],
+            [
+              566,
+              2365
+            ],
+            [
+              566,
+              2736
+            ],
+            [
+              566,
+              2920
+            ],
+            [
+              566,
+              3255
+            ],
+            [
+              566,
+              3706
+            ],
+            [
+              566,
+              3708
+            ],
+            [
+              566,
+              3712
+            ],
+            [
+              566,
+              4003
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_8",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_8",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_8",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_9",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_9",
+          "elements": 4194304,
+          "strict_outside_tolerance": 39,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              98,
+              39
+            ],
+            [
+              98,
+              71
+            ],
+            [
+              98,
+              83
+            ],
+            [
+              98,
+              181
+            ],
+            [
+              98,
+              243
+            ],
+            [
+              98,
+              323
+            ],
+            [
+              98,
+              804
+            ],
+            [
+              98,
+              830
+            ],
+            [
+              98,
+              924
+            ],
+            [
+              98,
+              1488
+            ],
+            [
+              98,
+              1516
+            ],
+            [
+              98,
+              1554
+            ],
+            [
+              98,
+              1580
+            ],
+            [
+              98,
+              1964
+            ],
+            [
+              98,
+              2162
+            ],
+            [
+              98,
+              2331
+            ],
+            [
+              98,
+              2338
+            ],
+            [
+              98,
+              2432
+            ],
+            [
+              98,
+              3057
+            ],
+            [
+              98,
+              3104
+            ],
+            [
+              98,
+              3247
+            ],
+            [
+              98,
+              3286
+            ],
+            [
+              98,
+              3301
+            ],
+            [
+              98,
+              3385
+            ],
+            [
+              98,
+              3559
+            ],
+            [
+              98,
+              3786
+            ],
+            [
+              98,
+              3925
+            ],
+            [
+              415,
+              285
+            ],
+            [
+              415,
+              348
+            ],
+            [
+              415,
+              653
+            ],
+            [
+              415,
+              1145
+            ],
+            [
+              415,
+              1403
+            ],
+            [
+              415,
+              1826
+            ],
+            [
+              415,
+              1924
+            ],
+            [
+              415,
+              2261
+            ],
+            [
+              415,
+              2270
+            ],
+            [
+              415,
+              3545
+            ],
+            [
+              415,
+              3599
+            ],
+            [
+              415,
+              3720
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_9",
+          "elements": 4194304,
+          "strict_outside_tolerance": 39,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              98,
+              39
+            ],
+            [
+              98,
+              71
+            ],
+            [
+              98,
+              83
+            ],
+            [
+              98,
+              181
+            ],
+            [
+              98,
+              243
+            ],
+            [
+              98,
+              323
+            ],
+            [
+              98,
+              804
+            ],
+            [
+              98,
+              830
+            ],
+            [
+              98,
+              924
+            ],
+            [
+              98,
+              1488
+            ],
+            [
+              98,
+              1516
+            ],
+            [
+              98,
+              1554
+            ],
+            [
+              98,
+              1580
+            ],
+            [
+              98,
+              1964
+            ],
+            [
+              98,
+              2162
+            ],
+            [
+              98,
+              2331
+            ],
+            [
+              98,
+              2338
+            ],
+            [
+              98,
+              2432
+            ],
+            [
+              98,
+              3057
+            ],
+            [
+              98,
+              3104
+            ],
+            [
+              98,
+              3247
+            ],
+            [
+              98,
+              3286
+            ],
+            [
+              98,
+              3301
+            ],
+            [
+              98,
+              3385
+            ],
+            [
+              98,
+              3559
+            ],
+            [
+              98,
+              3786
+            ],
+            [
+              98,
+              3925
+            ],
+            [
+              415,
+              285
+            ],
+            [
+              415,
+              348
+            ],
+            [
+              415,
+              653
+            ],
+            [
+              415,
+              1145
+            ],
+            [
+              415,
+              1403
+            ],
+            [
+              415,
+              1826
+            ],
+            [
+              415,
+              1924
+            ],
+            [
+              415,
+              2261
+            ],
+            [
+              415,
+              2270
+            ],
+            [
+              415,
+              3545
+            ],
+            [
+              415,
+              3599
+            ],
+            [
+              415,
+              3720
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_10",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_10",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_10",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_11",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_11",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_11",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_12",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_12",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_12",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_13",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_13",
+          "elements": 4194304,
+          "strict_outside_tolerance": 21,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              608,
+              295
+            ],
+            [
+              608,
+              633
+            ],
+            [
+              608,
+              960
+            ],
+            [
+              608,
+              1018
+            ],
+            [
+              608,
+              1236
+            ],
+            [
+              608,
+              1444
+            ],
+            [
+              608,
+              1583
+            ],
+            [
+              608,
+              1772
+            ],
+            [
+              608,
+              2113
+            ],
+            [
+              608,
+              2282
+            ],
+            [
+              608,
+              2292
+            ],
+            [
+              608,
+              2673
+            ],
+            [
+              608,
+              2783
+            ],
+            [
+              608,
+              2814
+            ],
+            [
+              608,
+              2977
+            ],
+            [
+              608,
+              3095
+            ],
+            [
+              608,
+              3295
+            ],
+            [
+              608,
+              3791
+            ],
+            [
+              608,
+              3878
+            ],
+            [
+              608,
+              3948
+            ],
+            [
+              608,
+              4068
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03515625,
+            0.03515625
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_13",
+          "elements": 4194304,
+          "strict_outside_tolerance": 21,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              608,
+              295
+            ],
+            [
+              608,
+              633
+            ],
+            [
+              608,
+              960
+            ],
+            [
+              608,
+              1018
+            ],
+            [
+              608,
+              1236
+            ],
+            [
+              608,
+              1444
+            ],
+            [
+              608,
+              1583
+            ],
+            [
+              608,
+              1772
+            ],
+            [
+              608,
+              2113
+            ],
+            [
+              608,
+              2282
+            ],
+            [
+              608,
+              2292
+            ],
+            [
+              608,
+              2673
+            ],
+            [
+              608,
+              2783
+            ],
+            [
+              608,
+              2814
+            ],
+            [
+              608,
+              2977
+            ],
+            [
+              608,
+              3095
+            ],
+            [
+              608,
+              3295
+            ],
+            [
+              608,
+              3791
+            ],
+            [
+              608,
+              3878
+            ],
+            [
+              608,
+              3948
+            ],
+            [
+              608,
+              4068
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03515625,
+            0.03515625
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_14",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_14",
+          "elements": 4194304,
+          "strict_outside_tolerance": 55,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              161,
+              993
+            ],
+            [
+              161,
+              1374
+            ],
+            [
+              161,
+              2171
+            ],
+            [
+              161,
+              2515
+            ],
+            [
+              161,
+              2610
+            ],
+            [
+              161,
+              3093
+            ],
+            [
+              161,
+              3127
+            ],
+            [
+              161,
+              3711
+            ],
+            [
+              161,
+              4078
+            ],
+            [
+              286,
+              59
+            ],
+            [
+              286,
+              92
+            ],
+            [
+              286,
+              1046
+            ],
+            [
+              286,
+              1049
+            ],
+            [
+              286,
+              1652
+            ],
+            [
+              286,
+              2216
+            ],
+            [
+              286,
+              2308
+            ],
+            [
+              286,
+              2341
+            ],
+            [
+              286,
+              2452
+            ],
+            [
+              286,
+              2475
+            ],
+            [
+              286,
+              2629
+            ],
+            [
+              286,
+              2687
+            ],
+            [
+              286,
+              2887
+            ],
+            [
+              286,
+              3216
+            ],
+            [
+              286,
+              3745
+            ],
+            [
+              286,
+              3777
+            ],
+            [
+              286,
+              3795
+            ],
+            [
+              286,
+              3840
+            ],
+            [
+              286,
+              4023
+            ],
+            [
+              286,
+              4041
+            ],
+            [
+              531,
+              76
+            ],
+            [
+              531,
+              153
+            ],
+            [
+              531,
+              248
+            ],
+            [
+              531,
+              280
+            ],
+            [
+              531,
+              357
+            ],
+            [
+              531,
+              405
+            ],
+            [
+              531,
+              553
+            ],
+            [
+              531,
+              1059
+            ],
+            [
+              531,
+              1091
+            ],
+            [
+              531,
+              1837
+            ],
+            [
+              531,
+              1856
+            ],
+            [
+              531,
+              1912
+            ],
+            [
+              531,
+              2166
+            ],
+            [
+              531,
+              2319
+            ],
+            [
+              531,
+              2335
+            ],
+            [
+              531,
+              2373
+            ],
+            [
+              531,
+              2601
+            ],
+            [
+              531,
+              2744
+            ],
+            [
+              531,
+              3166
+            ],
+            [
+              531,
+              3203
+            ],
+            [
+              531,
+              3255
+            ],
+            [
+              531,
+              3262
+            ],
+            [
+              531,
+              3391
+            ],
+            [
+              531,
+              3747
+            ],
+            [
+              531,
+              3776
+            ],
+            [
+              531,
+              3893
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_14",
+          "elements": 4194304,
+          "strict_outside_tolerance": 55,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              161,
+              993
+            ],
+            [
+              161,
+              1374
+            ],
+            [
+              161,
+              2171
+            ],
+            [
+              161,
+              2515
+            ],
+            [
+              161,
+              2610
+            ],
+            [
+              161,
+              3093
+            ],
+            [
+              161,
+              3127
+            ],
+            [
+              161,
+              3711
+            ],
+            [
+              161,
+              4078
+            ],
+            [
+              286,
+              59
+            ],
+            [
+              286,
+              92
+            ],
+            [
+              286,
+              1046
+            ],
+            [
+              286,
+              1049
+            ],
+            [
+              286,
+              1652
+            ],
+            [
+              286,
+              2216
+            ],
+            [
+              286,
+              2308
+            ],
+            [
+              286,
+              2341
+            ],
+            [
+              286,
+              2452
+            ],
+            [
+              286,
+              2475
+            ],
+            [
+              286,
+              2629
+            ],
+            [
+              286,
+              2687
+            ],
+            [
+              286,
+              2887
+            ],
+            [
+              286,
+              3216
+            ],
+            [
+              286,
+              3745
+            ],
+            [
+              286,
+              3777
+            ],
+            [
+              286,
+              3795
+            ],
+            [
+              286,
+              3840
+            ],
+            [
+              286,
+              4023
+            ],
+            [
+              286,
+              4041
+            ],
+            [
+              531,
+              76
+            ],
+            [
+              531,
+              153
+            ],
+            [
+              531,
+              248
+            ],
+            [
+              531,
+              280
+            ],
+            [
+              531,
+              357
+            ],
+            [
+              531,
+              405
+            ],
+            [
+              531,
+              553
+            ],
+            [
+              531,
+              1059
+            ],
+            [
+              531,
+              1091
+            ],
+            [
+              531,
+              1837
+            ],
+            [
+              531,
+              1856
+            ],
+            [
+              531,
+              1912
+            ],
+            [
+              531,
+              2166
+            ],
+            [
+              531,
+              2319
+            ],
+            [
+              531,
+              2335
+            ],
+            [
+              531,
+              2373
+            ],
+            [
+              531,
+              2601
+            ],
+            [
+              531,
+              2744
+            ],
+            [
+              531,
+              3166
+            ],
+            [
+              531,
+              3203
+            ],
+            [
+              531,
+              3255
+            ],
+            [
+              531,
+              3262
+            ],
+            [
+              531,
+              3391
+            ],
+            [
+              531,
+              3747
+            ],
+            [
+              531,
+              3776
+            ],
+            [
+              531,
+              3893
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_15",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_15",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_15",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_16",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_16",
+          "elements": 4194304,
+          "strict_outside_tolerance": 10,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              462,
+              253
+            ],
+            [
+              462,
+              424
+            ],
+            [
+              462,
+              2219
+            ],
+            [
+              462,
+              2222
+            ],
+            [
+              462,
+              2335
+            ],
+            [
+              462,
+              2834
+            ],
+            [
+              462,
+              2867
+            ],
+            [
+              462,
+              3617
+            ],
+            [
+              462,
+              3735
+            ],
+            [
+              462,
+              3779
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_16",
+          "elements": 4194304,
+          "strict_outside_tolerance": 10,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              462,
+              253
+            ],
+            [
+              462,
+              424
+            ],
+            [
+              462,
+              2219
+            ],
+            [
+              462,
+              2222
+            ],
+            [
+              462,
+              2335
+            ],
+            [
+              462,
+              2834
+            ],
+            [
+              462,
+              2867
+            ],
+            [
+              462,
+              3617
+            ],
+            [
+              462,
+              3735
+            ],
+            [
+              462,
+              3779
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_17",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_17",
+          "elements": 4194304,
+          "strict_outside_tolerance": 24,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              219,
+              1027
+            ],
+            [
+              219,
+              1315
+            ],
+            [
+              219,
+              1460
+            ],
+            [
+              219,
+              1592
+            ],
+            [
+              219,
+              1957
+            ],
+            [
+              219,
+              2470
+            ],
+            [
+              219,
+              2648
+            ],
+            [
+              219,
+              3128
+            ],
+            [
+              219,
+              3134
+            ],
+            [
+              219,
+              4036
+            ],
+            [
+              860,
+              352
+            ],
+            [
+              860,
+              483
+            ],
+            [
+              860,
+              716
+            ],
+            [
+              860,
+              757
+            ],
+            [
+              860,
+              1025
+            ],
+            [
+              860,
+              1136
+            ],
+            [
+              860,
+              1271
+            ],
+            [
+              860,
+              1838
+            ],
+            [
+              860,
+              1951
+            ],
+            [
+              860,
+              3010
+            ],
+            [
+              860,
+              3314
+            ],
+            [
+              860,
+              3645
+            ],
+            [
+              860,
+              4055
+            ],
+            [
+              860,
+              4073
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_17",
+          "elements": 4194304,
+          "strict_outside_tolerance": 24,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              219,
+              1027
+            ],
+            [
+              219,
+              1315
+            ],
+            [
+              219,
+              1460
+            ],
+            [
+              219,
+              1592
+            ],
+            [
+              219,
+              1957
+            ],
+            [
+              219,
+              2470
+            ],
+            [
+              219,
+              2648
+            ],
+            [
+              219,
+              3128
+            ],
+            [
+              219,
+              3134
+            ],
+            [
+              219,
+              4036
+            ],
+            [
+              860,
+              352
+            ],
+            [
+              860,
+              483
+            ],
+            [
+              860,
+              716
+            ],
+            [
+              860,
+              757
+            ],
+            [
+              860,
+              1025
+            ],
+            [
+              860,
+              1136
+            ],
+            [
+              860,
+              1271
+            ],
+            [
+              860,
+              1838
+            ],
+            [
+              860,
+              1951
+            ],
+            [
+              860,
+              3010
+            ],
+            [
+              860,
+              3314
+            ],
+            [
+              860,
+              3645
+            ],
+            [
+              860,
+              4055
+            ],
+            [
+              860,
+              4073
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_18",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_18",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_18",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_19",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_19",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_19",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_20",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_20",
+          "elements": 4194304,
+          "strict_outside_tolerance": 12,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              706,
+              504
+            ],
+            [
+              706,
+              563
+            ],
+            [
+              706,
+              1007
+            ],
+            [
+              706,
+              1290
+            ],
+            [
+              706,
+              1893
+            ],
+            [
+              706,
+              2638
+            ],
+            [
+              706,
+              3043
+            ],
+            [
+              706,
+              3245
+            ],
+            [
+              706,
+              3676
+            ],
+            [
+              706,
+              3793
+            ],
+            [
+              706,
+              3886
+            ],
+            [
+              706,
+              3961
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_20",
+          "elements": 4194304,
+          "strict_outside_tolerance": 12,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              706,
+              504
+            ],
+            [
+              706,
+              563
+            ],
+            [
+              706,
+              1007
+            ],
+            [
+              706,
+              1290
+            ],
+            [
+              706,
+              1893
+            ],
+            [
+              706,
+              2638
+            ],
+            [
+              706,
+              3043
+            ],
+            [
+              706,
+              3245
+            ],
+            [
+              706,
+              3676
+            ],
+            [
+              706,
+              3793
+            ],
+            [
+              706,
+              3886
+            ],
+            [
+              706,
+              3961
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_21",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_21",
+          "elements": 4194304,
+          "strict_outside_tolerance": 36,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              192,
+              387
+            ],
+            [
+              192,
+              570
+            ],
+            [
+              192,
+              571
+            ],
+            [
+              192,
+              671
+            ],
+            [
+              192,
+              730
+            ],
+            [
+              192,
+              832
+            ],
+            [
+              192,
+              837
+            ],
+            [
+              192,
+              863
+            ],
+            [
+              192,
+              886
+            ],
+            [
+              192,
+              1052
+            ],
+            [
+              192,
+              1325
+            ],
+            [
+              192,
+              1385
+            ],
+            [
+              192,
+              1400
+            ],
+            [
+              192,
+              1429
+            ],
+            [
+              192,
+              1487
+            ],
+            [
+              192,
+              1495
+            ],
+            [
+              192,
+              1577
+            ],
+            [
+              192,
+              1713
+            ],
+            [
+              192,
+              1826
+            ],
+            [
+              192,
+              1839
+            ],
+            [
+              192,
+              1862
+            ],
+            [
+              192,
+              1974
+            ],
+            [
+              192,
+              2002
+            ],
+            [
+              192,
+              2212
+            ],
+            [
+              192,
+              2231
+            ],
+            [
+              192,
+              2499
+            ],
+            [
+              192,
+              2528
+            ],
+            [
+              192,
+              2629
+            ],
+            [
+              192,
+              3034
+            ],
+            [
+              192,
+              3480
+            ],
+            [
+              192,
+              3483
+            ],
+            [
+              192,
+              3577
+            ],
+            [
+              192,
+              3721
+            ],
+            [
+              192,
+              3753
+            ],
+            [
+              192,
+              3896
+            ],
+            [
+              192,
+              3965
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_21",
+          "elements": 4194304,
+          "strict_outside_tolerance": 36,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              192,
+              387
+            ],
+            [
+              192,
+              570
+            ],
+            [
+              192,
+              571
+            ],
+            [
+              192,
+              671
+            ],
+            [
+              192,
+              730
+            ],
+            [
+              192,
+              832
+            ],
+            [
+              192,
+              837
+            ],
+            [
+              192,
+              863
+            ],
+            [
+              192,
+              886
+            ],
+            [
+              192,
+              1052
+            ],
+            [
+              192,
+              1325
+            ],
+            [
+              192,
+              1385
+            ],
+            [
+              192,
+              1400
+            ],
+            [
+              192,
+              1429
+            ],
+            [
+              192,
+              1487
+            ],
+            [
+              192,
+              1495
+            ],
+            [
+              192,
+              1577
+            ],
+            [
+              192,
+              1713
+            ],
+            [
+              192,
+              1826
+            ],
+            [
+              192,
+              1839
+            ],
+            [
+              192,
+              1862
+            ],
+            [
+              192,
+              1974
+            ],
+            [
+              192,
+              2002
+            ],
+            [
+              192,
+              2212
+            ],
+            [
+              192,
+              2231
+            ],
+            [
+              192,
+              2499
+            ],
+            [
+              192,
+              2528
+            ],
+            [
+              192,
+              2629
+            ],
+            [
+              192,
+              3034
+            ],
+            [
+              192,
+              3480
+            ],
+            [
+              192,
+              3483
+            ],
+            [
+              192,
+              3577
+            ],
+            [
+              192,
+              3721
+            ],
+            [
+              192,
+              3753
+            ],
+            [
+              192,
+              3896
+            ],
+            [
+              192,
+              3965
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_22",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_22",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_22",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_23",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_23",
+          "elements": 4194304,
+          "strict_outside_tolerance": 26,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              180,
+              700
+            ],
+            [
+              180,
+              2544
+            ],
+            [
+              180,
+              3185
+            ],
+            [
+              180,
+              3389
+            ],
+            [
+              546,
+              31
+            ],
+            [
+              546,
+              78
+            ],
+            [
+              546,
+              239
+            ],
+            [
+              546,
+              600
+            ],
+            [
+              546,
+              779
+            ],
+            [
+              546,
+              889
+            ],
+            [
+              546,
+              1145
+            ],
+            [
+              546,
+              1443
+            ],
+            [
+              546,
+              1653
+            ],
+            [
+              546,
+              1713
+            ],
+            [
+              546,
+              1833
+            ],
+            [
+              546,
+              1940
+            ],
+            [
+              546,
+              2048
+            ],
+            [
+              546,
+              2094
+            ],
+            [
+              546,
+              2320
+            ],
+            [
+              546,
+              2469
+            ],
+            [
+              546,
+              2490
+            ],
+            [
+              546,
+              2597
+            ],
+            [
+              546,
+              3015
+            ],
+            [
+              546,
+              3302
+            ],
+            [
+              546,
+              3332
+            ],
+            [
+              546,
+              3720
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_23",
+          "elements": 4194304,
+          "strict_outside_tolerance": 26,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              180,
+              700
+            ],
+            [
+              180,
+              2544
+            ],
+            [
+              180,
+              3185
+            ],
+            [
+              180,
+              3389
+            ],
+            [
+              546,
+              31
+            ],
+            [
+              546,
+              78
+            ],
+            [
+              546,
+              239
+            ],
+            [
+              546,
+              600
+            ],
+            [
+              546,
+              779
+            ],
+            [
+              546,
+              889
+            ],
+            [
+              546,
+              1145
+            ],
+            [
+              546,
+              1443
+            ],
+            [
+              546,
+              1653
+            ],
+            [
+              546,
+              1713
+            ],
+            [
+              546,
+              1833
+            ],
+            [
+              546,
+              1940
+            ],
+            [
+              546,
+              2048
+            ],
+            [
+              546,
+              2094
+            ],
+            [
+              546,
+              2320
+            ],
+            [
+              546,
+              2469
+            ],
+            [
+              546,
+              2490
+            ],
+            [
+              546,
+              2597
+            ],
+            [
+              546,
+              3015
+            ],
+            [
+              546,
+              3302
+            ],
+            [
+              546,
+              3332
+            ],
+            [
+              546,
+              3720
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_24",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_24",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_24",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_25",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_25",
+          "elements": 4194304,
+          "strict_outside_tolerance": 5,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              760,
+              685
+            ],
+            [
+              760,
+              1381
+            ],
+            [
+              760,
+              2173
+            ],
+            [
+              760,
+              2315
+            ],
+            [
+              760,
+              3687
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0498046875,
+            0.0498046875
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_25",
+          "elements": 4194304,
+          "strict_outside_tolerance": 5,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              760,
+              685
+            ],
+            [
+              760,
+              1381
+            ],
+            [
+              760,
+              2173
+            ],
+            [
+              760,
+              2315
+            ],
+            [
+              760,
+              3687
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0498046875,
+            0.0498046875
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_26",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_26",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_26",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_27",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_27",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_27",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_28",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_28",
+          "elements": 4194304,
+          "strict_outside_tolerance": 29,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              376,
+              19
+            ],
+            [
+              376,
+              309
+            ],
+            [
+              376,
+              359
+            ],
+            [
+              376,
+              588
+            ],
+            [
+              376,
+              1821
+            ],
+            [
+              376,
+              2047
+            ],
+            [
+              376,
+              2209
+            ],
+            [
+              376,
+              2237
+            ],
+            [
+              376,
+              2542
+            ],
+            [
+              376,
+              2811
+            ],
+            [
+              376,
+              2893
+            ],
+            [
+              376,
+              3290
+            ],
+            [
+              376,
+              3386
+            ],
+            [
+              376,
+              3671
+            ],
+            [
+              376,
+              4067
+            ],
+            [
+              789,
+              54
+            ],
+            [
+              789,
+              337
+            ],
+            [
+              789,
+              405
+            ],
+            [
+              789,
+              663
+            ],
+            [
+              789,
+              730
+            ],
+            [
+              789,
+              1479
+            ],
+            [
+              789,
+              1832
+            ],
+            [
+              789,
+              2369
+            ],
+            [
+              789,
+              2550
+            ],
+            [
+              789,
+              2586
+            ],
+            [
+              789,
+              3135
+            ],
+            [
+              789,
+              3213
+            ],
+            [
+              789,
+              3716
+            ],
+            [
+              789,
+              3922
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_28",
+          "elements": 4194304,
+          "strict_outside_tolerance": 29,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              376,
+              19
+            ],
+            [
+              376,
+              309
+            ],
+            [
+              376,
+              359
+            ],
+            [
+              376,
+              588
+            ],
+            [
+              376,
+              1821
+            ],
+            [
+              376,
+              2047
+            ],
+            [
+              376,
+              2209
+            ],
+            [
+              376,
+              2237
+            ],
+            [
+              376,
+              2542
+            ],
+            [
+              376,
+              2811
+            ],
+            [
+              376,
+              2893
+            ],
+            [
+              376,
+              3290
+            ],
+            [
+              376,
+              3386
+            ],
+            [
+              376,
+              3671
+            ],
+            [
+              376,
+              4067
+            ],
+            [
+              789,
+              54
+            ],
+            [
+              789,
+              337
+            ],
+            [
+              789,
+              405
+            ],
+            [
+              789,
+              663
+            ],
+            [
+              789,
+              730
+            ],
+            [
+              789,
+              1479
+            ],
+            [
+              789,
+              1832
+            ],
+            [
+              789,
+              2369
+            ],
+            [
+              789,
+              2550
+            ],
+            [
+              789,
+              2586
+            ],
+            [
+              789,
+              3135
+            ],
+            [
+              789,
+              3213
+            ],
+            [
+              789,
+              3716
+            ],
+            [
+              789,
+              3922
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_29",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_29",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_29",
+          "elements": 4194304,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_30",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_30",
+          "elements": 4194304,
+          "strict_outside_tolerance": 8,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              614,
+              56
+            ],
+            [
+              614,
+              278
+            ],
+            [
+              614,
+              548
+            ],
+            [
+              614,
+              723
+            ],
+            [
+              614,
+              930
+            ],
+            [
+              614,
+              1158
+            ],
+            [
+              614,
+              2688
+            ],
+            [
+              614,
+              4024
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_30",
+          "elements": 4194304,
+          "strict_outside_tolerance": 8,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              614,
+              56
+            ],
+            [
+              614,
+              278
+            ],
+            [
+              614,
+              548
+            ],
+            [
+              614,
+              723
+            ],
+            [
+              614,
+              930
+            ],
+            [
+              614,
+              1158
+            ],
+            [
+              614,
+              2688
+            ],
+            [
+              614,
+              4024
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_31",
+      "comparisons": {
+        "triton_grouped_8warps": {
+          "fixture": "captured_31",
+          "elements": 4194304,
+          "strict_outside_tolerance": 38,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              213,
+              109
+            ],
+            [
+              213,
+              124
+            ],
+            [
+              213,
+              236
+            ],
+            [
+              213,
+              1047
+            ],
+            [
+              213,
+              1205
+            ],
+            [
+              213,
+              1548
+            ],
+            [
+              213,
+              1563
+            ],
+            [
+              213,
+              1603
+            ],
+            [
+              213,
+              2616
+            ],
+            [
+              213,
+              2809
+            ],
+            [
+              213,
+              3226
+            ],
+            [
+              213,
+              3423
+            ],
+            [
+              213,
+              3953
+            ],
+            [
+              605,
+              160
+            ],
+            [
+              605,
+              324
+            ],
+            [
+              605,
+              488
+            ],
+            [
+              605,
+              508
+            ],
+            [
+              605,
+              634
+            ],
+            [
+              605,
+              726
+            ],
+            [
+              605,
+              799
+            ],
+            [
+              605,
+              873
+            ],
+            [
+              605,
+              1108
+            ],
+            [
+              605,
+              1178
+            ],
+            [
+              605,
+              1255
+            ],
+            [
+              605,
+              1611
+            ],
+            [
+              605,
+              1724
+            ],
+            [
+              605,
+              1927
+            ],
+            [
+              605,
+              2068
+            ],
+            [
+              605,
+              2242
+            ],
+            [
+              605,
+              2372
+            ],
+            [
+              605,
+              2469
+            ],
+            [
+              605,
+              2679
+            ],
+            [
+              605,
+              2969
+            ],
+            [
+              605,
+              3131
+            ],
+            [
+              605,
+              3157
+            ],
+            [
+              605,
+              3345
+            ],
+            [
+              605,
+              3595
+            ],
+            [
+              605,
+              4028
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_shuffle_8warps": {
+          "fixture": "captured_31",
+          "elements": 4194304,
+          "strict_outside_tolerance": 38,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              213,
+              109
+            ],
+            [
+              213,
+              124
+            ],
+            [
+              213,
+              236
+            ],
+            [
+              213,
+              1047
+            ],
+            [
+              213,
+              1205
+            ],
+            [
+              213,
+              1548
+            ],
+            [
+              213,
+              1563
+            ],
+            [
+              213,
+              1603
+            ],
+            [
+              213,
+              2616
+            ],
+            [
+              213,
+              2809
+            ],
+            [
+              213,
+              3226
+            ],
+            [
+              213,
+              3423
+            ],
+            [
+              213,
+              3953
+            ],
+            [
+              605,
+              160
+            ],
+            [
+              605,
+              324
+            ],
+            [
+              605,
+              488
+            ],
+            [
+              605,
+              508
+            ],
+            [
+              605,
+              634
+            ],
+            [
+              605,
+              726
+            ],
+            [
+              605,
+              799
+            ],
+            [
+              605,
+              873
+            ],
+            [
+              605,
+              1108
+            ],
+            [
+              605,
+              1178
+            ],
+            [
+              605,
+              1255
+            ],
+            [
+              605,
+              1611
+            ],
+            [
+              605,
+              1724
+            ],
+            [
+              605,
+              1927
+            ],
+            [
+              605,
+              2068
+            ],
+            [
+              605,
+              2242
+            ],
+            [
+              605,
+              2372
+            ],
+            [
+              605,
+              2469
+            ],
+            [
+              605,
+              2679
+            ],
+            [
+              605,
+              2969
+            ],
+            [
+              605,
+              3131
+            ],
+            [
+              605,
+              3157
+            ],
+            [
+              605,
+              3345
+            ],
+            [
+              605,
+              3595
+            ],
+            [
+              605,
+              4028
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    }
+  ],
+  "timing": {
+    "ops_per_graph": 32,
+    "round_order": [
+      [
+        "triton_grouped_8warps",
+        "vllm_0_10_0",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "triton_grouped_8warps",
+        "vllm_0_10_0",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "triton_shuffle_8warps",
+        "vllm_0_10_0",
+        "triton_grouped_8warps"
+      ],
+      [
+        "triton_grouped_8warps",
+        "vllm_0_10_0",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_grouped_8warps",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "triton_shuffle_8warps",
+        "triton_grouped_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_shuffle_8warps",
+        "triton_grouped_8warps"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_shuffle_8warps",
+        "triton_grouped_8warps"
+      ],
+      [
+        "triton_grouped_8warps",
+        "vllm_0_10_0",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "triton_grouped_8warps",
+        "triton_shuffle_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_grouped_8warps",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "triton_shuffle_8warps",
+        "vllm_0_10_0",
+        "triton_grouped_8warps"
+      ],
+      [
+        "triton_shuffle_8warps",
+        "vllm_0_10_0",
+        "triton_grouped_8warps"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_shuffle_8warps",
+        "triton_grouped_8warps"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_shuffle_8warps",
+        "triton_grouped_8warps"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_grouped_8warps",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "triton_grouped_8warps",
+        "vllm_0_10_0",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "triton_grouped_8warps",
+        "vllm_0_10_0",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "triton_grouped_8warps",
+        "triton_shuffle_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_shuffle_8warps",
+        "triton_grouped_8warps"
+      ],
+      [
+        "triton_grouped_8warps",
+        "vllm_0_10_0",
+        "triton_shuffle_8warps"
+      ]
+    ],
+    "inputs_restored_bitwise": true,
+    "started_utc": "2026-11-26T08:50:58.679316+00:00",
+    "wall_seconds": 0.05473896395415068,
+    "statistics": {
+      "vllm_0_10_0": {
+        "graph_elapsed_ms": [
+          0.4392319917678833,
+          0.4411199986934662,
+          0.434688001871109,
+          0.43667200207710266,
+          0.442656010389328,
+          0.4399360120296478,
+          0.4422079920768738,
+          0.43699198961257935,
+          0.4418559968471527,
+          0.437855988740921,
+          0.44150400161743164,
+          0.44201600551605225,
+          0.44329598546028137,
+          0.43881601095199585,
+          0.43801599740982056,
+          0.438975989818573,
+          0.4421440064907074,
+          0.44089600443840027,
+          0.43929600715637207,
+          0.4414080083370209,
+          0.439520001411438
+        ],
+        "samples_us": [
+          13.725999742746353,
+          13.784999959170818,
+          13.584000058472157,
+          13.646000064909458,
+          13.8330003246665,
+          13.748000375926495,
+          13.818999752402306,
+          13.655999675393105,
+          13.807999901473522,
+          13.682999648153782,
+          13.797000050544739,
+          13.813000172376633,
+          13.852999545633793,
+          13.71300034224987,
+          13.687999919056892,
+          13.717999681830406,
+          13.817000202834606,
+          13.778000138700008,
+          13.728000223636627,
+          13.794000260531902,
+          13.735000044107437
+        ],
+        "q1_us": 13.71300034224987,
+        "median_us": 13.748000375926495,
+        "q3_us": 13.807999901473522
+      },
+      "triton_grouped_8warps": {
+        "graph_elapsed_ms": [
+          0.4739519953727722,
+          0.46799999475479126,
+          0.4708479940891266,
+          0.47513601183891296,
+          0.47040000557899475,
+          0.4727039933204651,
+          0.4679679870605469,
+          0.4687359929084778,
+          0.47548800706863403,
+          0.4753600060939789,
+          0.47088000178337097,
+          0.4739519953727722,
+          0.47094398736953735,
+          0.47088000178337097,
+          0.4752959907054901,
+          0.4704959988594055,
+          0.4764479994773865,
+          0.4735040068626404,
+          0.4691520035266876,
+          0.47225600481033325,
+          0.4743039906024933
+        ],
+        "samples_us": [
+          14.810999855399132,
+          14.624999836087227,
+          14.713999815285206,
+          14.84800036996603,
+          14.700000174343586,
+          14.771999791264534,
+          14.62399959564209,
+          14.64799977838993,
+          14.859000220894814,
+          14.85500019043684,
+          14.715000055730343,
+          14.810999855399132,
+          14.716999605298042,
+          14.715000055730343,
+          14.852999709546566,
+          14.702999964356422,
+          14.888999983668327,
+          14.797000214457512,
+          14.661000110208988,
+          14.758000150322914,
+          14.821999706327915
+        ],
+        "q1_us": 14.702999964356422,
+        "median_us": 14.758000150322914,
+        "q3_us": 14.821999706327915
+      },
+      "triton_shuffle_8warps": {
+        "graph_elapsed_ms": [
+          0.40857601165771484,
+          0.40755200386047363,
+          0.4073599874973297,
+          0.4078719913959503,
+          0.40751999616622925,
+          0.4066239893436432,
+          0.4073280096054077,
+          0.40560001134872437,
+          0.40755200386047363,
+          0.40697601437568665,
+          0.40560001134872437,
+          0.4068480134010315,
+          0.40432000160217285,
+          0.40880000591278076,
+          0.4065600037574768,
+          0.4065600037574768,
+          0.40569600462913513,
+          0.4069119989871979,
+          0.40809598565101624,
+          0.40723198652267456,
+          0.40729600191116333
+        ],
+        "samples_us": [
+          12.768000364303589,
+          12.736000120639801,
+          12.729999609291553,
+          12.745999731123447,
+          12.734999880194664,
+          12.70699966698885,
+          12.729000300168991,
+          12.675000354647636,
+          12.736000120639801,
+          12.718000449240208,
+          12.675000354647636,
+          12.714000418782234,
+          12.635000050067902,
+          12.775000184774399,
+          12.70500011742115,
+          12.70500011742115,
+          12.678000144660473,
+          12.715999968349934,
+          12.752999551594257,
+          12.72599957883358,
+          12.728000059723854
+        ],
+        "q1_us": 12.70500011742115,
+        "median_us": 12.72599957883358,
+        "q3_us": 12.736000120639801
+      }
+    },
+    "triton_over_vllm": 0.9256618585141666,
+    "passes_5pct": true
+  },
+  "started_utc": "2026-11-26T08:50:54.900959+00:00",
+  "finished_utc": "2026-11-26T08:50:58.734379+00:00",
+  "wall_seconds": 3.8334137657657266
+}
