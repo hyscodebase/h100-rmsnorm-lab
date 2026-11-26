@@ -46,18 +46,21 @@ class Replay:
 
     def burst(self, graphs, repeats):
         self.begin.record(self.control)
+        self.enqueue(graphs, self.begin, self.done, repeats)
+        self.end.record(self.control)
+        self.end.synchronize()
+        return self.begin.elapsed_time(self.end)
+
+    def enqueue(self, graphs, ready, completed, repeats):
         for stream in self.streams:
-            stream.wait_event(self.begin)
+            stream.wait_event(ready)
         for _ in range(repeats):
             for stream, graph in zip(self.streams, graphs, strict=True):
                 with self.torch.cuda.stream(stream):
                     graph.replay()
-        for stream, event in zip(self.streams, self.done, strict=True):
+        for stream, event in zip(self.streams, completed, strict=True):
             event.record(stream)
             self.control.wait_event(event)
-        self.end.record(self.control)
-        self.end.synchronize()
-        return self.begin.elapsed_time(self.end)
 
 
 def make_work(torch, seed, device):
@@ -92,18 +95,21 @@ def input_fingerprints(works, weight):
             "stream_input_sha256": [[digest(t) for t in work.source] for work in works]}
 
 
-def capture(torch, fn, work, weight):
+def capture(torch, fn, work, weight, *, restore=True):
     work.stream.wait_stream(torch.cuda.current_stream())
     x, residual = work.buffer
     with torch.cuda.stream(work.stream):
         run.restore(work.source, x, residual)
-        fn(x[0], residual[0], weight)
+        if fn is not None:
+            fn(x[0], residual[0], weight)
     work.stream.synchronize()
     graph = torch.cuda.CUDAGraph()
     with torch.cuda.graph(graph, stream=work.stream):
-        run.restore(work.source, x, residual)
-        for index in range(run.OPS):
-            fn(x[index], residual[index], weight)
+        if restore:
+            run.restore(work.source, x, residual)
+        if fn is not None:
+            for index in range(run.OPS):
+                fn(x[index], residual[index], weight)
     work.stream.synchronize()
     return graph
 
@@ -127,14 +133,18 @@ def outputs_match(records):
     )
 
 
+def poison_buffers(torch, works):
+    for work in works:
+        for tensor in work.buffer:
+            tensor.fill_(float("nan"))
+    torch.cuda.synchronize()
+
+
 def verify_graphs(torch, runner, graphs, works, weight, initial_weight):
     checks = {}
     reference = []
     for name in BACKENDS:
-        for work in works:
-            for tensor in work.buffer:
-                tensor.fill_(float("nan"))
-        torch.cuda.synchronize()
+        poison_buffers(torch, works)
         runner.burst(graphs[name], 1)
         if name == BACKENDS[0]:
             for work in works:
@@ -212,20 +222,41 @@ def measure(torch, seed, runner, graphs, works, reference, cuda_uuid):
             "median_rows_per_second": rates, "comparisons": gains}
 
 
-def checkpoint(seed, asset_dir, qualification, revision):
-    import torch
-    import triton
-    from sixteen_warp_kernel import fused_sixteen_warps
-    from small_rows_kernel import fused_split_warps
-
-    started, clock = run.original.utc_now(), time.perf_counter()
-    anchor = json.loads(ANCHOR.read_bytes())
+def validate_stack(torch, triton, library, anchor):
     if not torch.cuda.is_available() or torch.cuda.device_count() != 1 or not anchor["gate_passed"]:
         raise ValueError("Use the recorded H100 and a passing kernel anchor.")
     environment = single.grouped.environment_metadata(torch, triton)
-    library = asset_dir / Path(MEMBER).name
     if environment != anchor["environment"] or sha(library) != anchor["asset"]["extension_sha256"]:
         raise ValueError("The H100 or released extension differs from the anchor.")
+    return environment
+
+
+def prepare_backends(torch, library, anchor):
+    from sixteen_warp_kernel import fused_sixteen_warps
+    from small_rows_kernel import fused_split_warps
+
+    torch.cuda.set_device(0)
+    torch.cuda.reset_peak_memory_stats(0)
+    torch.ops.load_library(str(library.resolve()))
+    op = torch.ops._C.fused_add_rms_norm
+    methods = {BACKENDS[0]: lambda x, r, w: op(x, r, w, 1e-6), BACKENDS[1]: fused_split_warps,
+               BACKENDS[2]: fused_sixteen_warps}
+    codegen = {BACKENDS[1]: single.small.compile_split(torch, fused_split_warps),
+               BACKENDS[2]: single.compile_sixteen(torch, fused_sixteen_warps)}
+    if any(code["ptx_instruction_sha256"] != anchor["codegen"][backend]["ptx_instruction_sha256"]
+           for backend, code in codegen.items()):
+        raise ValueError("A Triton kernel's instructions differ from the registered comparison.")
+    return methods, codegen
+
+
+def checkpoint(seed, asset_dir, qualification, revision):
+    import torch
+    import triton
+
+    started, clock = run.original.utc_now(), time.perf_counter()
+    anchor = json.loads(ANCHOR.read_bytes())
+    library = asset_dir / Path(MEMBER).name
+    environment = validate_stack(torch, triton, library, anchor)
     sources = {name: hashlib.sha256((run.ROOT / name).read_bytes()).hexdigest() for name in SOURCES}
     should_measure = seed in TIMING_SEEDS
     if should_measure and (
@@ -235,19 +266,9 @@ def checkpoint(seed, asset_dir, qualification, revision):
         or qualification["environment"] != environment or qualification["asset"] != anchor["asset"]
     ):
         raise ValueError("A passing preflight from the exact revision is required.")
-    torch.cuda.set_device(0)
-    torch.cuda.reset_peak_memory_stats(0)
-    torch.ops.load_library(str(library.resolve()))
-    op = torch.ops._C.fused_add_rms_norm
-    methods = {BACKENDS[0]: lambda x, r, w: op(x, r, w, 1e-6), BACKENDS[1]: fused_split_warps,
-               BACKENDS[2]: fused_sixteen_warps}
     device = torch.device("cuda:0")
     with torch.inference_mode():
-        codegen = {BACKENDS[1]: single.small.compile_split(torch, fused_split_warps),
-                   BACKENDS[2]: single.compile_sixteen(torch, fused_sixteen_warps)}
-        if any(code["ptx_instruction_sha256"] != anchor["codegen"][backend]["ptx_instruction_sha256"]
-               for backend, code in codegen.items()):
-            raise ValueError("A Triton kernel's instructions differ from the registered comparison.")
+        methods, codegen = prepare_backends(torch, library, anchor)
         fixtures = verify_fixtures(torch, methods, seed, device, ROWS)
         works, weight, address_check = make_work(torch, seed, device)
         initial_weight = weight.view(torch.int16).clone()
