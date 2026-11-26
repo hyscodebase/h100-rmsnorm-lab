@@ -220,6 +220,20 @@ class LabCLI(unittest.TestCase):
         self.cli("step")
         self.assertEqual(self.completed(), {fixture.name})
 
+    def test_gemm_rejects_consistent_cuda_times_exceeding_wall_window(self):
+        self.prepare_gemm()
+        fixture = self.directory / "s42-m2-k3-n4.json"
+        result = json.loads(fixture.read_text())
+        timing = result["timing"]
+        for batch in timing["batches"]:
+            batch["event_elapsed_s"] *= 100
+        timing["cuda_event_total_s"] *= 100
+        timing["cuda_event_tflops"] /= 100
+        fixture.write_text(json.dumps(result))
+        failure = self.cli("step", expect_success=False)
+        self.assertIn("exceeds the sequential wall window", failure.stderr)
+        self.assertEqual(self.completed(), set())
+
     def test_interrupted_process_group_can_resume_pending_benchmark(self):
         self.cli("step")
         hold = self.directory / "hold"

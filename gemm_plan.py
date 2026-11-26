@@ -98,6 +98,8 @@ def validate_result(result, shape, plan):
                 "Invalid raw GEMM batch.")
     iterations = sum(b["iterations"] for b in batches)
     gpu_seconds = sum(b["event_elapsed_s"] for b in batches)
+    # Synchronized, sequential event intervals fit inside the host window, up to clock tolerance.
+    require(gpu_seconds <= elapsed * 1.01 + 0.002, "Summed CUDA event time exceeds the sequential wall window.")
     flops = 2 * m * k * n
     require(timing["iterations"] == iterations and timing["flops_per_iteration"] == flops
             and math.isclose(timing["cuda_event_total_s"], gpu_seconds)
