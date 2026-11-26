@@ -27,7 +27,7 @@
 | 복사 없는 두 커널과 융합 커널 비교 | 완료 | 128×4096에서 두 출력의 비트를 맞추고 원본을 보존했다. 융합은 두 커널 기준보다 세 독립 시드에서 15.125%, 21.429%, 16.547% 높은 처리량을 기록해 5%를 모두 넘었다. [실측·자원 기록](experiments/rmsnorm-residual/vllm/COPY_FREE_FUSION_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/29) |
 | 255행에서 복사 없는 융합 이득 재검증 | 완료 | 128행과 같은 바이너리로 두 출력을 비트 단위로 맞췄다. 융합 처리량은 복사 없는 두 커널보다 세 시드에서 각각 12.766%, 14.026%, 12.809% 높았다. [실측·자원 기록](experiments/rmsnorm-residual/vllm/COPY_FREE_ROWS_255_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/31) |
 | 256행에서 vLLM의 합산 순서가 바뀐 뒤 비교 | 완료 | 기존 16워프는 정규화 결과 1,161개에서 비트가 달랐다. 새 8워프의 두 출력은 모두 일치했고, 융합 처리량은 복사 없는 두 커널보다 세 시드에서 12.381~12.485% 높았다. [실측·자원 기록](experiments/rmsnorm-residual/vllm/COPY_FREE_ROWS_256_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/33) |
-| 512행에서 8워프 융합 이득 재검증 | 다음 가설 | 256행과 같은 바이너리와 8스트림으로 행을 두 배로 늘린다. 시드 161 정확도 확인 뒤 시드 162~164에서 융합의 5% 기준을 검증한다. [후속 계획](experiments/rmsnorm-residual/vllm/COPY_FREE_ROWS_512.md) · [측정 이슈](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/34) |
+| 512행에서 8워프 융합 이득 재검증 | 완료 | 256행과 같은 바이너리로 두 출력을 비트 단위로 맞췄다. 복사 없는 두 커널 대비 융합 처리량은 독립 시드 세 개에서 19.741~19.759% 높았다. [실측·자원 기록](experiments/rmsnorm-residual/vllm/COPY_FREE_ROWS_512_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/35) |
 | RMSNorm 4104 인접 너비 재검증 | 후속 후보 | 4103·4104·4105와 4112에서 새로운 시드를 사용해 권장 설정이 유효한 범위를 검증한다. |
 
 ## 다음 가설을 고르는 규칙
