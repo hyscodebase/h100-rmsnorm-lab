@@ -137,9 +137,16 @@ def comparison(timing):
             "passes_throughput": rates[CANDIDATE] >= THROUGHPUT_RATIO * rates[BASELINE]}
 
 
-def checkpoint(seed, asset_dir, qualification, revision, *, numeric_seed=NUMERIC_SEED, timing_seeds=TIMING_SEEDS,
-               source_paths=SOURCES, measure_work=measure, probe_work=probe_counter,
-               qualifies_counter=counter_passed, counter_function=COUNTER_FUNCTION):
+def validate_qualification(qualification, seed, provenance, counter_function, qualifies_counter):
+    if (not qualification or qualification["seed"] != seed or not qualification["gate_passed"]
+            or any(qualification[key] != value for key, value in provenance.items())
+            or qualification["counter_function"] != counter_function
+            or not qualifies_counter(qualification["counter_probe"])
+            or not copy_free.numeric_gate(qualification["numerical"], four.VERIFICATION_BACKENDS)):
+        raise ValueError(f"A passing seed-{seed} numerical and energy checkpoint from this revision is required.")
+
+
+def checked_device_run(seed, asset_dir, revision, *, source_paths, collect, validate=None):
     import torch
     import triton
     from eight_warp_outputs import fused_out_of_place as baseline
@@ -152,13 +159,8 @@ def checkpoint(seed, asset_dir, qualification, revision, *, numeric_seed=NUMERIC
     sources = {name: hashlib.sha256((run.ROOT / name).read_bytes()).hexdigest() for name in source_paths}
     provenance = {"rows": ROWS, "width": WIDTH, "code_revision": revision, "source_sha256": sources,
                   "environment": environment, "asset": anchor["asset"]}
-    timed = seed in timing_seeds
-    if timed and (not qualification or qualification["seed"] != numeric_seed or not qualification["gate_passed"]
-                  or any(qualification[key] != value for key, value in provenance.items())
-                  or qualification["counter_function"] != counter_function
-                  or not qualifies_counter(qualification["counter_probe"])
-                  or not copy_free.numeric_gate(qualification["numerical"], four.VERIFICATION_BACKENDS)):
-        raise ValueError(f"A passing seed-{numeric_seed} numerical and energy checkpoint from this revision is required.")
+    if validate is not None:
+        validate(provenance)
     device = torch.device("cuda:0")
     with torch.inference_mode():
         vllm = base.load_vllm(torch, library)
@@ -172,25 +174,41 @@ def checkpoint(seed, asset_dir, qualification, revision, *, numeric_seed=NUMERIC
         numerical = verified.numerical
         exact = copy_free.numeric_gate(numerical, four.VERIFICATION_BACKENDS)
         cuda_uuid = getattr(torch.cuda.get_device_properties(device), "uuid", None)
-        counter_error, probe, timing = None, None, None
+        counter_error, sensor = None, None
         try:
             sensor = Nvml(cuda_uuid)
         except (OSError, AttributeError, RuntimeError, ValueError) as error:
             counter_error = type(error).__name__
-        else:
-            try:
-                probe = probe_work(sensor, verified.runner, verified.graphs[BASELINE])
-                if exact and qualifies_counter(probe) and timed:
-                    timing = measure_work(torch, seed, verified, sensor, cuda_uuid)
-            finally:
+        try:
+            payload = collect(torch, verified, sensor, cuda_uuid, exact)
+        finally:
+            if sensor is not None:
                 sensor.close()
     return {**provenance, "seed": seed, "codegen": codegen, "numerical": numerical, "numerically_exact": exact,
-            "gate_passed": exact and qualifies_counter(probe), "counter_function": counter_function,
-            "counter_error": counter_error, "counter_probe": probe, "timing": timing, "effect": comparison(timing),
+            "counter_error": counter_error, **payload,
             "graph_contract": copy_free.graph_contract(ROWS, backends=four.VERIFICATION_BACKENDS),
             "pytorch_peak_allocated_bytes": torch.cuda.max_memory_allocated(0),
             "pytorch_peak_reserved_bytes": torch.cuda.max_memory_reserved(0), "started_utc": started,
             "finished_utc": run.original.utc_now(), "wall_seconds": time.perf_counter() - clock}
+
+
+def checkpoint(seed, asset_dir, qualification, revision, *, numeric_seed=NUMERIC_SEED, timing_seeds=TIMING_SEEDS,
+               source_paths=SOURCES, measure_work=measure, probe_work=probe_counter,
+               qualifies_counter=counter_passed, counter_function=COUNTER_FUNCTION):
+    timed = seed in timing_seeds
+
+    def validate(provenance):
+        validate_qualification(qualification, numeric_seed, provenance, counter_function, qualifies_counter)
+
+    def collect(torch, verified, sensor, cuda_uuid, exact):
+        probe = probe_work(sensor, verified.runner, verified.graphs[BASELINE]) if sensor is not None else None
+        passed = exact and qualifies_counter(probe)
+        timing = measure_work(torch, seed, verified, sensor, cuda_uuid) if passed and timed else None
+        return {"gate_passed": passed, "counter_function": counter_function, "counter_probe": probe,
+                "timing": timing, "effect": comparison(timing)}
+
+    return checked_device_run(seed, asset_dir, revision, source_paths=source_paths, collect=collect,
+                              validate=validate if timed else None)
 
 
 if __name__ == "__main__":

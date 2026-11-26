@@ -1,0 +1,74 @@
+{
+  "id": "input-load-cache-512",
+  "hypothesis": "Bypassing L1 on the activation and residual loads improves the fixed-work throughput of the eight-warp fused residual RMSNorm on H100.",
+  "shape": {
+    "rows": 512,
+    "hidden_width": 4096,
+    "dtype": "bfloat16"
+  },
+  "baseline": {
+    "backend": "triton_8warps_out_of_place",
+    "source": "experiments/rmsnorm-residual/vllm/eight_warp_outputs.py",
+    "source_revision": "2ef16f1943b732e5627c066ad1ce4bac9e3903be",
+    "binary_sha256": "7b38c6052f9842335a8be7794921eef913dc208e9939ba910096dba9eaffc947",
+    "qualification_checkpoint": "experiments/rmsnorm-residual/vllm/long-window-energy-512-results/s205.json"
+  },
+  "candidate": {
+    "backend": "triton_8warps_cg_inputs_out_of_place",
+    "change": "Use the Triton .cg load hint for activation and residual only.",
+    "physical_warps": 8
+  },
+  "qualification": {
+    "seed": 209,
+    "fixture_count": 8,
+    "library_reference": "release-pinned vLLM",
+    "require_both_outputs_bitwise": true,
+    "require_input_and_weight_fingerprints": true,
+    "require_distinct_input_cache_instructions": true,
+    "archive_fields": [
+      "ptx_load_cache_policy",
+      "registers_per_thread",
+      "spills",
+      "binary_sha256"
+    ]
+  },
+  "timing": {
+    "seeds": [
+      210,
+      211,
+      212
+    ],
+    "bursts_per_period": 512,
+    "graph_replays_per_burst": 32,
+    "minimum_warmup_s": 3,
+    "streams": 8,
+    "pairs_per_stream": 32,
+    "orders": "Both backend orders in independent periods with one saved period per submission.",
+    "condition": "Match shape, buffer layout, fingerprints and launch geometry for both backends.",
+    "period_normalized_rows": 2147483648,
+    "archive_fields": [
+      "burst_wall_and_cuda_times",
+      "backend_order",
+      "input_and_weight_fingerprints",
+      "post_period_exactness",
+      "auxiliary_h100_snapshots"
+    ]
+  },
+  "adoption": {
+    "minimum_throughput_ratio": 1.05,
+    "require_all_timing_seeds": true,
+    "require_bitwise_exactness": true,
+    "metric": "Median normalized rows per second per backend and seed."
+  },
+  "references": [
+    "https://triton-lang.org/main/python-api/generated/triton.language.load.html",
+    "https://docs.nvidia.com/cuda/archive/12.8.1/parallel-thread-execution/index.html#cache-operators"
+  ],
+  "next_work": "Implement the load-policy candidate and qualify seed 209.",
+  "tracking_issue": "https://github.com/hyscodebase/h100-rmsnorm-lab/issues/58",
+  "motivation": {
+    "completed_work": "experiments/rmsnorm-residual/vllm/LONG_WINDOW_ENERGY_512_REPORT.md",
+    "finding": "Warp remapping preserved both outputs and changed sustained throughput by less than 0.1% in seeds 206 and 207. Seed 206 fell short of the registered lower energy bound.",
+    "comparison": "Keep the eight-warp launch and test the cache policy of the two input loads."
+  }
+}

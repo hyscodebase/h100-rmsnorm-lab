@@ -1,0 +1,19 @@
+{
+  "unit": "s208-p0",
+  "attempt_id": "7045a7e20553456ba92dea1fbd55d1ec",
+  "rows": 512,
+  "seed": 208,
+  "period": {
+    "index": 0,
+    "pair_index": 0,
+    "order_index": 0,
+    "position": 0,
+    "backend": "triton_8warps_out_of_place"
+  },
+  "code_revision": "2ef16f1943b732e5627c066ad1ce4bac9e3903be",
+  "started_utc": "2026-11-26T15:06:42.253493+00:00",
+  "mode": "compute",
+  "outcome": "checkpoint_saved",
+  "finished_utc": "2026-11-26T15:10:38.029108+00:00",
+  "elapsed_s": 235.79019341699313
+}

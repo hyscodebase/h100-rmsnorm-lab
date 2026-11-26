@@ -41,18 +41,21 @@ def pair_eligible(blocks):
     )
 
 
-def collect_pair(torch, verified, sensor, origin, order, order_index, *, measure_window, qualifies_pair):
+def collect_period(torch, verified, sensor, origin, backend, *, bursts, measure_window):
     base = energy.base
-    blocks = []
-    for backend in order[order_index]:
-        graphs = verified.graphs[backend]
-        before = auxiliary_snapshot(sensor, origin)
-        warmup = base.collect_window(verified.runner, graphs, energy.WARMUP_S, origin, rows=ROWS)
-        work = measure_window(verified.runner, graphs, sensor, origin, energy.MEASURED_BURSTS)
-        after = auxiliary_snapshot(sensor, origin)
-        work.update(backend=backend, warmup=warmup, auxiliary_before=before, auxiliary_after=after,
-                    post_graph_checks=base.compare(torch, verified.works, verified.reference))
-        blocks.append(work)
+    graphs = verified.graphs[backend]
+    before = auxiliary_snapshot(sensor, origin)
+    warmup = base.collect_window(verified.runner, graphs, energy.WARMUP_S, origin, rows=ROWS)
+    work = measure_window(verified.runner, graphs, sensor, origin, bursts)
+    after = auxiliary_snapshot(sensor, origin)
+    work.update(backend=backend, warmup=warmup, auxiliary_before=before, auxiliary_after=after,
+                post_graph_checks=base.compare(torch, verified.works, verified.reference))
+    return work
+
+
+def collect_pair(torch, verified, sensor, origin, order, order_index, *, measure_window, qualifies_pair):
+    blocks = [collect_period(torch, verified, sensor, origin, backend, bursts=energy.MEASURED_BURSTS,
+                             measure_window=measure_window) for backend in order[order_index]]
     return {"order_index": order_index, "eligible": qualifies_pair(blocks), "blocks": blocks}
 
 

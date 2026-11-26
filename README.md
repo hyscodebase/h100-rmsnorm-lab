@@ -88,6 +88,8 @@ With a 50 ms combined counter boundary limit, two complete independent seeds sho
 
 Using the timestamps attached to NVML field readings recovered three periods with slow opening calls. Two complete seeds showed 1.360–1.779% less energy per row, and one reached the 1.5% threshold. The third seed supplied one eligible pair after two slow closing calls. [Field timestamps, raw results and resource observations](experiments/rmsnorm-residual/vllm/TIMESTAMPED_NVML_ENERGY_512_REPORT.md)
 
+With eight times the fixed work per period, all three exact timing seeds completed both backend orders. Gross energy savings were 1.180–1.599%, with throughput 0.045–0.057% lower. The sensitivity lower bound at 1,000 W cleared 1.5% in one seed. [Long-window evidence, chart and recovery record](experiments/rmsnorm-residual/vllm/LONG_WINDOW_ENERGY_512_REPORT.md)
+
 ## Sustained H100 compute
 
 In 20 runs of a BF16 prefill projection, the H100 completed 1.50 million matrix products over 902.18 measured seconds. The 16,384-row shape reached a median of 682.19 TFLOP/s. Gaps in device sampling limited confirmation of sustained activity to eight runs. [Full results, throughput and resource charts](experiments/prefill-gemm/REPORT.md) · [Workload and protocol](experiments/prefill-gemm/README.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/3)

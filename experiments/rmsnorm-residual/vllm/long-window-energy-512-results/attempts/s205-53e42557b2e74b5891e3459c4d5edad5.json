@@ -1,0 +1,13 @@
+{
+  "unit": "s205",
+  "attempt_id": "53e42557b2e74b5891e3459c4d5edad5",
+  "rows": 512,
+  "seed": 205,
+  "period": null,
+  "code_revision": "2ef16f1943b732e5627c066ad1ce4bac9e3903be",
+  "started_utc": "2026-11-26T14:29:04.421154+00:00",
+  "mode": "compute",
+  "outcome": "checkpoint_saved",
+  "finished_utc": "2026-11-26T14:29:38.447852+00:00",
+  "elapsed_s": 34.02539212501142
+}
