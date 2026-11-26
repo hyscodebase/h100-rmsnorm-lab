@@ -9,6 +9,7 @@ import statistics
 import copy_free_run as copy_free
 from copy_free_report import GUARDS, verify_supplemental_samples
 import four_warp_energy_run as protocol
+from four_warp_energy_run import boundary_padding_seconds
 import run
 from split_schedule_report import verify_attempt_clocks
 from sustained_report import verify_measurement, verify_numerical, verify_recovery, verify_window
@@ -64,7 +65,22 @@ def verify_probe(probe, error):
         verify_energy_window(window, protocol.PROBE_BURSTS)
 
 
-def verify_record(record, seed, anchor, sources, revision):
+def verify_timing(seed, timing):
+    verify_measurement(seed, timing, backends=protocol.BACKENDS, rows=protocol.ROWS,
+                       warmup_s=protocol.WARMUP_S, fixed_bursts=protocol.MEASURED_BURSTS)
+    preceding_query_end = 0
+    for block in timing["blocks"]:
+        verify_energy_window(block, protocol.MEASURED_BURSTS)
+        if not preceding_query_end <= block["warmup"]["start_s"] < block["warmup"]["end_s"] <= block["energy_start"]["query_start_s"]:
+            raise ValueError("Warm-up overlaps a cumulative energy interval.")
+        preceding_query_end = block["energy_end"]["query_end_s"]
+    if (timing["median_joules_per_billion_rows"] != protocol.median_energy(timing["blocks"])
+            or timing["monotonic_counter"] != protocol.monotonic_counter(timing["blocks"])):
+        raise ValueError("The energy medians or monotonic decision differ from the endpoints.")
+
+
+def verify_record(record, seed, anchor, sources, revision, *, timing_seeds=protocol.TIMING_SEEDS,
+                  verify_timing_fn=verify_timing):
     if ((record["seed"], record["rows"], record["width"]) != (seed, protocol.ROWS, protocol.WIDTH)
             or record["source_sha256"] != sources or record["code_revision"] != revision
             or record["environment"] != anchor["environment"] or record["asset"] != anchor["asset"]
@@ -86,20 +102,10 @@ def verify_record(record, seed, anchor, sources, revision):
     eligible = exact and protocol.counter_passed(probe)
     timing = record["timing"]
     if (record["numerically_exact"] != exact or record["gate_passed"] != eligible
-            or (timing is not None) != (eligible and seed in protocol.TIMING_SEEDS)):
+            or (timing is not None) != (eligible and seed in timing_seeds)):
         raise ValueError("Exactness, counter qualification or timing eligibility differs.")
     if timing:
-        verify_measurement(seed, timing, backends=protocol.BACKENDS, rows=protocol.ROWS,
-                           warmup_s=protocol.WARMUP_S, fixed_bursts=protocol.MEASURED_BURSTS)
-        preceding_query_end = 0
-        for block in timing["blocks"]:
-            verify_energy_window(block, protocol.MEASURED_BURSTS)
-            if not preceding_query_end <= block["warmup"]["start_s"] < block["warmup"]["end_s"] <= block["energy_start"]["query_start_s"]:
-                raise ValueError("Warm-up overlaps a cumulative energy interval.")
-            preceding_query_end = block["energy_end"]["query_end_s"]
-        if (timing["median_joules_per_billion_rows"] != protocol.median_energy(timing["blocks"])
-                or timing["monotonic_counter"] != protocol.monotonic_counter(timing["blocks"])):
-            raise ValueError("The energy medians or monotonic decision differ from the endpoints.")
+        verify_timing_fn(seed, timing)
     if record["effect"] != protocol.comparison(timing):
         raise ValueError("The energy or throughput decision differs from the measured work.")
     return digests
@@ -136,11 +142,6 @@ def read_results(folder=RESULTS):
 def adopted(records):
     effects = [records.get(seed, {}).get("effect") for seed in protocol.TIMING_SEEDS]
     return all(effect and effect["passes_energy"] and effect["passes_throughput"] for effect in effects)
-
-
-def boundary_padding_seconds(block):
-    return ((block["start_s"] - block["energy_start"]["query_start_s"])
-            + (block["energy_end"]["query_end_s"] - block["end_s"]))
 
 
 def energy_saving_sensitivity(timing, padding_watts):
