@@ -8,7 +8,20 @@ After an independent replay of the same seeded fixture, the two kernels returned
 
 At column 41, for example, the pre-weight FP64 value was 1.62109363495937 and the midpoint was 1.62109375. Both GPU implementations returned −0.376953125 after weighting. The strict oracle's weighted reference was −0.37429046630859375 with a tolerance of 0.0018724523315429688. An independent PyTorch FP32 expression produced −0.375 at this coordinate and differed from the two kernels at twenty positions in the full fixture. The diagnostic localizes the disagreements to rounding boundaries. It does not identify the exact reduction or approximation instruction responsible at each coordinate. [Diagnostic implementation](diagnose.py)
 
-The follow-up registers a bounded FP32 acceptance test on fresh seeds. A CPU replay of the interval arithmetic covered all ten recorded coordinates. The next numerical gate also requires bitwise agreement of both kernels at any such boundary. This seed remains a failed preflight under its registered rule. [Fresh-seed protocol](PRECISION_PLAN.md) · [Tracking issue #11](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/11)
+## Fresh seeds and the FP32 interval
+
+A CPU replay of the registered interval arithmetic covered all ten measured seed-109 witness coordinates. On fresh seed 113 both GPU implementations passed. On seeds 114–116 the boundary rule permitted only a valid adjacent encoded value and required both kernels to produce the same bits whenever the strict tolerance was exceeded. Each seed failed that rule, so all three raw timing fields are empty. [Preregistered rule](PRECISION_PLAN.md) · [Tracking issue #11](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/11)
+
+| Seed | Elements beyond strict tolerance in either kernel | Accepted with matching bits | Rejected |
+| ---: | ---: | ---: | ---: |
+| [113](results/s113.json) | 0 | 0 | 0 |
+| [114](results/s114.json) | 124 | 77 | 47 |
+| [115](results/s115.json) | 42 | 6 | 36 |
+| [116](results/s116.json) | 23 | 0 | 23 |
+
+The seed-114 diagnostic independently evaluated both weighted BF16 endpoints at all 47 rejected coordinates. At every one, the two kernels individually matched an endpoint and selected different results. At row 286, column 35, vLLM returned −1.4921875 and Triton returned −1.5. Further investigation will test how the reduction grouping affects those choices. [Endpoint evidence](results/bounded-disagreements.json) · [Grouped reduction experiment](REDUCTION_PLAN.md)
+
+The first run of seed 114 stopped at a missing Python import in the metadata lookup. Commit 084e88c fixed the import before any replay was timed. The failed and successful attempts remain in the journal. [Attempt records](results/attempts)
 
 ## Reproduce the numerical checkpoint
 
