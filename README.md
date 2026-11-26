@@ -46,7 +46,7 @@ For a single shape, add `--rows 1 --widths 4096`. To regenerate the figure, inst
 
 ## Sustained H100 compute
 
-A companion workload measures a larger part of LLM prefill: a BF16 dense projection with up to 16,384 token rows. Each checkpoint measures at least 45 seconds of matrix products and captures in-window GPU utilization, power and memory. [Workload and protocol](experiments/prefill-gemm/README.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/3)
+In 20 runs of a BF16 prefill projection, the H100 completed 1.50 million matrix products over 902.18 measured seconds. The 16,384-row shape reached a median of 682.19 TFLOP/s. Gaps in device sampling limited confirmation of sustained activity to eight runs. [Full results, throughput and resource charts](experiments/prefill-gemm/REPORT.md) · [Workload and protocol](experiments/prefill-gemm/README.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/3)
 
 ## Row tiling and the continuing experiment
 
