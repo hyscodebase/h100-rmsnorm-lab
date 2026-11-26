@@ -17,16 +17,17 @@ def _square_sum_vectors(z):
 
 
 @triton.jit
-def _ordered_sixteen_warp_sum(partial, logical_thread):
+def _ordered_sixteen_warp_sum(partial, columns):
+    # Match the assembly pack to the eight contiguous elements owned by one lane.
     return tl.inline_asm_elementwise(
         """{
         .shared .align 16 .b8 physical_warp_sum[64];
         .reg .f32 total, peer, w0, w1, w2, w3;
-        .reg .u32 lane, thread, warp;
+        .reg .u32 lane, thread, warp, column;
         .reg .u64 base, offset, slot;
         .reg .pred leader, mismatch;
 
-        mov.f32 total, $1;
+        mov.f32 total, $8;
         shfl.sync.bfly.b32 peer, total, 1, 31, -1;
         add.rn.f32 total, total, peer;
         shfl.sync.bfly.b32 peer, total, 2, 31, -1;
@@ -68,15 +69,38 @@ def _ordered_sixteen_warp_sum(partial, logical_thread):
         add.rn.f32 total, total, w1;
         add.rn.f32 total, total, w2;
         add.rn.f32 total, total, w3;
-        setp.ne.u32 mismatch, thread, $2;
+        shl.b32 column, thread, 3;
+        setp.ne.u32 mismatch, column, $16;
+        add.u32 column, column, 1;
+        setp.ne.or.u32 mismatch, column, $17, mismatch;
+        add.u32 column, column, 1;
+        setp.ne.or.u32 mismatch, column, $18, mismatch;
+        add.u32 column, column, 1;
+        setp.ne.or.u32 mismatch, column, $19, mismatch;
+        add.u32 column, column, 1;
+        setp.ne.or.u32 mismatch, column, $20, mismatch;
+        add.u32 column, column, 1;
+        setp.ne.or.u32 mismatch, column, $21, mismatch;
+        add.u32 column, column, 1;
+        setp.ne.or.u32 mismatch, column, $22, mismatch;
+        add.u32 column, column, 1;
+        setp.ne.or.u32 mismatch, column, $23, mismatch;
         @mismatch mov.b32 total, 0x7fc00000;
         mov.f32 $0, total;
+        mov.f32 $1, total;
+        mov.f32 $2, total;
+        mov.f32 $3, total;
+        mov.f32 $4, total;
+        mov.f32 $5, total;
+        mov.f32 $6, total;
+        mov.f32 $7, total;
         }""",
-        constraints="=f,f,r",
-        args=[partial, logical_thread],
+        constraints=("=f,=f,=f,=f,=f,=f,=f,=f,"
+                     "f,f,f,f,f,f,f,f,r,r,r,r,r,r,r,r"),
+        args=[partial, columns],
         dtype=tl.float32,
         is_pure=False,
-        pack=1,
+        pack=8,
     )
 
 
@@ -87,8 +111,8 @@ def sixteen_warp_rmsnorm(X, R, W):
     columns = thread[:, None] * 8 + tl.arange(0, 8)[None, :]
     updated = _updated(X, R, row_offset + columns)
     partial = _square_sum_vectors(updated)
-    total = _ordered_sixteen_warp_sum(partial, thread)
-    scale = tl.rsqrt(total / 4096.0 + 1e-6)[:, None]
+    total = _ordered_sixteen_warp_sum(tl.broadcast_to(partial[:, None], (512, 8)), columns)
+    scale = tl.rsqrt(total / 4096.0 + 1e-6)
     _normalize(X, W, row_offset + columns, columns, updated, scale)
 
 
