@@ -35,6 +35,14 @@ The polling period is one second. The 90-second cap covers one typical 45-second
 
 Pass the directory printed by `echo "$logs"` to the exporter as `--telemetry-dir` alongside the matching checkpoint's results directory. Use a fresh output directory for a new campaign. The exporter retains timestamps at or after each timed start and strictly before its end, so starting the collector during warmup is sufficient.
 
+## Archive a fresh checkpointed run
+
+To preserve a local run, provide its state directory and a new snapshot directory. The command verifies the plan, the recorded benchmark revision, raw measurements and terminal attempt records before publishing the local snapshot. Add `--usage-dir "$logs"` when you have collected supplementary samples on the same device. A later capture can use a new destination and retain the earlier one.
+
+```bash
+python3 experiments/prefill-gemm/archive.py --state-dir .lab/current --output prefill-snapshot
+```
+
 ## Regenerate the index
 
 From a checkout containing the recorded Git revisions:
