@@ -7,6 +7,7 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import archive
 
@@ -77,9 +78,52 @@ class ArchiveTest(unittest.TestCase):
         metadata = json.loads(manifest.read_bytes())
         metadata["sources"][archive.gemm_plan.SOURCE] = "0" * 64
         manifest.write_text(json.dumps(metadata))
-        with self.assertRaisesRegex(ValueError, "source manifest"):
+        with self.assertRaisesRegex(ValueError, "source hashes differ"):
             self.publish()
         self.assertFalse(self.output.exists())
+
+    def test_unexpected_values_inside_public_fields_rejected(self):
+        path = self.state / "tasks" / self.cell.name
+        for section, key, value in (
+            ("timing", "flops_formula", {"extra": "local metadata"}),
+            ("telemetry", "scope", "local metadata"),
+            ("telemetry", "queries_crossing_window_end", {"extra": 1}),
+            ("environment", "gpu", "NVIDIA H100 on a private host"),
+            ("environment", "torch", "2.7.1+private.build"),
+            ("environment", "driver", "550.144.03/local"),
+            ("environment", "python", "3.12.16@local"),
+            ("environment", "cuda_runtime", {"runtime": "12.8"}),
+        ):
+            with self.subTest(field=key):
+                data = json.loads(self.cell.read_bytes())
+                data["result"][section][key] = value
+                path.write_text(json.dumps(data))
+                with self.assertRaises(ValueError):
+                    self.publish()
+                self.assertFalse(self.output.exists())
+
+    def test_duplicate_manifest_fields_are_not_copied_verbatim(self):
+        path = self.state / "manifest.json"
+        path.write_text(path.read_text().replace('"version": 1', '"version": "private", "version": 1'))
+        with self.assertRaisesRegex(ValueError, "Duplicate JSON key"):
+            self.publish()
+        self.assertFalse(self.output.exists())
+
+    def test_saved_run_uses_historical_blob_and_failed_only_uses_current_source(self):
+        path = self.state / "tasks" / self.cell.name
+        original = json.loads(path.read_bytes())
+        with patch.object(archive.lab, "manifest", return_value={"changed_checkout": True}):
+            self.publish()
+            self.assertEqual((self.output / "results" / self.cell.name).read_bytes(), self.cell.read_bytes())
+            self.output = self.output.with_name("second-snapshot")
+            original["result"]["code_revision"] = "0" * 40
+            path.write_text(json.dumps(original))
+            with self.assertRaisesRegex(ValueError, "Cannot verify benchmark source"):
+                self.publish()
+            path.unlink()
+            with self.assertRaisesRegex(ValueError, "matching benchmark checkout"):
+                self.publish()
+            self.assertFalse(self.output.exists())
 
     def test_accepts_failed_only_and_omits_in_progress_attempt(self):
         (self.state / "tasks" / self.cell.name).unlink()

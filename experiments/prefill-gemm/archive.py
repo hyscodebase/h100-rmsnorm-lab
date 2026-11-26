@@ -20,6 +20,15 @@ def regular_bytes(path):
     return path.read_bytes()
 
 
+def unique_json(raw, name):
+    def without_duplicates(pairs):
+        values = dict(pairs)
+        if len(values) != len(pairs):
+            raise ValueError(f"Duplicate JSON key in {name}.")
+        return values
+    return json.loads(raw, object_pairs_hook=without_duplicates)
+
+
 def timestamp(value):
     if not isinstance(value, str) or not re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,6})?(?:Z|\+00:00)", value):
         raise ValueError("Expected a UTC timestamp in the controller record.")
@@ -30,12 +39,7 @@ def checkpoint_bytes(path):
     # Copy original bytes so the published checksum identifies the actual run,
     # but reject extra metadata, including within individual samples and errors.
     raw = regular_bytes(path)
-    def unique(pairs):
-        values = dict(pairs)
-        if len(values) != len(pairs):
-            raise ValueError(f"Duplicate JSON key in {path.name}.")
-        return values
-    cell = json.loads(raw, object_pairs_hook=unique)
+    cell = unique_json(raw, path.name)
     r = cell["result"]
     t = r["telemetry"]
     metric_keys = set(gemm_plan.TELEMETRY)
@@ -50,8 +54,27 @@ def checkpoint_bytes(path):
         (t, "scope requested_period_s samples summary queries_crossing_window_end query_errors"),
     ]
     for item, names in schema:
-        if set(item) != set(names.split()):
+        if not isinstance(item, dict) or set(item) != set(names.split()):
             raise ValueError(f"Unexpected checkpoint fields in {path.name}.")
+    # PyTorch versions can include an arbitrary local build label. Keep only
+    # public release formats rather than copying a distributor's private text.
+    public_version = r"[0-9]+(?:\.[0-9]+){1,3}"
+    patterns = {
+        "gpu": r"NVIDIA H100(?:[ -](?:SXM[45]?|PCIe|NVL|[0-9]{1,3}GB|HBM[23][eE]?))*",
+        "driver": public_version, "cuda_runtime": public_version,
+        "python": public_version + r"(?:(?:a|b|rc)[0-9]+)?",
+        "torch": public_version + r"(?:(?:a|b|rc)[0-9]+)?(?:\.(?:dev|post)[0-9]+)?(?:\+cu[0-9]+)?",
+    }
+    for key, pattern in patterns.items():
+        value = r["environment"][key]
+        if not isinstance(value, str) or not re.fullmatch(pattern, value):
+            raise ValueError(f"Unexpected public environment field {key} in {path.name}.")
+    if (r["timing"]["flops_formula"] != "2*M*N*K; one multiply-add counts as two operations"
+            or t["scope"] != "Device-wide nvidia-smi readings; mean and maximum over observed in-window samples"
+            or type(t["requested_period_s"]) is not int or t["requested_period_s"] != 1
+            or type(t["queries_crossing_window_end"]) is not int or t["queries_crossing_window_end"] < 0
+            or not isinstance(t["query_errors"], list)):
+        raise ValueError(f"Unexpected benchmark protocol metadata in {path.name}.")
     for items, keys in ((r["timing"]["batches"], {"iterations", "event_elapsed_s"}),
                         (t["samples"], {"query_start_s", "query_end_s", *metric_keys}),
                         (t["summary"].values(), {"count", "mean", "peak_observed"}),
@@ -70,7 +93,7 @@ def checkpoint_bytes(path):
 
 
 def terminal_attempt(path, plan, tasks, digest, completed):
-    data = json.loads(regular_bytes(path))
+    data = unique_json(regular_bytes(path), path.name)
     task, identifier = data["task_id"], data["attempt_id"]
     if (task not in tasks or not isinstance(identifier, str) or not re.fullmatch("[0-9a-f]{32}", identifier)
             or path.name != f"{task}-{identifier}.json" or data["experiment_hash"] != digest):
@@ -118,14 +141,18 @@ def snapshot(state, output, usage=None):
         raise ValueError("Use a separate output directory outside the source state.")
     if usage is not None and not usage.is_dir():
         raise ValueError("The supplemental usage directory does not exist.")
-    plan = json.loads(regular_bytes(state / "plan.json"))
+    plan = unique_json(regular_bytes(state / "plan.json"), "plan.json")
     expected_plan = lab.read_json(ROOT / "plans/prefill-gemm.json")
     if plan != expected_plan:
         raise ValueError("The state does not match the public prefill campaign plan.")
     manifest = regular_bytes(state / "manifest.json")
-    metadata = json.loads(manifest)
-    if metadata != lab.manifest(plan):
-        raise ValueError("The source manifest differs from the plan and current benchmark source.")
+    metadata = unique_json(manifest, "manifest.json")
+    if (not isinstance(metadata, dict) or set(metadata) != {"version", "experiment_hash", "sources"}
+            or type(metadata["version"]) is not int or metadata["version"] != 1
+            or not isinstance(metadata["sources"], dict) or set(metadata["sources"]) != {gemm_plan.SOURCE}
+            or not all(isinstance(v, str) and re.fullmatch("[0-9a-f]{64}", v)
+                       for v in (metadata["experiment_hash"], metadata["sources"][gemm_plan.SOURCE]))):
+        raise ValueError("Unexpected source manifest fields.")
     source = state / "tasks"
     attempts = state / "attempts"
     if not source.is_dir() or source.is_symlink() or attempts.is_symlink():
@@ -140,6 +167,8 @@ def snapshot(state, output, usage=None):
             (results / path.name).write_bytes(checkpoint_bytes(path))
         # Validate the captured bytes, including each recorded Git blob, before publishing.
         tasks, records = read_results(results)
+        if not records and metadata != lab.manifest(plan):
+            raise ValueError("A failed-only source manifest requires the matching benchmark checkout.")
         completed = {name for name, shape in tasks.items() if shape in records}
         count = 0
         for path in sorted(attempts.glob("*.json")):
