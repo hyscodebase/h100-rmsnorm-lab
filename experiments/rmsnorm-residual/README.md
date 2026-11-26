@@ -8,6 +8,8 @@ Width 4,096 occurs in the published Mistral-7B-v0.1 configuration. FlashInfer ex
 
 The Triton candidate passed the numerical checks in all 12 checkpoints and measured 10.068–10.113 µs at the target. All four compiled variants missed the same denominator-sensitive BF16 probe in every checkpoint. Eager measured 115.666–115.844 µs at the target. [Full report and per-seed raw evidence](REPORT.md)
 
+The follow-up established two correctly rounded compiled PyTorch references. At 1,024 × 4,096, the four-warp Triton operator cut latency by 23.44–23.83% against the fastest correct reference across three fresh seeds. [Precision-matched comparison](materialized/REPORT.md)
+
 ## What makes two implementations comparable?
 
 A single BF16 rounding step can change the normalized answer. With an activation of 1, a repeating residual of 1/256 and 3/256, and nonconstant weights, rounding the sum before normalization produces 0.9921875 in the first column. Normalizing the unrounded sum produces 0.99609375 in that column. An ordinary tolerance comparison can accept both. A fixed bit-level regression distinguishes the two. The full numerical suite also checks that outputs are separate and that reusable inputs remain intact. [Independent reference and numerical checks](check.py) · [Regression tests](test_check.py) · [CPU BF16 probe values and bits](evidence/cpu-rounding.json)

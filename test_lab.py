@@ -47,7 +47,7 @@ class LabCLI(unittest.TestCase):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         self.directory = Path(temp.name)
-        for name in ("lab.py", "gemm_plan.py", "residual_plan.py", "kernels.py", "check.py", "benchmark.py"):
+        for name in ("lab.py", "gemm_plan.py", "residual_plan.py", "materialized_plan.py", "kernels.py", "check.py", "benchmark.py"):
             shutil.copy2(ROOT / name, self.directory / name)
         self.runner = self.directory / "fake-runner"
         self.runner.write_text(f"#!{sys.executable}\n" + RUNNER)

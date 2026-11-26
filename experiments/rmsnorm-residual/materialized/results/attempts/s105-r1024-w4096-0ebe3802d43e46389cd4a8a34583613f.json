@@ -1,0 +1,15 @@
+{
+  "attempt_id": "0ebe3802d43e46389cd4a8a34583613f",
+  "task_id": "s105-r1024-w4096",
+  "experiment_hash": "bb58f5b87dd1d1e0de4da7a89e01220cf7200f0b9325738de07317dda2ed16ee",
+  "started_utc": "2026-11-26T08:07:38.256612+00:00",
+  "reproduce_argv": [
+    "python3",
+    "experiments/rmsnorm-residual/materialized/campaign.py",
+    "--seed",
+    "105"
+  ],
+  "outcome": "checkpoint_saved",
+  "controller_elapsed_s": 18.98662300000433,
+  "finished_utc": "2026-11-26T08:07:57.244096+00:00"
+}

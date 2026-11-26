@@ -1,0 +1,15 @@
+{
+  "id": "materialized-rmsnorm",
+  "kind": "materialized_rmsnorm",
+  "hypothesis": "Materializing the updated residual or explicitly encoding BF16 rounding gives a correct compiled reference for the fused H100 operator.",
+  "rows": 1024,
+  "width": 4096,
+  "seeds": [
+    105,
+    106,
+    107,
+    108
+  ],
+  "operations": 32,
+  "rounds": 21
+}
