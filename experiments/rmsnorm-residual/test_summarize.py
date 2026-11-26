@@ -49,7 +49,9 @@ class ResidualDecisionTest(unittest.TestCase):
             cells = copy.deepcopy(self.cells)
             for name in missing:
                 cells[103, 1024][0]["backends"][name] = {"status": "excluded"}
-            self.assertIn("reference is unavailable", summarize.verdict(self.plan, cells))
+            decision = summarize.verdict(self.plan, cells)
+            self.assertIn("reference is unavailable", decision)
+            self.assertNotIn("Retain the compiled path", decision)
 
 
 if __name__ == "__main__":

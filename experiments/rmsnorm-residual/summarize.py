@@ -95,7 +95,7 @@ def verdict(plan, cells):
     failures = [key for key, (r, _) in cells.items() if correctness_failure(r["backends"][protocol.CANDIDATE])]
     if failures:
         where = ", ".join(f"seed {s}, {rows} rows" for s, rows in failures)
-        return f"Retain the compiled path. Candidate correctness failed at {where}; the performance decision stops."
+        return f"Candidate correctness failed at {where}. Its performance comparison is ineligible."
     target_passes = [compare(cells[s, TARGET][0])[2] for s in plan["seeds"] if (s, TARGET) in cells]
     if len(cells) < len(plan["seeds"]) * len(plan["rows"]):
         return (f"Partial evidence. {target_passes.count(True)} target seeds meet the gate so far. "
@@ -103,7 +103,7 @@ def verdict(plan, cells):
     verified = all(r["backends"][n]["status"] == "measured" for r, _ in cells.values()
                    for n in (protocol.EAGER, protocol.CANDIDATE))
     if not verified or None in target_passes:
-        return "Retain the compiled path. Required numerical verification or a target reference is unavailable."
+        return "Speedup against compiled PyTorch is undetermined. Required numerical verification or a target reference is unavailable."
     if all(target_passes) and len(target_passes) == 3:
         return "Recommend the four-warp Triton kernel at 1,024 × 4,096 on this H100. All three target seeds meet the 5% latency gate."
     return f"Retain the compiled path at 1,024 × 4,096. {target_passes.count(True)} of three target seeds meet the 5% latency gate."
