@@ -22,6 +22,7 @@ NUMERIC_SEEDS, TIMING_SEEDS = (137,), (138, 139, 140)
 SEEDS = (*NUMERIC_SEEDS, *TIMING_SEEDS)
 BACKENDS = single.BACKENDS
 STREAMS, BURST_REPLAYS, WARMUP_S, PERIOD_S = 8, 32, 1.0, 6.0
+PAIR_FIELDS = ("activation_bit_differences_by_pair", "residual_bit_differences_by_pair")
 ANCHOR = run.HERE / "sixteen-warp-results/s133.json"
 SOURCES = (*single.SOURCES, *(str(path.relative_to(run.ROOT)) for path in (
     ANCHOR, Path(__file__).resolve(), run.HERE / "sustained_sensors.py", run.HERE / "SUSTAINED_128.md",
@@ -86,13 +87,14 @@ def make_work(torch, seed, device, *, rows=ROWS):
                            "pair_tensor_stride_bytes": pair_stride * 2, "pairs_per_stream": run.OPS}
 
 
-def input_fingerprints(works, weight):
-    def digest(tensor):
-        cpu = tensor.cpu()
-        return hashlib.sha256(ctypes.string_at(cpu.data_ptr(), cpu.numel() * cpu.element_size())).hexdigest()
+def tensor_digest(tensor):
+    cpu = tensor.cpu()
+    return hashlib.sha256(ctypes.string_at(cpu.data_ptr(), cpu.numel() * cpu.element_size())).hexdigest()
 
-    return {"weight_sha256": digest(weight),
-            "stream_input_sha256": [[digest(t) for t in work.source] for work in works]}
+
+def input_fingerprints(works, weight):
+    return {"weight_sha256": tensor_digest(weight),
+            "stream_input_sha256": [[tensor_digest(t) for t in work.source] for work in works]}
 
 
 def capture_graph(torch, stream, warmup, record):
@@ -137,10 +139,10 @@ def compare(torch, works, reference):
     ]
 
 
-def outputs_match(records):
+def outputs_match(records, *, fields=PAIR_FIELDS):
     return tuple(record["stream"] for record in records) == tuple(range(STREAMS)) and all(
         len(record[field]) == run.OPS and not any(record[field])
-        for record in records for field in ("activation_bit_differences_by_pair", "residual_bit_differences_by_pair")
+        for record in records for field in fields
     )
 
 
@@ -215,7 +217,7 @@ def pace(blocks, backends=BACKENDS):
 
 
 def measure(torch, seed, runner, graphs, works, reference, cuda_uuid, *, backends=BACKENDS, period_s=PERIOD_S,
-            rows=ROWS, rounds=None):
+            rows=ROWS, rounds=None, compare_outputs=compare):
     origin_utc = run.original.utc_now()
     origin = time.perf_counter()
     observer = Observer(cuda_uuid, origin)
@@ -226,7 +228,7 @@ def measure(torch, seed, runner, graphs, works, reference, cuda_uuid, *, backend
                 warm = collect_window(runner, graphs[backend], WARMUP_S, origin, rows=rows)
                 measured = collect_window(runner, graphs[backend], period_s, origin, rows=rows)
                 measured.update(id=len(blocks), round=round_index, position=position, backend=backend, warmup=warm,
-                                post_graph_checks=compare(torch, works, reference))
+                                post_graph_checks=compare_outputs(torch, works, reference))
                 blocks.append(measured)
     finally:
         telemetry = observer.finish()
