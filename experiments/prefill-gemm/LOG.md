@@ -1,0 +1,14 @@
+# Prefill experiment log
+
+Dates are November 26, 2026. Times below are UTC. The [execution index](evidence/run-index.csv) lists precise timed windows; the [attempts](evidence/attempts) also include controller-side work from seed 46 onward.
+
+| Time | Event | Evidence and consequence |
+| --- | --- | --- |
+| 06:30 | Recorded the projection workload and decision rule | Four token counts, five seeds and 45-second measured windows per checkpoint. [Benchmark and plan commit](https://github.com/hyscodebase/h100-rmsnorm-lab/commit/5943195) |
+| 06:33 | Published the first measured checkpoint and opened the experiment PR | The 8,192-row pilot produced 681.9 wall TFLOP/s. [Original checkpoint](results/s44-m8192-k4096-n11008.json) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/3) · [PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/4) |
+| 06:35–06:38 | Reviewed coverage and timing arithmetic | The first review found that sparse readings could qualify as sustained activity and that implausible aggregate event durations could pass validation. The changes added a coverage rule and checked sequential CUDA event time against wall time. Raw records were retained. [Review](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/4#pullrequestreview-6069561592) · [Fix](https://github.com/hyscodebase/h100-rmsnorm-lab/commit/5a3b89f) · [Re-review](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/4#pullrequestreview-6069588101) |
+| 06:43 | Added prospective attempt records and wider supplementary sensors | Seed 46 at 8,192 rows was the first archived run with the extra fields. Earlier runs retain the fields actually recorded. [Data dictionary](evidence/README.md) |
+| 06:44 | Captured the software environment and GPU configuration between checkpoints | The separate snapshot includes actual CUDA and cuBLAS runtime versions and the 700 W enforced device limit. [Environment snapshot](evidence/environment/20261126T064441Z.json) |
+| 06:48 | Hardware query timed out before a valid checkpoint was saved | The controller returned exit code 1 after 21.07 seconds for seed 46 at 2,048 rows. The benchmark reported a `nvidia-smi` query timeout. The attempted parameters were retained for retry. [Failed attempt](evidence/attempts/s46-m2048-k4096-n11008-a33c68cf338640d9a8b5c353b80970fb.json) |
+
+Cross-shape comparisons use a fixed shape order within each seed. Device activity is device-wide. The registered activity qualification and throughput comparison use the primary measurements. Supplementary power and utilization samples answer resource-accounting questions independently.
