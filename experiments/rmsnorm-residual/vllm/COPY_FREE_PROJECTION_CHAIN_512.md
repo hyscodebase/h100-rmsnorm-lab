@@ -1,0 +1,9 @@
+# Test copy-free fusion within a BF16 projection chain
+
+The isolated 512-row benchmark compares two implementations of residual addition and RMSNorm at width 4,096. Test whether the throughput advantage persists when the result feeds a BF16 projection and a preceding projection supplies the activation. [Isolated tuning and held-out results](SPLIT_ADD_TILES_512_REPORT.md)
+
+Each pair runs a 512 × 4,096 input times a 4,096 × 4,096 projection weight, residual addition with RMSNorm, then a 4,096 × 4,096 projection of the normalized activation. Use the same preallocated projection and output buffers, eight CUDA streams and 32 independent pairs per stream in both paths. Record both PyTorch BF16 matmul calls and retain the two fixed random projection weights. Use the selected 8,192-element split addition, the fixed normalization and fused binaries, and the same BF16 rounding and buffer contract. [Tuned split selection](split-add-tiles-512-results/s173.json)
+
+Use released vLLM inside the same projection chain as the numerical oracle. Seed 177 checks both RMSNorm outputs and the downstream BF16 projection output bitwise. Check the original projection inputs, residual and shared weight hashes. Verify the pinned Triton identities and record the PyTorch and CUDA stack. Check both backends with poisoned writable buffers before timing.
+
+Run seeds 178–180 independently after qualification. Use two balanced periods per backend per seed, at least one second of warm-up and six measured seconds per period, and 32 graph replays per stream in each burst. The registered chain effect requires at least 1% higher median wall throughput for fusion in all three seeds with exact outputs. Report the measured projection-chain effect and the prior isolated measurements alongside it. Preserve all raw intervals, completed graph and row counts, device observations and cached recovery.

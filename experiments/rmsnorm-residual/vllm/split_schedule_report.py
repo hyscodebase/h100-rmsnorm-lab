@@ -48,8 +48,8 @@ def verify_record(record, seed, anchor, sources, revision):
     return digests
 
 
-def verify_attempt_clocks(folder, results):
-    earlier = json.loads(EARLIER_CLOCK.read_bytes())
+def verify_attempt_clocks(folder, results, *, earlier_clock=EARLIER_CLOCK):
+    earlier = json.loads(earlier_clock.read_bytes())
     later = json.loads((folder / "clock-probe.json").read_bytes())
     attempts = [json.loads(path.read_bytes()) for path in (folder / "attempts").glob("*.json")]
     for attempt in attempts:
