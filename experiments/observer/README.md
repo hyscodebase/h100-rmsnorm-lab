@@ -19,3 +19,5 @@ The first step is read-only preflight. The following 18 steps measure one 45-sec
 Each completed arm produces a source revision, seed, UTC start time, driver/runtime and device properties, sampled numerical reference, raw CUDA-event batches, and one record for each of the 45 scheduled polling slots per reader. Every attempt is journaled before dispatch. A stop or a failure preserves previous checkpoints. Each observer arm supplies its own monitoring data to avoid interference from an extra polling process.
 
 The final comparison requires all 18 timed checkpoints. Adoption depends on coverage in standalone runs, within-seed throughput ratios, and agreement in simultaneous paired windows. [Analysis and decision rules](analyze.py)
+
+Publish a local copy from this campaign with `python3 experiments/observer/archive.py --state-dir .lab/observer --output experiments/observer/results`. Run `python3 experiments/observer/analyze.py experiments/observer/results` to verify available checkpoints and compute the registered comparisons. [Execution log](LOG.md) · [Published measurements](results)

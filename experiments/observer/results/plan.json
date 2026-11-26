@@ -1,0 +1,25 @@
+{
+  "id": "observer-coverage",
+  "kind": "observer_coverage",
+  "hypothesis": "Persistent direct NVML improves primary activity coverage during H100 BF16 prefill while preserving throughput and paired measurement agreement.",
+  "seeds": [
+    51,
+    52,
+    53,
+    54,
+    55,
+    56
+  ],
+  "arm_order": [
+    "ABC",
+    "BCA",
+    "CAB",
+    "CBA",
+    "BAC",
+    "ACB"
+  ],
+  "seconds": 45,
+  "attempt_seconds": 90,
+  "allocation_seconds": 1800,
+  "extra_compute_attempts": 2
+}

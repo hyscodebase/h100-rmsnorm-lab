@@ -1,0 +1,7 @@
+{
+  "task_id": "preflight",
+  "experiment_hash": "09b3d5dbcbada428aa68099fb05a277cda7eedd3f6d257a11fddad797801ae26",
+  "completed_utc": "2026-11-26T07:16:55.449390+00:00",
+  "controller_envelope_sha256": "8c26665fe51b0c76add42ffc878632073c2c870f2b62acd509ed2032d264127b",
+  "exported_result_sha256": "c60b5ff7d3ba23d0e337b8bfb30ad8d057ebf35a9832876b05b9d22f85689823"
+}
