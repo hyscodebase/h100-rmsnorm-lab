@@ -84,6 +84,8 @@ Mapping eight logical warp groups onto four physical warps preserved both BF16 o
 
 With equal work per period, the same four-warp binary used 0.844–2.183% less energy per row in the gross NVML windows. Two of three independent seeds reached 1.5%, and query padding reached 2.274 seconds. [Energy results, boundary sensitivity and raw data](experiments/rmsnorm-residual/vllm/FOUR_WARP_ENERGY_512_REPORT.md)
 
+With a 50 ms combined counter boundary limit, two complete independent seeds showed 2.237–2.244% less energy per row. A third seed yielded only one eligible pair after the registered repeat. [Short-boundary results and NVML delay evidence](experiments/rmsnorm-residual/vllm/ENERGY_COUNTER_BOUNDARIES_512_REPORT.md)
+
 ## Sustained H100 compute
 
 In 20 runs of a BF16 prefill projection, the H100 completed 1.50 million matrix products over 902.18 measured seconds. The 16,384-row shape reached a median of 682.19 TFLOP/s. Gaps in device sampling limited confirmation of sustained activity to eight runs. [Full results, throughput and resource charts](experiments/prefill-gemm/REPORT.md) · [Workload and protocol](experiments/prefill-gemm/README.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/3)
