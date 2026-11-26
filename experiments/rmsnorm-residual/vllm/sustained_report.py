@@ -91,8 +91,9 @@ def verify_telemetry(data, blocks, groups=protocol.BACKENDS, *, group_by="backen
         raise ValueError("NVML sample assignment or qualification differs.")
 
 
-def verify_measurement(seed, timing, *, backends=protocol.BACKENDS, period_s=protocol.PERIOD_S, rows=protocol.ROWS):
-    order = protocol.balanced_order(seed, backends)
+def verify_measurement(seed, timing, *, backends=protocol.BACKENDS, period_s=protocol.PERIOD_S, rows=protocol.ROWS,
+                       rounds=None):
+    order = protocol.balanced_order(seed, backends, rounds=rounds)
     blocks = timing["blocks"]
     sequence = [(round_no, i, backend) for round_no, group in enumerate(order) for i, backend in enumerate(group)]
     if timing["order"] != order or [(b["round"], b["position"], b["backend"]) for b in blocks] != sequence:

@@ -16,9 +16,11 @@ def residual_add(x, residual, residual_out, block: tl.constexpr):
     tl.store(residual_out + offsets, rounded)
 
 
-def launch_residual_add(x, residual, residual_out):
-    return residual_add[(x.numel() // ADD_BLOCK,)](
-        x, residual, residual_out, ADD_BLOCK, num_warps=ADD_WARPS, enable_fp_fusion=False,
+def launch_residual_add(x, residual, residual_out, *, tile=ADD_BLOCK):
+    if tile <= 0 or x.numel() % tile:
+        raise ValueError("The positive residual-add tile must divide the activation size.")
+    return residual_add[(x.numel() // tile,)](
+        x, residual, residual_out, tile, num_warps=ADD_WARPS, enable_fp_fusion=False,
     )
 
 
