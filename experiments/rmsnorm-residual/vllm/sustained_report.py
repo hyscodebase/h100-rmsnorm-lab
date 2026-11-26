@@ -25,9 +25,9 @@ def verify_graph_records(records):
                 raise ValueError("Invalid per-pair bit difference counts.")
 
 
-def verify_numerical(numerical):
-    verify_pairwise(numerical["fixtures"], CASES)
-    if set(numerical["graph_checks"]) != set(protocol.BACKENDS):
+def verify_numerical(numerical, backends=protocol.BACKENDS):
+    verify_pairwise(numerical["fixtures"], CASES, backends)
+    if set(numerical["graph_checks"]) != set(backends):
         raise ValueError("A reference or candidate output check is missing.")
     for record in numerical["graph_checks"].values():
         verify_graph_records(record["streams"])
@@ -91,8 +91,8 @@ def verify_telemetry(data, blocks, groups=protocol.BACKENDS, *, group_by="backen
         raise ValueError("NVML sample assignment or qualification differs.")
 
 
-def verify_measurement(seed, timing):
-    order = protocol.balanced_order(seed)
+def verify_measurement(seed, timing, *, backends=protocol.BACKENDS, period_s=protocol.PERIOD_S):
+    order = protocol.balanced_order(seed, backends)
     blocks = timing["blocks"]
     sequence = [(round_no, i, backend) for round_no, group in enumerate(order) for i, backend in enumerate(group)]
     if timing["order"] != order or [(b["round"], b["position"], b["backend"]) for b in blocks] != sequence:
@@ -102,15 +102,15 @@ def verify_measurement(seed, timing):
     for number, block in enumerate(blocks):
         warmup = block["warmup"]
         verify_window(warmup, protocol.WARMUP_S)
-        verify_window(block, protocol.PERIOD_S)
+        verify_window(block, period_s)
         if block["id"] != number or not previous <= warmup["start_s"] < warmup["end_s"] <= block["start_s"]:
             raise ValueError("Warm-up and measurement windows overlap.")
         verify_graph_records(block["post_graph_checks"])
         previous = block["end_s"]
     if timing["outputs_match_after_timing"] != all(protocol.outputs_match(b["post_graph_checks"]) for b in blocks):
         raise ValueError("Post-window output status differs.")
-    verify_telemetry(timing["telemetry"], blocks)
-    if protocol.pace(blocks) != (timing["median_rows_per_second"], timing["comparisons"]):
+    verify_telemetry(timing["telemetry"], blocks, backends)
+    if protocol.pace(blocks, backends) != (timing["median_rows_per_second"], timing["comparisons"]):
         raise ValueError("The recorded throughput decisions differ from the original bursts.")
 
 
