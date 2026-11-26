@@ -1,0 +1,9 @@
+# Test residual producer-to-consumer distance at 512 rows
+
+At 512 × 4,096 the fused path led the adjacent split path by 19.74–19.76%. The rounded BF16 residual written by the first split kernel occupies 4 MiB per pair. Test whether delaying each normalization relative to its addition changes throughput with identical arithmetic and the same logical memory requests. [512-row evidence](COPY_FREE_ROWS_512_REPORT.md) · [Direct-counter qualification](COPY_FREE_MEMORY_512_QUALIFICATION.md)
+
+Keep eight CUDA streams, 32 disjoint pairs per stream, the seed-161 addition, normalization and fused binaries, and identical BF16 sources and outputs. In the adjacent split graph, each pair runs addition followed by normalization. In the staged split graph, each stream runs the 32 additions in pair order and then the 32 normalizations in the same pair order. Each split graph launches 64 kernels and uses the same pair and output addresses. Include the fused graph for throughput context and use released vLLM as the reference for both output bits.
+
+Seed 169 qualifies the exact outputs on all pairs, unchanged activation, residual and weight hashes, both output alias guards, the graph launch order and the pinned binaries. Independent seeds 170–172 measure three balanced periods per backend after that checkpoint passes. Give every period at least one second of warm-up and six seconds of timing and keep 32 graph replays per stream in each burst.
+
+The registered scheduling effect requires at least 5% higher median wall throughput for the adjacent split graph in every timing seed with both outputs still bitwise exact. Keep raw CUDA and wall intervals, launch orders, completed rows, direct NVML and supplemental device samples, and cache-only recovery. Interpret the result as the effect of scheduling distance on this workload.

@@ -1,0 +1,29 @@
+[
+  {
+    "seed": 165,
+    "code_revision": "972f02368b5c64e29eb336a7a927fd9799286fb9",
+    "outcome": "option_rejected",
+    "profiler_joined_target": false,
+    "errors": [
+      "==ERROR== Option profile-from-start is not supported during range replay."
+    ],
+    "private_profiler_log_sha256": "ea77ad29165dc7f5d5890b6dd7dd2d4b9751977518bdbb2908977382f95c6c8b",
+    "exported_profiles": 0,
+    "complete_application_traces": 0
+  },
+  {
+    "seed": 165,
+    "code_revision": "321c7c52c5ff022fb56efd0df079d1614d9c066d",
+    "outcome": "counter_access_denied",
+    "profiler_joined_target": true,
+    "errors": [
+      "==ERROR== Failed to prepare range for profiling",
+      "==ERROR== ERR_NVGPUCTRPERM - The user does not have permission to access NVIDIA GPU Performance Counters on the target device 0. For instructions on enabling permissions and to get more information see https://developer.nvidia.com/ERR_NVGPUCTRPERM",
+      "==ERROR== Failed to profile \"range\"",
+      "==ERROR== The application returned an error code (9)."
+    ],
+    "private_profiler_log_sha256": "af768de6a06acdeee4e504290f16aca93fcc2aff77c9f3022d2b21debc76d02c",
+    "exported_profiles": 0,
+    "complete_application_traces": 0
+  }
+]

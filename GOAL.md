@@ -28,7 +28,8 @@
 | 255행에서 복사 없는 융합 이득 재검증 | 완료 | 128행과 같은 바이너리로 두 출력을 비트 단위로 맞췄다. 융합 처리량은 복사 없는 두 커널보다 세 시드에서 각각 12.766%, 14.026%, 12.809% 높았다. [실측·자원 기록](experiments/rmsnorm-residual/vllm/COPY_FREE_ROWS_255_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/31) |
 | 256행에서 vLLM의 합산 순서가 바뀐 뒤 비교 | 완료 | 기존 16워프는 정규화 결과 1,161개에서 비트가 달랐다. 새 8워프의 두 출력은 모두 일치했고, 융합 처리량은 복사 없는 두 커널보다 세 시드에서 12.381~12.485% 높았다. [실측·자원 기록](experiments/rmsnorm-residual/vllm/COPY_FREE_ROWS_256_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/33) |
 | 512행에서 8워프 융합 이득 재검증 | 완료 | 256행과 같은 바이너리로 두 출력을 비트 단위로 맞췄다. 복사 없는 두 커널 대비 융합 처리량은 독립 시드 세 개에서 19.741~19.759% 높았다. [실측·자원 기록](experiments/rmsnorm-residual/vllm/COPY_FREE_ROWS_512_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/35) |
-| 512행에서 DRAM과 L2 트래픽 비교 | 다음 가설 | Nsight Compute의 범위 계측으로 같은 기기와 바이너리를 비교한다. 시드 165에서 계측과 정확도를 확인하고 166~168에서 융합의 DRAM 읽기가 원소당 0.5바이트 이상 줄어드는지 검증한다. [후속 계획](experiments/rmsnorm-residual/vllm/COPY_FREE_MEMORY_512.md) · [측정 이슈](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/36) |
+| 512행에서 DRAM과 L2 트래픽 비교 | 호스트 권한 대기 | 시드 165에서 Nsight Compute의 범위 계측이 `ERR_NVGPUCTRPERM`으로 중단됐다. 두 시도의 원시 오류와 자원 표본을 보존했다. [검증 기록](experiments/rmsnorm-residual/vllm/COPY_FREE_MEMORY_512_QUALIFICATION.md) · [측정 이슈](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/36) |
+| 512행에서 잔차 생성과 정규화 사이의 실행 간격 비교 | 다음 가설 | 같은 두 커널을 쌍마다 이어서 실행하거나, 덧셈을 32개 실행한 뒤 정규화를 32개 실행한다. 시드 169에서 정확도를 검증하고 170~172에서 기존 순서의 처리량이 5% 이상 높은지 검사한다. [실험 계획](experiments/rmsnorm-residual/vllm/COPY_FREE_SPLIT_SCHEDULE_512.md) · [측정 이슈](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/38) |
 | RMSNorm 4104 인접 너비 재검증 | 후속 후보 | 4103·4104·4105와 4112에서 새로운 시드를 사용해 권장 설정이 유효한 범위를 검증한다. |
 
 ## 다음 가설을 고르는 규칙
