@@ -3,6 +3,7 @@ import argparse
 import hashlib
 import json
 import os
+import platform
 import re
 import time
 from pathlib import Path
