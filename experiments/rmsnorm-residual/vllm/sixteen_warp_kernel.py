@@ -2,7 +2,18 @@
 import triton
 import triton.language as tl
 
-from grouped_kernel import _group_square_sum, _normalize, _updated
+from grouped_kernel import _normalize, _updated
+
+
+@triton.jit
+def _square_sum_vectors(z):
+    # Keep the older kernel and its compiled instructions fixed as a baseline.
+    left, right = tl.split(tl.reshape(z, (512, 4, 2)))
+    pairs = left * left + right * right
+    even, odd = tl.split(tl.reshape(pairs, (512, 2, 2)))
+    pair0, pair2 = tl.split(even)
+    pair1, pair3 = tl.split(odd)
+    return ((pair0 + pair1) + pair2) + pair3
 
 
 @triton.jit
@@ -75,7 +86,7 @@ def sixteen_warp_rmsnorm(X, R, W):
     thread = tl.arange(0, 512)
     columns = thread[:, None] * 8 + tl.arange(0, 8)[None, :]
     updated = _updated(X, R, row_offset + columns)
-    partial = _group_square_sum(updated, 512)
+    partial = _square_sum_vectors(updated)
     total = _ordered_sixteen_warp_sum(partial, thread)
     scale = tl.rsqrt(total / 4096.0 + 1e-6)[:, None]
     _normalize(X, W, row_offset + columns, columns, updated, scale)

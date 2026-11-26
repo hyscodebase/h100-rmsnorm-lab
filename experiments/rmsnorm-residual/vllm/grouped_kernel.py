@@ -10,10 +10,10 @@ def _split_sum(values, BLOCKS: tl.constexpr, ENTRIES: tl.constexpr):
 
 
 @triton.jit
-def _group_square_sum(z, GROUPS: tl.constexpr = 256):
-    left, right = tl.split(tl.reshape(z, (GROUPS, 4, 2)))
+def _group_square_sum(z):
+    left, right = tl.split(tl.reshape(z, (256, 4, 2)))
     pairs = left * left + right * right
-    even, odd = tl.split(tl.reshape(pairs, (GROUPS, 2, 2)))
+    even, odd = tl.split(tl.reshape(pairs, (256, 2, 2)))
     pair0, pair2 = tl.split(even)
     pair1, pair3 = tl.split(odd)
     return ((pair0 + pair1) + pair2) + pair3
