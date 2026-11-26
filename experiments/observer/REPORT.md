@@ -38,6 +38,38 @@ Power summaries use finite power readings returned within the measured window by
 
 The readers draw from device-wide driver counters and the CLI reports GPU activity in integer percentage points. During sustained GEMM, readings near 100% provide limited resolution for differences between observers. Agreement on this high-load workload establishes neither independent ground truth nor accuracy during idle transitions. Simultaneous polling in C can affect query latency. The throughput gate uses the standalone arms only.
 
+<details>
+<summary>See per-seed sample counts, gaps, errors and timeouts for every reader</summary>
+
+| Seed | Arm | Reader | Activity samples | Max gap | Coverage | Skipped | Errors | Timeouts | Crossing | Wall TFLOP/s |
+|---:|---|---|---:|---:|---|---:|---:|---:|---:|---:|
+| 51 | A | cli | 38 | 7.156 | Fail | 6 | 0 | 1 | 0 | 681.228 |
+| 51 | B | nvml | 45 | 1.366 | Pass | 0 | 0 | 0 | 0 | 679.226 |
+| 51 | C | cli | 40 | 3.359 | Pass | 5 | 0 | 0 | 0 | 678.772 |
+| 51 | C | nvml | 43 | 1.899 | Pass | 2 | 0 | 0 | 0 | 678.772 |
+| 52 | B | nvml | 43 | 2.261 | Pass | 2 | 0 | 0 | 0 | 679.513 |
+| 52 | C | cli | 26 | 7.748 | Fail | 17 | 0 | 2 | 0 | 683.507 |
+| 52 | C | nvml | 38 | 2.282 | Pass | 7 | 0 | 0 | 0 | 683.507 |
+| 52 | A | cli | 40 | 3.554 | Pass | 5 | 0 | 0 | 0 | 682.117 |
+| 53 | C | cli | 33 | 7.473 | Fail | 11 | 0 | 1 | 0 | 681.378 |
+| 53 | C | nvml | 38 | 3.002 | Pass | 7 | 0 | 0 | 0 | 681.378 |
+| 53 | A | cli | 28 | 7.744 | Fail | 15 | 0 | 1 | 1 | 681.730 |
+| 53 | B | nvml | 43 | 2.258 | Pass | 2 | 0 | 0 | 0 | 681.972 |
+| 54 | C | cli | 38 | 7.702 | Fail | 6 | 0 | 1 | 0 | 682.125 |
+| 54 | C | nvml | 42 | 2.249 | Pass | 3 | 0 | 0 | 0 | 682.125 |
+| 54 | B | nvml | 44 | 1.826 | Pass | 1 | 0 | 0 | 0 | 682.904 |
+| 54 | A | cli | 36 | 3.559 | Pass | 9 | 0 | 0 | 0 | 683.466 |
+| 55 | B | nvml | 43 | 2.281 | Pass | 2 | 0 | 0 | 0 | 681.823 |
+| 55 | A | cli | 40 | 3.540 | Pass | 5 | 0 | 0 | 0 | 683.001 |
+| 55 | C | cli | 33 | 7.746 | Fail | 11 | 0 | 1 | 0 | 682.285 |
+| 55 | C | nvml | 38 | 2.884 | Pass | 7 | 0 | 0 | 0 | 682.285 |
+| 56 | A | cli | 37 | 7.550 | Fail | 7 | 0 | 1 | 0 | 682.491 |
+| 56 | C | cli | 39 | 3.589 | Pass | 6 | 0 | 0 | 0 | 682.572 |
+| 56 | C | nvml | 42 | 2.776 | Pass | 3 | 0 | 0 | 0 | 682.572 |
+| 56 | B | nvml | 44 | 1.858 | Pass | 1 | 0 | 0 | 0 | 683.229 |
+
+</details>
+
 ## Reproduction
 
 GPU NVIDIA H100 80GB HBM3, driver 550.144.03, CUDA runtime 12.8, PyTorch 2.7.1+cu128, Python 3.12.16. Standalone A reported nvidia-smi 550.144.03 and standalone B reported NVML 12.550.144.03 via nvml-ctypes-v1. The six seeds are 51–56. The registered order balances each arm twice in each position. The run manifest is `09b3d5dbcbada428aa68099fb05a277cda7eedd3f6d257a11fddad797801ae26`. [Frozen source revision](https://github.com/hyscodebase/h100-rmsnorm-lab/commit/5bd202d11edce993949342e8b9fb4726a7407f5c) · [Source SHA-256 hashes](results/manifest.json) · [Checkpoint provenance](results/provenance) · [Controller attempts](results/attempts)
