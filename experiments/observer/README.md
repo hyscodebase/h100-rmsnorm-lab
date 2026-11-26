@@ -4,6 +4,10 @@ On a single H100 the 8,192-row BF16 projection reached 680.10 median wall TFLOP/
 
 Test one seed and observer arm at a time. A uses one nvidia-smi process per poll, B calls the NVML shared library in a persistent worker, and C collects both at the same deadlines with independent workers. The benchmark matches both readers to the active CUDA device by its physical UUID. The archive retains only public device properties. Polls can time out or be skipped, and a completed GEMM with no usable samples still contributes a coverage failure. [NVIDIA System Management Interface](https://docs.nvidia.com/deploy/nvidia-smi/index.html) · [Benchmark](benchmark.py) · [Observer implementation](sensors.py)
 
+## Result
+
+Across six standalone runs the CLI met the coverage requirement in three and direct NVML in six. The median paired throughput ratio was 0.99873 and all six simultaneous comparisons met the agreement requirement. Use direct NVML for future sustained runs with this H100, driver and shape. [Full report and comparison figure](REPORT.md)
+
 ## Run one checkpoint
 
 Use a Linux checkout with an H100, CUDA-enabled PyTorch, the NVIDIA driver library and nvidia-smi. The default local runner uses the current Python interpreter. The same controller can call a configured SSH runner. A fresh state directory keeps the prior experiment available.

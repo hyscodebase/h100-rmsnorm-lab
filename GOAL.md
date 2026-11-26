@@ -10,8 +10,8 @@
 | 프로그램당 1·2·4행 처리 | 완료 | 정확도 60건을 통과했다. 1024×8192에서는 새 설정이 두 기준을 모두 5% 앞서지 못해 기존 1행 구현을 유지했다. [실험 보고서](results/row-tiles/REPORT.md) |
 | 은닉 차원에 따른 2행 타일의 손익 | 완료 | 1024×4104에서만 2행·4워프가 두 시드에서 두 기준을 5% 이상 앞섰다. 이 입력에 해당 설정을 권장한다. [결과와 원시 기록](results/width-sweep/REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/2) |
 | 프리필 BF16 행렬곱의 지속 처리량 | 완료 | 20구간에서 총 902.18초를 측정했다. 16,384행의 처리량 중앙값은 682.19 TFLOP/s였다. 사용률 표본이 충분한 구간은 8개였고, 다섯 시드 중 네 개에서 지속 부하를 확인한 입력 크기는 없었다. [결과와 자원 사용 그래프](experiments/prefill-gemm/REPORT.md) |
-| 프리필 중 GPU 사용률의 관측 공백 | 다음 실험 사전등록 | 8,192행에서 기존 nvidia-smi와 직접 NVML 조회의 누락률, 처리량, 같은 시점 표본의 일치도를 비교한다. 6개 시드와 3개 계측 방식의 순서를 교차 배치한다. [설계와 채택 기준](experiments/prefill-gemm/NEXT.md) · [계측 실행기](experiments/observer/README.md) · [후속 이슈](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/5) |
-| 잔차 덧셈과 RMSNorm 융합 | 다음 커널 사전등록 | 1024×4096에서 두 출력을 모두 반환하는 Triton 구현을 가장 빠른 정확한 torch.compile 구현과 비교한다. 새로운 세 시드 각각 5% 이상 낮은 지연시간을 요구한다. [사전등록 및 이슈](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/7) |
+| 프리필 중 GPU 사용률의 관측 공백 | 완료 | 직접 NVML 6/6, CLI 3/6에서 관측 기준 충족. 시드별 처리량 비율 중앙값은 0.99873이다. 같은 장치와 부하에는 직접 NVML을 채택했다. [결과](experiments/observer/REPORT.md) · 8,192행에서 기존 nvidia-smi와 직접 NVML 조회의 누락률, 처리량, 같은 시점 표본의 일치도를 비교한다. 6개 시드와 3개 계측 방식의 순서를 교차 배치한다. [설계와 채택 기준](experiments/prefill-gemm/NEXT.md) · [계측 실행기](experiments/observer/README.md) · [후속 이슈](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/5) |
+| 잔차 덧셈과 RMSNorm 융합 | H100 실측 중 | 1024×4096에서 두 출력을 모두 반환하는 Triton 구현을 가장 빠른 정확한 torch.compile 구현과 비교한다. 새로운 세 시드 각각 5% 이상 낮은 지연시간을 요구한다. [사전등록 및 이슈](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/7) |
 | RMSNorm 4104 인접 너비 재검증 | 후속 후보 | 4103·4104·4105와 4112에서 새로운 시드를 사용해 권장 설정이 유효한 범위를 검증한다. |
 
 ## 다음 가설을 고르는 규칙
