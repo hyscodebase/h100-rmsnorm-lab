@@ -15,23 +15,23 @@ from transfer_report import CASES, timestamp, verify_revision
 PAIR_FIELDS = ("activation_bit_differences_by_pair", "residual_bit_differences_by_pair")
 
 
-def verify_graph_records(records):
+def verify_graph_records(records, *, rows=protocol.ROWS):
     if [item["stream"] for item in records] != list(range(protocol.STREAMS)):
         raise ValueError("Missing independent stream records.")
     for item in records:
         for field in PAIR_FIELDS:
             counts = item[field]
-            if len(counts) != run.OPS or not all(type(n) is int and 0 <= n <= protocol.ROWS * protocol.WIDTH for n in counts):
+            if len(counts) != run.OPS or not all(type(n) is int and 0 <= n <= rows * protocol.WIDTH for n in counts):
                 raise ValueError("Invalid per-pair bit difference counts.")
 
 
-def verify_numerical(numerical, backends=protocol.BACKENDS):
-    verify_pairwise(numerical["fixtures"], CASES, backends)
+def verify_numerical(numerical, backends=protocol.BACKENDS, *, rows=protocol.ROWS):
+    verify_pairwise(numerical["fixtures"], CASES, backends, rows=rows)
     if set(numerical["graph_checks"]) != set(backends):
         raise ValueError("A reference or candidate output check is missing.")
     for record in numerical["graph_checks"].values():
-        verify_graph_records(record["streams"])
-    shape_bytes = 2 * protocol.ROWS * protocol.WIDTH
+        verify_graph_records(record["streams"], rows=rows)
+    shape_bytes = 2 * rows * protocol.WIDTH
     expected = {"disjoint_aligned_buffers": True, "unique_streams": protocol.STREAMS,
                 "disjoint_allocations": protocol.STREAMS * 4 + 1,
                 "input_and_output_bytes": protocol.STREAMS * 4 * run.OPS * shape_bytes + 2 * protocol.WIDTH,
@@ -48,7 +48,7 @@ def verify_numerical(numerical, backends=protocol.BACKENDS):
     return digests
 
 
-def verify_window(window, minimum):
+def verify_window(window, minimum, *, rows=protocol.ROWS):
     start, end, bursts = window["start_s"], window["end_s"], window["bursts"]
     if (not bursts or end != bursts[-1]["end_s"] or not 0 <= start < end
             or window["wall_seconds"] != end - start or end - start < minimum
@@ -63,7 +63,7 @@ def verify_window(window, minimum):
         previous = burst["end_s"]
     graphs = len(bursts) * protocol.STREAMS * protocol.BURST_REPLAYS
     if (window["attempted_graphs"] != graphs or window["completed_graphs"] != graphs
-            or window["normalized_rows"] != graphs * run.OPS * protocol.ROWS
+            or window["normalized_rows"] != graphs * run.OPS * rows
             or window["cuda_ms"] != sum(burst["cuda_ms"] for burst in bursts)):
         raise ValueError("A graph or normalized row count differs from the original bursts.")
 
@@ -91,7 +91,7 @@ def verify_telemetry(data, blocks, groups=protocol.BACKENDS, *, group_by="backen
         raise ValueError("NVML sample assignment or qualification differs.")
 
 
-def verify_measurement(seed, timing, *, backends=protocol.BACKENDS, period_s=protocol.PERIOD_S):
+def verify_measurement(seed, timing, *, backends=protocol.BACKENDS, period_s=protocol.PERIOD_S, rows=protocol.ROWS):
     order = protocol.balanced_order(seed, backends)
     blocks = timing["blocks"]
     sequence = [(round_no, i, backend) for round_no, group in enumerate(order) for i, backend in enumerate(group)]
@@ -101,11 +101,11 @@ def verify_measurement(seed, timing, *, backends=protocol.BACKENDS, period_s=pro
     previous = 0
     for number, block in enumerate(blocks):
         warmup = block["warmup"]
-        verify_window(warmup, protocol.WARMUP_S)
-        verify_window(block, period_s)
+        verify_window(warmup, protocol.WARMUP_S, rows=rows)
+        verify_window(block, period_s, rows=rows)
         if block["id"] != number or not previous <= warmup["start_s"] < warmup["end_s"] <= block["start_s"]:
             raise ValueError("Warm-up and measurement windows overlap.")
-        verify_graph_records(block["post_graph_checks"])
+        verify_graph_records(block["post_graph_checks"], rows=rows)
         previous = block["end_s"]
     if timing["outputs_match_after_timing"] != all(protocol.outputs_match(b["post_graph_checks"]) for b in blocks):
         raise ValueError("Post-window output status differs.")

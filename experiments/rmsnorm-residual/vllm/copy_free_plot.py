@@ -10,14 +10,15 @@ import run
 from shuffle_plot import COLORS, MARKERS, plt
 
 
-def draw(data, output):
+def draw(data, output, *, workload=protocol.DEFAULT):
     fig, (rate, power) = plt.subplots(1, 2, figsize=(10.6, 4.8), gridspec_kw={"width_ratios": [1.3, 1]})
     fig.subplots_adjust(left=.225, right=.945, top=.69, bottom=.22, wspace=.27)
     ink, muted = "#152733", "#50636D"
     fig.text(.051, .905, "Copy-free residual RMSNorm on H100", fontsize=17, color=ink, weight="bold")
-    fig.text(.051, .832, "8 CUDA streams  ·  128 token rows × 4,096 features  ·  BF16", fontsize=10.5, color=muted)
+    subtitle = f"8 CUDA streams  ·  {workload.rows} token rows × 4,096 features  ·  BF16"
+    fig.text(.051, .832, subtitle, fontsize=10.5, color=muted)
     handles, labels = [], []
-    for seed, offset, color, marker in zip(protocol.TIMING_SEEDS, (-.18, 0, .18), COLORS, MARKERS):
+    for seed, offset, color, marker in zip(workload.timing_seeds, (-.18, 0, .18), COLORS, MARKERS):
         timing = data.get(seed, {}).get("timing")
         if not admissible(timing):
             continue
@@ -53,5 +54,10 @@ def draw(data, output):
 
 if __name__ == "__main__":
     cli = argparse.ArgumentParser(description=__doc__)
-    cli.add_argument("--output", type=Path, default=run.HERE / "copy-free-throughput.png")
-    draw(read_results(), cli.parse_args().output)
+    cli.add_argument("--rows", type=int, choices=protocol.WORKLOADS, default=protocol.ROWS)
+    cli.add_argument("--output", type=Path)
+    args = cli.parse_args()
+    workload = protocol.WORKLOADS[args.rows]
+    prefix = "copy-free" if workload == protocol.DEFAULT else f"copy-free-{workload.rows}"
+    output = args.output or run.HERE / f"{prefix}-throughput.png"
+    draw(read_results(workload=workload), output, workload=workload)

@@ -1,6 +1,8 @@
 """Verify copy-free residual RMSNorm evidence and recompute timing decisions."""
 import argparse
+import hashlib
 import json
+import math
 from pathlib import Path
 
 import copy_free_run as protocol
@@ -10,7 +12,10 @@ from sustained_report import admissible, verify_measurement, verify_numerical, v
 from transfer_report import timestamp, verify_revision
 
 RESULTS = run.HERE / "copy-free-results"
+TRANSFER_RESULTS = run.HERE / "copy-free-255-results"
 GUARDS = {"activation_output_aliases_input", "residual_output_aliases_input", "outputs_alias_each_other"}
+DEVICE_METRICS = {"util_pct", "used_mib", "total_mib", "power_w", "temperature_c", "sm_clock_mhz",
+                  "memory_clock_mhz", "power_limit_w", "memory_busy_pct"}
 
 
 def clock_bounds(record):
@@ -36,12 +41,11 @@ def clock_bounds(record):
     return lower / 1e9, upper / 1e9
 
 
-def verify_codegen(codegen, first, anchor):
+def verify_codegen(codegen, first, anchor, *, workload=protocol.DEFAULT):
     if protocol.binary_identity(codegen) != protocol.binary_identity(first):
         raise ValueError("A loaded kernel differs from qualification.")
     fused = codegen[protocol.CANDIDATE]
-    if any(fused[key] != anchor[protocol.CANDIDATE][key] for key in protocol.IDENTITY_FIELDS):
-        raise ValueError("The fused kernel differs from the previous experiment.")
+    protocol.verify_anchor_identity(codegen, anchor, workload)
     add = codegen[protocol.SPLIT]["residual_add"]
     if ((add["num_warps"], add["tile_elements"], add["fp_fusion"]) != (4, 2048, False)
             or not add["ptx_opcodes"].get("ld.global.v4.b32")
@@ -54,55 +58,93 @@ def verify_codegen(codegen, first, anchor):
             raise ValueError("A normalization kernel differs from the matched collective.")
 
 
-def read_results(folder=RESULTS):
+def verify_supplemental_samples(folder):
+    archive = json.loads((folder / "device-samples.json").read_bytes())
+    attempts = [json.loads(path.read_bytes()) for path in (folder / "attempts").glob("*.json")]
+    finished = {attempt["attempt_id"]: attempt for attempt in attempts if "finished_utc" in attempt}
+    for window in archive["observations"]:
+        attempt = finished.pop(window["attempt_id"], None)
+        if attempt is None or (window["rows"], window["seed"]) != (attempt["rows"], attempt["seed"]):
+            raise ValueError("The supplemental device window differs from its attempt.")
+        started, ended = (timestamp(attempt[key]) for key in ("started_utc", "finished_utc"))
+        previous = None
+        for sample in window["samples"]:
+            if sample.keys() != DEVICE_METRICS | {"timestamp_utc"}:
+                raise ValueError("The supplemental device fields differ.")
+            observed = timestamp(sample["timestamp_utc"])
+            if not started <= observed <= ended or (previous is not None and observed <= previous):
+                raise ValueError("A supplemental device sample is outside the ordered attempt window.")
+            for metric in DEVICE_METRICS:
+                value = sample[metric]
+                if value is not None and (
+                    type(value) not in (int, float) or not math.isfinite(value) or value < 0
+                    or (metric.endswith("_pct") and value > 100)
+                ):
+                    raise ValueError("A supplemental device measurement is invalid.")
+            previous = observed
+    if finished:
+        raise ValueError("A finished attempt is missing a supplemental device window.")
+
+
+def read_results(folder=None, *, workload=protocol.DEFAULT):
+    if folder is None:
+        folder = RESULTS if workload == protocol.DEFAULT else TRANSFER_RESULTS
+    rows = workload.rows
     files = {path.name: json.loads(path.read_bytes()) for path in folder.glob("s*.json")}
-    first = files[f"s{protocol.NUMERIC_SEEDS[0]}.json"]
-    expected = protocol.SEEDS if first["gate_passed"] else protocol.NUMERIC_SEEDS
+    first = files[f"s{workload.numeric_seed}.json"]
+    expected = workload.seeds if first["gate_passed"] else (workload.numeric_seed,)
     if files.keys() != {f"s{seed}.json" for seed in expected}:
         raise ValueError("The checkpoints differ from the registered seeds.")
-    anchor = json.loads(protocol.ANCHOR.read_bytes())
     sources, revision = first["source_sha256"], first["code_revision"]
-    if sources.keys() != set(protocol.SOURCES):
+    if sources.keys() != set(workload.sources):
         raise ValueError("The source manifest differs.")
     verify_revision(run.ROOT, revision, tuple(sorted(sources.items())))
+    anchor_bytes = workload.anchor.read_bytes()
+    if hashlib.sha256(anchor_bytes).hexdigest() != sources[str(workload.anchor.relative_to(run.ROOT))]:
+        raise ValueError("The prior checkpoint differs from the registered anchor.")
+    anchor = json.loads(anchor_bytes)
     data, digests = {}, set()
     for seed in expected:
         result = files[f"s{seed}.json"]
-        if (result["seed"], result["rows"], result["width"]) != (seed, protocol.ROWS, protocol.WIDTH):
+        if (result["seed"], result["rows"], result["width"]) != (seed, rows, protocol.WIDTH):
             raise ValueError("The checkpoint seed or shape differs.")
         if (result["code_revision"] != revision or result["source_sha256"] != sources
                 or result["asset"] != anchor["asset"] or result["environment"] != anchor["environment"]
-                or result["graph_contract"] != protocol.graph_contract()):
+                or result["graph_contract"] != protocol.graph_contract(rows)):
             raise ValueError("Source, stack, or graph contract differs.")
-        verify_codegen(result["codegen"], first["codegen"], anchor["codegen"])
+        verify_codegen(result["codegen"], first["codegen"], anchor["codegen"], workload=workload)
         numerical = result["numerical"]
-        current = verify_numerical(numerical, protocol.BACKENDS)
+        current = verify_numerical(numerical, protocol.BACKENDS, rows=rows)
         if digests & current or any(set(guards) != GUARDS for guards in numerical["alias_guards"].values()):
             raise ValueError("An independent input digest or alias guard is invalid.")
         digests.update(current)
         passed = protocol.numeric_gate(numerical)
         timing = result["timing"]
-        if passed != result["gate_passed"] or bool(timing) != (passed and seed in protocol.TIMING_SEEDS):
+        if passed != result["gate_passed"] or bool(timing) != (passed and seed in workload.timing_seeds):
             raise ValueError("The recorded numerical eligibility differs.")
         if timing:
-            verify_measurement(seed, timing, backends=protocol.BACKENDS, period_s=protocol.PERIOD_S)
+            verify_measurement(seed, timing, backends=protocol.BACKENDS, period_s=protocol.PERIOD_S, rows=rows)
         data[seed] = result
     probe = json.loads((folder / "clock-probe.json").read_bytes())
-    verify_attempts(folder, data, remote_clock_bounds_s=clock_bounds(probe))
+    verify_attempts(folder, data, remote_clock_bounds_s=clock_bounds(probe), rows=rows)
+    verify_supplemental_samples(folder)
     if any(result["timing"] for result in data.values()):
         verify_recovery(data, json.loads((folder / "checkpoint-recovery.json").read_bytes()), revision)
     return data
 
 
-def adopted(data):
-    timings = [data.get(seed, {}).get("timing") for seed in protocol.TIMING_SEEDS]
+def adopted(data, *, workload=protocol.DEFAULT):
+    timings = [data.get(seed, {}).get("timing") for seed in workload.timing_seeds]
     return all(admissible(timing) and timing["comparisons"][protocol.SPLIT]["passes_5pct"] for timing in timings)
 
 
 if __name__ == "__main__":
     cli = argparse.ArgumentParser(description=__doc__)
-    cli.add_argument("directory", type=Path, nargs="?", default=RESULTS)
-    data = read_results(cli.parse_args().directory)
+    cli.add_argument("directory", type=Path, nargs="?")
+    cli.add_argument("--rows", type=int, choices=protocol.WORKLOADS, default=protocol.ROWS)
+    args = cli.parse_args()
+    workload = protocol.WORKLOADS[args.rows]
+    data = read_results(args.directory, workload=workload)
     for seed, result in sorted(data.items()):
         timing = result["timing"]
         if not timing:
@@ -116,4 +158,4 @@ if __name__ == "__main__":
                   f"  GPU median={gpu['median']}% samples={gpu['count']} gap={load['maximum_gap_s']:.3f} s")
         for name, comparison in timing["comparisons"].items():
             print(f"  vs {name}: {100 * comparison['throughput_gain']:+.3f}% pass={comparison['passes_5pct']}")
-    print("Fused implementation adopted:", adopted(data))
+    print("Fused implementation adopted:", adopted(data, workload=workload))
