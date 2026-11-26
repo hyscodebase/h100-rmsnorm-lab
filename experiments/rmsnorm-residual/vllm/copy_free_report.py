@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 
 import copy_free_run as protocol
@@ -13,6 +14,8 @@ from transfer_report import timestamp, verify_revision
 RESULTS = run.HERE / "copy-free-results"
 TRANSFER_RESULTS = run.HERE / "copy-free-255-results"
 GUARDS = {"activation_output_aliases_input", "residual_output_aliases_input", "outputs_alias_each_other"}
+DEVICE_METRICS = {"util_pct", "used_mib", "total_mib", "power_w", "temperature_c", "sm_clock_mhz",
+                  "memory_clock_mhz", "power_limit_w", "memory_busy_pct"}
 
 
 def clock_bounds(record):
@@ -53,6 +56,34 @@ def verify_codegen(codegen, first, anchor, *, workload=protocol.DEFAULT):
                 kernel["emitted_shared_loads"], kernel["ptx_opcodes"].get("bar.sync"), kernel["fp_fusion"]
         ) != (16, 512, [1, 2, 4, 8, 16], 4, 1, False):
             raise ValueError("A normalization kernel differs from the matched collective.")
+
+
+def verify_supplemental_samples(folder):
+    archive = json.loads((folder / "device-samples.json").read_bytes())
+    attempts = [json.loads(path.read_bytes()) for path in (folder / "attempts").glob("*.json")]
+    finished = {attempt["attempt_id"]: attempt for attempt in attempts if "finished_utc" in attempt}
+    for window in archive["observations"]:
+        attempt = finished.pop(window["attempt_id"], None)
+        if attempt is None or (window["rows"], window["seed"]) != (attempt["rows"], attempt["seed"]):
+            raise ValueError("The supplemental device window differs from its attempt.")
+        started, ended = (timestamp(attempt[key]) for key in ("started_utc", "finished_utc"))
+        previous = None
+        for sample in window["samples"]:
+            if sample.keys() != DEVICE_METRICS | {"timestamp_utc"}:
+                raise ValueError("The supplemental device fields differ.")
+            observed = timestamp(sample["timestamp_utc"])
+            if not started <= observed <= ended or (previous is not None and observed <= previous):
+                raise ValueError("A supplemental device sample is outside the ordered attempt window.")
+            for metric in DEVICE_METRICS:
+                value = sample[metric]
+                if value is not None and (
+                    type(value) not in (int, float) or not math.isfinite(value) or value < 0
+                    or (metric.endswith("_pct") and value > 100)
+                ):
+                    raise ValueError("A supplemental device measurement is invalid.")
+            previous = observed
+    if finished:
+        raise ValueError("A finished attempt is missing a supplemental device window.")
 
 
 def read_results(folder=None, *, workload=protocol.DEFAULT):
@@ -96,6 +127,7 @@ def read_results(folder=None, *, workload=protocol.DEFAULT):
         data[seed] = result
     probe = json.loads((folder / "clock-probe.json").read_bytes())
     verify_attempts(folder, data, remote_clock_bounds_s=clock_bounds(probe), rows=rows)
+    verify_supplemental_samples(folder)
     if any(result["timing"] for result in data.values()):
         verify_recovery(data, json.loads((folder / "checkpoint-recovery.json").read_bytes()), revision)
     return data
