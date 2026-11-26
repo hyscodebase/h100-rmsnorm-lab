@@ -18,7 +18,7 @@ Rates are millions of normalized rows per second and each entry is a median acro
 | Triton 8 warps | 39.873–39.965 | 39.252–39.404 |
 | Triton 16 warps | 39.945–40.027 | 39.272–39.411 |
 
-The wall rates cover the original enqueue and synchronization window. The 16-warp wall rate led vLLM by 7.267–7.308% in the combined schedule and 6.943–7.010% in the split schedule. The small Triton difference remains after separating restoration. The next workload preserves both sources and tests writing the two outputs directly. [Input-preserving kernel plan](SUSTAINED_OUT_OF_PLACE.md)
+The wall rates cover the original enqueue and synchronization window. The 16-warp wall rate led vLLM by 7.267–7.308% in the combined schedule and 6.943–7.010% in the split schedule. The small Triton difference remains after separating restoration. The follow-up preserved both sources and measured a kernel that writes both outputs directly. [Input-preserving kernel result](SUSTAINED_OUT_OF_PLACE_REPORT.md)
 
 ![Measured operator throughput and restoration fractions across the three timing seeds](copy-split.png)
 

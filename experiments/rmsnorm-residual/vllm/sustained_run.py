@@ -95,23 +95,34 @@ def input_fingerprints(works, weight):
             "stream_input_sha256": [[digest(t) for t in work.source] for work in works]}
 
 
+def capture_graph(torch, stream, warmup, record):
+    stream.wait_stream(torch.cuda.current_stream())
+    with torch.cuda.stream(stream):
+        warmup()
+    stream.synchronize()
+    graph = torch.cuda.CUDAGraph()
+    with torch.cuda.graph(graph, stream=stream):
+        record()
+    stream.synchronize()
+    return graph
+
+
 def capture(torch, fn, work, weight, *, restore=True):
-    work.stream.wait_stream(torch.cuda.current_stream())
     x, residual = work.buffer
-    with torch.cuda.stream(work.stream):
+
+    def warmup():
         run.restore(work.source, x, residual)
         if fn is not None:
             fn(x[0], residual[0], weight)
-    work.stream.synchronize()
-    graph = torch.cuda.CUDAGraph()
-    with torch.cuda.graph(graph, stream=work.stream):
+
+    def record():
         if restore:
             run.restore(work.source, x, residual)
         if fn is not None:
             for index in range(run.OPS):
                 fn(x[index], residual[index], weight)
-    work.stream.synchronize()
-    return graph
+
+    return capture_graph(torch, work.stream, warmup, record)
 
 
 def differences(torch, observed, reference):
@@ -140,13 +151,13 @@ def poison_buffers(torch, works):
     torch.cuda.synchronize()
 
 
-def verify_graphs(torch, runner, graphs, works, weight, initial_weight):
+def verify_graphs(torch, runner, graphs, works, weight, initial_weight, *, backends=BACKENDS, check_inputs=False):
     checks = {}
     reference = []
-    for name in BACKENDS:
+    for name in backends:
         poison_buffers(torch, works)
         runner.burst(graphs[name], 1)
-        if name == BACKENDS[0]:
+        if name == backends[0]:
             for work in works:
                 x, residual = work.source
                 expected_r = (x.float() + residual.float()).bfloat16()
@@ -154,21 +165,23 @@ def verify_graphs(torch, runner, graphs, works, weight, initial_weight):
         checks[name] = {"streams": compare(torch, works, reference),
                         "finite_activations": all(bool(torch.isfinite(work.buffer[0]).all()) for work in works),
                         "weight_unchanged": bool(torch.equal(weight.view(torch.int16), initial_weight))}
+        if check_inputs:
+            checks[name]["source_fingerprints"] = input_fingerprints(works, weight)
     return reference, checks
 
 
-def numeric_gate(record):
+def numeric_gate(record, backends=BACKENDS):
     fixtures = record["fixtures"]
     checks = record["graph_checks"]
     return (len(fixtures) == 8 and all(bitwise_case(case) for case in fixtures)
-            and set(checks) == set(BACKENDS)
+            and set(checks) == set(backends)
             and all(c["weight_unchanged"] and c["finite_activations"] and outputs_match(c["streams"])
                     for c in checks.values())
             and record["inputs_unchanged"])
 
 
-def balanced_order(seed):
-    order = list(BACKENDS)
+def balanced_order(seed, backends=BACKENDS):
+    order = list(backends)
     random.Random(seed).shuffle(order)
     return [order[i:] + order[:i] for i in range(len(order))]
 
@@ -191,33 +204,33 @@ def collect_window(runner, graphs, minimum_seconds, origin):
             "cuda_ms": sum(burst["cuda_ms"] for burst in bursts)}
 
 
-def pace(blocks):
+def pace(blocks, backends=BACKENDS):
     rates = {backend: statistics.median(block["normalized_rows"] / block["wall_seconds"]
-                                       for block in blocks if block["backend"] == backend) for backend in BACKENDS}
-    new_rate = rates[BACKENDS[-1]]
+                                       for block in blocks if block["backend"] == backend) for backend in backends}
+    new_rate = rates[backends[-1]]
     gains = {backend: {"throughput_gain": new_rate / rates[backend] - 1,
-                       "passes_5pct": new_rate >= rates[backend] * 1.05} for backend in BACKENDS[:-1]}
+                       "passes_5pct": new_rate >= rates[backend] * 1.05} for backend in backends[:-1]}
     return rates, gains
 
 
-def measure(torch, seed, runner, graphs, works, reference, cuda_uuid):
+def measure(torch, seed, runner, graphs, works, reference, cuda_uuid, *, backends=BACKENDS, period_s=PERIOD_S):
     origin_utc = run.original.utc_now()
     origin = time.perf_counter()
     observer = Observer(cuda_uuid, origin)
-    order, blocks = balanced_order(seed), []
+    order, blocks = balanced_order(seed, backends), []
     try:
         for round_index, group in enumerate(order):
             for position, backend in enumerate(group):
                 warm = collect_window(runner, graphs[backend], WARMUP_S, origin)
-                measured = collect_window(runner, graphs[backend], PERIOD_S, origin)
+                measured = collect_window(runner, graphs[backend], period_s, origin)
                 measured.update(id=len(blocks), round=round_index, position=position, backend=backend, warmup=warm,
                                 post_graph_checks=compare(torch, works, reference))
                 blocks.append(measured)
     finally:
         telemetry = observer.finish()
     associate(telemetry["slots"], blocks)
-    telemetry["by_backend"] = summarize_load(blocks, telemetry["slots"], BACKENDS)
-    rates, gains = pace(blocks)
+    telemetry["by_backend"] = summarize_load(blocks, telemetry["slots"], backends)
+    rates, gains = pace(blocks, backends)
     return {"observer_origin_utc": origin_utc, "order": order, "blocks": blocks, "telemetry": telemetry,
             "median_rows_per_second": rates, "comparisons": gains}
 

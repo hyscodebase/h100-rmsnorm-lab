@@ -1,0 +1,9 @@
+# Compare two copy-free ways to preserve both residual RMSNorm inputs
+
+The direct-output kernel improved sustained throughput for callers that preserve both BF16 source tensors. Test whether it also beats a copy-free, two-kernel implementation with the same output contract. Use a vectorized BF16 addition kernel to write the updated residual, then normalize that residual into the activation output. Keep the released vLLM operator with input restoration as a reference. [Direct-output result](SUSTAINED_OUT_OF_PLACE_REPORT.md)
+
+Keep the 128 × 4,096 shape, eight CUDA streams, the same 32 disjoint pairs per stream and the same source and output addresses. The two-kernel implementation rounds the residual update to BF16, reads that stored residual, and performs the same ordered FP32 reduction and BF16 round before multiplying by the weight. Verify the addition kernel's vectorized memory instructions and the normalization layout. All backends must preserve both original inputs and their weight.
+
+Use seed 149 as the standalone accuracy checkpoint. Compare both results bitwise against vLLM after poisoning the output buffers, verify the signed-zero and weight-rounding probes, and check the unchanged source digests. Recheck both results after every timed block. Run independent timing seeds 150–152 only after the numerical checkpoint passes.
+
+Give each backend three balanced timing rounds. Each period follows at least one second of warm-up and lasts at least six seconds, ending at the first completed burst. Each burst enqueues 32 graph replays per stream. Use the median end-to-end wall rate of the three periods to decide whether the fused kernel is at least 5% faster than the two-kernel implementation in every seed. Retain the vLLM comparison, loaded binaries, original CUDA events, completed rows and direct NVML activity and power.

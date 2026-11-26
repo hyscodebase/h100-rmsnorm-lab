@@ -9,10 +9,10 @@
 #one = #ttg.blocked<{sizePerThread = [1], threadsPerWarp = [32], warpsPerCTA = [16], order = [0]}>
 
 module attributes {"ttg.num-ctas" = 1 : i32, "ttg.num-warps" = 16 : i32, ttg.target = "cuda:90", "ttg.threads-per-warp" = 32 : i32} {
-  tt.func public @sixteen_warp_rmsnorm(
+  tt.func public @KERNEL_NAME@(
       %x: !tt.ptr<bf16> {tt.divisibility = 16 : i32},
       %residual: !tt.ptr<bf16> {tt.divisibility = 16 : i32},
-      %weight: !tt.ptr<bf16> {tt.divisibility = 16 : i32}) {
+      %weight: !tt.ptr<bf16> {tt.divisibility = 16 : i32}@OUTPUT_ARGUMENTS@) {
     %width = arith.constant 4096 : i32
     %vector_width = arith.constant dense<8> : tensor<512x1xi32, #tile>
     %denominator = arith.constant dense<4.096000e+03> : tensor<512xf32, #lanes>
@@ -33,13 +33,13 @@ module attributes {"ttg.num-ctas" = 1 : i32, "ttg.num-warps" = 16 : i32, ttg.tar
     %r_base = tt.splat %residual : !tt.ptr<bf16> -> tensor<512x8x!tt.ptr<bf16>, #tile>
     %x_addr = tt.addptr %x_base, %positions : tensor<512x8x!tt.ptr<bf16>, #tile>, tensor<512x8xi32, #tile>
     %r_addr = tt.addptr %r_base, %positions : tensor<512x8x!tt.ptr<bf16>, #tile>, tensor<512x8xi32, #tile>
-    %xb = tt.load %x_addr : tensor<512x8x!tt.ptr<bf16>, #tile>
+@OUTPUT_ADDRESSES@    %xb = tt.load %x_addr : tensor<512x8x!tt.ptr<bf16>, #tile>
     %rb = tt.load %r_addr : tensor<512x8x!tt.ptr<bf16>, #tile>
     %xf = arith.extf %xb : tensor<512x8xbf16, #tile> to tensor<512x8xf32, #tile>
     %rf = arith.extf %rb : tensor<512x8xbf16, #tile> to tensor<512x8xf32, #tile>
     %sum = arith.addf %xf, %rf : tensor<512x8xf32, #tile>
     %rounded = arith.truncf %sum : tensor<512x8xf32, #tile> to tensor<512x8xbf16, #tile>
-    tt.store %r_addr, %rounded : tensor<512x8x!tt.ptr<bf16>, #tile>
+    tt.store @RESIDUAL_DESTINATION@, %rounded : tensor<512x8x!tt.ptr<bf16>, #tile>
 
     // Sum adjacent squared pairs, then add the four pairs in vLLM order.
     %z = arith.extf %rounded : tensor<512x8xbf16, #tile> to tensor<512x8xf32, #tile>
@@ -72,7 +72,7 @@ module attributes {"ttg.num-ctas" = 1 : i32, "ttg.num-warps" = 16 : i32, ttg.tar
     %wf = arith.extf %wb : tensor<512x8xbf16, #tile> to tensor<512x8xf32, #tile>
     %weighted = arith.mulf %scaled_f32, %wf : tensor<512x8xf32, #tile>
     %output = arith.truncf %weighted : tensor<512x8xf32, #tile> to tensor<512x8xbf16, #tile>
-    tt.store %x_addr, %output : tensor<512x8x!tt.ptr<bf16>, #tile>
+    tt.store @ACTIVATION_DESTINATION@, %output : tensor<512x8x!tt.ptr<bf16>, #tile>
     tt.return
   }
 }

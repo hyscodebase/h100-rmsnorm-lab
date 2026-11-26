@@ -36,11 +36,11 @@ def verify_attempts(folder, data):
         raise ValueError("Every checkpoint needs a recorded successful submission or recovery.")
 
 
-def verify_pairwise(records, names):
+def verify_pairwise(records, names, backends=protocol.BACKENDS):
     for case in records:
-        if "reason" not in case and set(case["comparisons"]) != set(protocol.BACKENDS[1:]):
-            raise ValueError("A two-candidate check is missing.")
-    for backend in protocol.BACKENDS[1:]:
+        if "reason" not in case and set(case["comparisons"]) != set(backends[1:]):
+            raise ValueError("A candidate comparison is missing.")
+    for backend in backends[1:]:
         fields = [case["comparisons"][backend] if "comparisons" in case else case for case in records]
         verify_cases(fields, names, protocol.ROWS * run.WIDTH)
 
