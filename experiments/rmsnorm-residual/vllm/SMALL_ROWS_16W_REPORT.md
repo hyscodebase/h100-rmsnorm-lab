@@ -10,7 +10,7 @@ The 128 × 4,096 BF16 kernel assigns one eight-element vector to each of 512 thr
 | 135 | 4.002 | 3.965 | 3.364 | 15.942% | 15.158% |
 | 136 | 4.010 | 3.964 | 3.369 | 15.985% | 15.010% |
 
-The candidate meets the registered 5% latency criterion against both baselines in all three independent timing seeds. Both Triton candidates matched every checked value across 83,886,080 normalized elements per comparator, plus exact stored residuals. The performance result covers this shape and the registered replay workload. The next experiment measures multi-stream throughput and device load. [Sustained workload plan](SUSTAINED_128.md)
+The candidate meets the registered 5% latency criterion against both baselines in all three independent timing seeds. Both Triton candidates matched every checked value across 83,886,080 normalized elements per comparator, plus exact stored residuals. The performance result covers this shape and the registered replay workload. The follow-up measured eight-stream throughput and device load. [Sustained workload results](SUSTAINED_128_REPORT.md)
 
 ![Three-way H100 latency comparison at 128 token rows](sixteen-warp-latency.png)
 

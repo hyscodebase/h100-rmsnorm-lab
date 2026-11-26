@@ -56,6 +56,8 @@ At 128 rows, reducing the two groups per lane independently resolved all 238 rec
 
 A 16-warp implementation then kept the same ordered FP32 sum and matched vLLM bitwise in every checked case. At 128 rows, the three median latencies were 3.364–3.370 µs, about 15.8–16.0% lower than vLLM and 15.0–15.2% lower than the eight-warp kernel. [Three-way results, compiler evidence and chart](experiments/rmsnorm-residual/vllm/SMALL_ROWS_16W_REPORT.md)
 
+In a sustained 8-stream workload with input restoration, the 16-warp kernel processed 41.254–41.526 million normalized rows per second. It led vLLM by 6.718–7.405% across three seeds and stayed within 0.6% of the 8-warp kernel. The in-window GPU activity medians were 100% in all nine backend-seed groups, with seven groups meeting the sample coverage requirement. [Sustained throughput and NVML record](experiments/rmsnorm-residual/vllm/SUSTAINED_128_REPORT.md)
+
 ## Sustained H100 compute
 
 In 20 runs of a BF16 prefill projection, the H100 completed 1.50 million matrix products over 902.18 measured seconds. The 16,384-row shape reached a median of 682.19 TFLOP/s. Gaps in device sampling limited confirmation of sustained activity to eight runs. [Full results, throughput and resource charts](experiments/prefill-gemm/REPORT.md) · [Workload and protocol](experiments/prefill-gemm/README.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/3)
