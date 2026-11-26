@@ -70,6 +70,8 @@ At 256 rows, the prior 16-warp kernel disagreed with vLLM on 1,161 captured acti
 
 At 512 rows, the same three Triton binaries matched both BF16 outputs. Fusion processed 91.534–91.550 million rows per second and led the copy-free two-kernel graph by 19.74–19.76% across three independent timing seeds. [512-row throughput, power and raw records](experiments/rmsnorm-residual/vllm/COPY_FREE_ROWS_512_REPORT.md)
 
+At 512 rows, the adjacent split schedule led the all-adds-first schedule by 3.18–3.26% with identical binaries and exact outputs. The registered effect required 5%. The Nsight qualification also recorded the server's hardware-counter permission result. [Scheduling and throughput](experiments/rmsnorm-residual/vllm/SPLIT_SCHEDULE_512_REPORT.md) · [Counter qualification](experiments/rmsnorm-residual/vllm/COPY_FREE_MEMORY_512_QUALIFICATION.md)
+
 ## Sustained H100 compute
 
 In 20 runs of a BF16 prefill projection, the H100 completed 1.50 million matrix products over 902.18 measured seconds. The 16,384-row shape reached a median of 682.19 TFLOP/s. Gaps in device sampling limited confirmation of sustained activity to eight runs. [Full results, throughput and resource charts](experiments/prefill-gemm/REPORT.md) · [Workload and protocol](experiments/prefill-gemm/README.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/3)

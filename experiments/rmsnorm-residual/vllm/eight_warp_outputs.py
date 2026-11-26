@@ -60,13 +60,17 @@ def fused_out_of_place(x, residual, weight, x_out, residual_out):
         )
 
 
+def launch_normalization(residual_out, weight, x_out):
+    return normalize_written_residual[(residual_out.shape[0],)](
+        residual_out, weight, x_out, num_warps=8, enable_fp_fusion=False,
+    )
+
+
 def split_out_of_place(x, residual, weight, x_out, residual_out):
     import torch
 
     validate_output_buffers(x, residual, weight, x_out, residual_out)
     with torch.cuda.device(x.device):
         add = launch_residual_add(x, residual, residual_out)
-        norm = normalize_written_residual[(x.shape[0],)](
-            residual_out, weight, x_out, num_warps=8, enable_fp_fusion=False,
-        )
+        norm = launch_normalization(residual_out, weight, x_out)
     return add, norm

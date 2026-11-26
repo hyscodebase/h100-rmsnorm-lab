@@ -10,7 +10,8 @@ import run
 from shuffle_plot import COLORS, MARKERS, plt
 
 
-def draw(data, output, *, workload=protocol.DEFAULT):
+def draw(data, output, *, workload=protocol.DEFAULT,
+         backend_labels=("vLLM + copies", "Triton add → RMSNorm", "Triton fused output")):
     fig, (rate, power) = plt.subplots(1, 2, figsize=(10.6, 4.8), gridspec_kw={"width_ratios": [1.3, 1]})
     fig.subplots_adjust(left=.225, right=.945, top=.69, bottom=.22, wspace=.27)
     ink, muted = "#152733", "#50636D"
@@ -33,7 +34,7 @@ def draw(data, output, *, workload=protocol.DEFAULT):
             observed = timing["telemetry"]["by_backend"][backend]["metrics"]["power_w"]["median"]
             if observed is not None:
                 power.plot(observed, row + offset, ls="", marker=marker, color=color, ms=5)
-    rate.set_yticks(range(3), ("vLLM + copies", "Triton add → RMSNorm", "Triton fused output"))
+    rate.set_yticks(range(len(backend_labels)), backend_labels)
     power.set_yticks([])
     rate.set_xlabel("Throughput (million rows/s)", labelpad=11, color=ink)
     power.set_xlabel("Median observed power (W)", labelpad=11, color=ink)
