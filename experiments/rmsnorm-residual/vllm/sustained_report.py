@@ -68,7 +68,7 @@ def verify_window(window, minimum):
         raise ValueError("A graph or normalized row count differs from the original bursts.")
 
 
-def verify_telemetry(data, blocks):
+def verify_telemetry(data, blocks, groups=protocol.BACKENDS, *, group_by="backend"):
     slots = data["slots"]
     if data["period_s"] != SENSOR_PERIOD or [s["slot"] for s in slots] != list(range(len(slots))):
         raise ValueError("The NVML observation schedule is missing slots.")
@@ -87,7 +87,7 @@ def verify_telemetry(data, blocks):
                 raise ValueError("Invalid NVML device metrics.")
     assigned = [dict(slot) for slot in slots]
     associate(assigned, blocks)
-    if assigned != slots or summarize_load(blocks, assigned, protocol.BACKENDS) != data["by_backend"]:
+    if assigned != slots or summarize_load(blocks, assigned, groups, group_by=group_by) != data[f"by_{group_by}"]:
         raise ValueError("NVML sample assignment or qualification differs.")
 
 
@@ -149,7 +149,11 @@ def read_results(folder):
             verify_measurement(seed, record["timing"])
         data[seed] = record
     verify_attempts(folder, data)
-    recovered = json.loads((folder / "checkpoint-recovery.json").read_bytes())
+    verify_recovery(data, json.loads((folder / "checkpoint-recovery.json").read_bytes()), revision)
+    return data
+
+
+def verify_recovery(data, recovered, revision):
     cached = data[recovered["seed"]]
     canonical = json.dumps(cached, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
     if (not cached["timing"] or recovered["rows"] != cached["rows"] or recovered["code_revision"] != revision
@@ -157,7 +161,6 @@ def read_results(folder):
             or recovered["canonical_json_bytes"] != len(canonical)
             or recovered["canonical_json_sha256"] != hashlib.sha256(canonical).hexdigest()):
         raise ValueError("The recorded recovery differs from the archived timing checkpoint.")
-    return data
 
 
 def admissible(timing):

@@ -10,7 +10,7 @@ The workload uses 128 × 4,096 BF16 activations per call and eight CUDA streams.
 | 139 | 38.652 | 41.491 | 41.504 | +7.377% | +0.030% |
 | 140 | 38.657 | 41.494 | 41.254 | +6.718% | −0.578% |
 
-Each rate is the median of three measured blocks in millions of normalized rows per second. Sixteen warps met the 5% threshold against vLLM in all three seeds. It missed the threshold against eight warps in each seed, so this workload does not meet the registered adoption criterion. The 27 measured blocks lasted 162.355 seconds and completed 6,572,474,368 normalized rows, including repeated graph inputs. The archive also retains 6,268 coordinated measurement bursts and 1,053 warm-up bursts. [Next experiment with separate copy and kernel intervals](SUSTAINED_COPY_SPLIT.md)
+Each rate is the median of three measured blocks in millions of normalized rows per second. Sixteen warps met the 5% threshold against vLLM in all three seeds. It missed the threshold against eight warps in each seed, so this workload does not meet the registered adoption criterion. The 27 measured blocks lasted 162.355 seconds and completed 6,572,474,368 normalized rows, including repeated graph inputs. The archive also retains 6,268 coordinated measurement bursts and 1,053 warm-up bursts. [Separate copy and operator results](COPY_SPLIT_REPORT.md)
 
 ![Measured throughput and GPU activity for each backend and seed](sustained-throughput.png)
 

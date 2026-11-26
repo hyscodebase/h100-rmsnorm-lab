@@ -135,12 +135,12 @@ def associate(slots, blocks):
                              None)
 
 
-def summarize_load(blocks, slots, backends):
+def summarize_load(blocks, slots, backends, *, group_by="backend"):
     result = {}
     for name in backends:
         values = []
         gaps = []
-        for block in (block for block in blocks if block["backend"] == name):
+        for block in (block for block in blocks if block[group_by] == name):
             matched = [s for s in slots if s["block"] == block["id"] and s["status"] == "sampled"
                        and s["values"]["gpu_busy_pct"] is not None]
             values.extend(s["values"] for s in matched)
