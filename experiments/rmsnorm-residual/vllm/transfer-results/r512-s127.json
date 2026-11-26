@@ -1,0 +1,1519 @@
+{
+  "rows": 512,
+  "width": 4096,
+  "seed": 127,
+  "code_revision": "f6c1018fc6885622b65ab3cd16d52f002984905d",
+  "source_sha256": {
+    "experiments/rmsnorm-residual/vllm/PLAN.md": "8bf7df499b2931cecb93c423bc829a5813577df8710857155492023b1d5c6480",
+    "experiments/rmsnorm-residual/vllm/run.py": "8495521eb03e0a2da6a8321ce74c99dc97e441b38e8553fc2e7320f2b90a7f5f",
+    "experiments/rmsnorm-residual/vllm/kernel.py": "b9d6f67e0c5e6e9cfc9da78def0ccec046d3b609bf1c7862ac407a3becffb8cd",
+    "experiments/rmsnorm-residual/vllm/wheel.py": "9b8956435559569d88d0a5b9f9e32db55d33f9b4f494638a1c8d010c7e73ae52",
+    "experiments/rmsnorm-residual/benchmark.py": "a2be59cd09dcbf15ed279df860e8220944a7bddeedc2e7f1c74cf655c5da6f05",
+    "experiments/rmsnorm-residual/check.py": "06fc94defcc7b4223a1675db0f5eadff52215236681922c9890a1b5112d5a7df",
+    "experiments/rmsnorm-residual/vllm/PRECISION_PLAN.md": "9044cc966bf098e23513234cfdcdc0c7ea2b07ef576576b5f34f8df97bed2e97",
+    "experiments/rmsnorm-residual/vllm/float32_gate.py": "a7f9de4c5cb8b859c1addc911ff694f20203171f49dc583fbe553d9c6518eaf9",
+    "experiments/rmsnorm-residual/vllm/bounded_preflight.py": "cc23b30e47936066c58503d972cf1c1fc0fb48e9dfb7e18d70c6a2db01eb934d",
+    "experiments/rmsnorm-residual/vllm/bounded_timing.py": "cb7e0dbd660eba5e995134be76f0a7b7b0a0e9d1232f3d24b31f607870e91928",
+    "experiments/rmsnorm-residual/vllm/grouped_kernel.py": "aac1b46f1e644bf454c05ac47e95cd9118b221085aed9dedae1f40f5aa785c27",
+    "experiments/rmsnorm-residual/vllm/grouped_run.py": "7cdd077162b62123387e242af0502b004efa8aca18855d1787119de731389583",
+    "experiments/rmsnorm-residual/vllm/REDUCTION_PLAN.md": "b9e968dd6efa1e63e65b695cba441e2c7870852691fb1765df6a7dc3ffc815f9",
+    "experiments/rmsnorm-residual/vllm/shuffle_run.py": "75cae46a127cb711a8e1169a5bc2a06d2a8de0492aaa9bd04180b87bcd142c89",
+    "experiments/rmsnorm-residual/vllm/shuffle_kernel.py": "d6bcff1669b46fea47cee1736012fbb6c62570874ff7e93ff4585bc34159ba71",
+    "experiments/rmsnorm-residual/vllm/SHUFFLE_PLAN.md": "30c506614837256406c628890a9cd16fc8415ef7259ef3239f9b86e1ad6b6d5f",
+    "experiments/rmsnorm-residual/vllm/row_transfer.py": "a55dcfbfc9833dd7a9a2d4431197312527d0f9581583fc12a61ea80df2735fcb",
+    "experiments/rmsnorm-residual/vllm/ROW_TRANSFER.md": "910aeab61a54572648976a2772a01bd8a9c941247cbe0ccd6f0c390ba05f5998"
+  },
+  "environment": {
+    "gpu": "NVIDIA H100 80GB HBM3",
+    "compute_capability": [
+      9,
+      0
+    ],
+    "total_memory_bytes": 84929216512,
+    "sm_count": 132,
+    "driver": "550.144.03",
+    "cuda": "12.8",
+    "torch": "2.7.1+cu128",
+    "triton": "3.3.1",
+    "python": "3.12.16"
+  },
+  "asset": {
+    "version": "0.10.0",
+    "wheel": "vllm-0.10.0-cp38-abi3-manylinux1_x86_64.whl",
+    "wheel_sha256": "8ca37559d82b43b5e8c8248d2e4a1ecb51d6d4e5d517491d656df6491ed93dab",
+    "extension": "_C.abi3.so",
+    "extension_sha256": "0bdeda3d6ef7f1df23bcbd128f27c003dc2750475632d8d1d5658e5af15a1e74",
+    "extension_size_bytes": 339450440
+  },
+  "codegen": {
+    "num_warps": 8,
+    "shared_bytes": 0,
+    "registers_per_thread": 32,
+    "spill_count": 0,
+    "ttgir_sha256": "cb6e81321b75157f981d47384137ae29e2bedf0fbd6aef6bd8e5350cab4ec2bd",
+    "ptx_sha256": "a9f26f03ddc630ca6708b9f41892b4e718439b8d3f8c71be226ab52e551ffa28",
+    "ptx_instruction_sha256": "2cdd4eb0ae9a261ad6b2f9fba0f5d569cb11f66ab4097e158af6cc347bffdfc6",
+    "ptx_opcodes": {
+      "add.rn.bf16x2": 8,
+      "add.rn.f32": 28,
+      "add.s64": 6,
+      "add.u64": 1,
+      "and.b32": 1,
+      "bar.sync": 1,
+      "cvt.f32.bf16": 16,
+      "cvt.rn.bf16x2.f32": 8,
+      "div.full.f32": 1,
+      "ld.global.v4.b32": 6,
+      "ld.param.u64": 3,
+      "ld.shared.v4.f32": 2,
+      "mov.b32": 8,
+      "mov.f32": 3,
+      "mov.u32": 28,
+      "mov.u64": 1,
+      "mul.rn.bf16x2": 8,
+      "mul.rn.f32": 32,
+      "mul.wide.s32": 1,
+      "mul.wide.u32": 2,
+      "or.b32": 1,
+      "rsqrt.approx.ftz.f32": 1,
+      "setp.eq.u32": 1,
+      "setp.ne.u32": 1,
+      "shfl.sync.bfly.b32": 5,
+      "shl.b32": 2,
+      "shr.u32": 1,
+      "st.global.v4.b32": 4
+    },
+    "fp_fusion": false,
+    "logical_group_width": 8,
+    "warp_shuffle_offsets": [
+      1,
+      2,
+      4,
+      8,
+      16
+    ],
+    "emitted_shared_loads": 2,
+    "inline_cta_shared_bytes": 32,
+    "logical_thread_guard": true,
+    "binary_sha256": "8f822a868693989b9c316de69925dff2359744cd4891024813924651ecb0e895",
+    "reduction_instructions": [
+      "shfl.sync.bfly.b32 peer, total, 1, 31, -1;",
+      "shfl.sync.bfly.b32 peer, total, 2, 31, -1;",
+      "shfl.sync.bfly.b32 peer, total, 4, 31, -1;",
+      "shfl.sync.bfly.b32 peer, total, 8, 31, -1;",
+      "shfl.sync.bfly.b32 peer, total, 16, 31, -1;",
+      "@leader st.shared.f32 [slot], total;",
+      "bar.sync 0;",
+      "ld.shared.v4.f32 {w0, w1, w2, w3}, [base];",
+      "ld.shared.v4.f32 {w4, w5, w6, w7}, [base+16];"
+    ]
+  },
+  "gate_passed": true,
+  "fixtures": [
+    {
+      "fixture": "random",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "zero_rows",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "cancellation",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.0458984375,
+        0.0458984375
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "tiny",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.00048828125,
+        0.00048828125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "bf16_ties",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.00390625,
+        0.00390625
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "bf16_denominator_tie",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.0,
+        0.0
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "weight_rounding",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.00390625,
+        0.00390625
+      ],
+      "passed": true,
+      "weight_probe": [
+        1.46875,
+        1.46875
+      ]
+    },
+    {
+      "fixture": "signed_zero",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.0,
+        0.0
+      ],
+      "passed": true,
+      "normalized_zero_bits": [
+        [
+          32768,
+          0
+        ],
+        [
+          32768,
+          0
+        ]
+      ]
+    }
+  ],
+  "replay_checks": [
+    {
+      "fixture": "captured_0",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_1",
+      "elements": 2097152,
+      "strict_outside_tolerance": 18,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          326,
+          31
+        ],
+        [
+          326,
+          115
+        ],
+        [
+          326,
+          328
+        ],
+        [
+          326,
+          469
+        ],
+        [
+          326,
+          1062
+        ],
+        [
+          326,
+          1783
+        ],
+        [
+          326,
+          1961
+        ],
+        [
+          326,
+          2062
+        ],
+        [
+          326,
+          2064
+        ],
+        [
+          326,
+          2114
+        ],
+        [
+          326,
+          2493
+        ],
+        [
+          326,
+          2759
+        ],
+        [
+          326,
+          3045
+        ],
+        [
+          326,
+          3303
+        ],
+        [
+          326,
+          3631
+        ],
+        [
+          326,
+          3827
+        ],
+        [
+          326,
+          3909
+        ],
+        [
+          326,
+          3921
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_2",
+      "elements": 2097152,
+      "strict_outside_tolerance": 13,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          25,
+          325
+        ],
+        [
+          25,
+          498
+        ],
+        [
+          25,
+          560
+        ],
+        [
+          25,
+          813
+        ],
+        [
+          25,
+          1139
+        ],
+        [
+          25,
+          1156
+        ],
+        [
+          25,
+          1562
+        ],
+        [
+          25,
+          2186
+        ],
+        [
+          25,
+          3218
+        ],
+        [
+          25,
+          3687
+        ],
+        [
+          25,
+          3688
+        ],
+        [
+          25,
+          3858
+        ],
+        [
+          25,
+          4014
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03076171875,
+        0.03076171875
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_3",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_4",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.056640625,
+        0.056640625
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_5",
+      "elements": 2097152,
+      "strict_outside_tolerance": 9,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          300,
+          959
+        ],
+        [
+          300,
+          1236
+        ],
+        [
+          300,
+          2149
+        ],
+        [
+          300,
+          2438
+        ],
+        [
+          300,
+          3152
+        ],
+        [
+          300,
+          3195
+        ],
+        [
+          300,
+          3494
+        ],
+        [
+          300,
+          3562
+        ],
+        [
+          300,
+          4086
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03076171875,
+        0.03076171875
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_6",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_7",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_8",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_9",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_10",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.031005859375,
+        0.031005859375
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_11",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_12",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.0302734375,
+        0.0302734375
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_13",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_14",
+      "elements": 2097152,
+      "strict_outside_tolerance": 23,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          260,
+          252
+        ],
+        [
+          260,
+          254
+        ],
+        [
+          260,
+          429
+        ],
+        [
+          260,
+          534
+        ],
+        [
+          260,
+          546
+        ],
+        [
+          260,
+          701
+        ],
+        [
+          260,
+          825
+        ],
+        [
+          260,
+          862
+        ],
+        [
+          260,
+          1136
+        ],
+        [
+          260,
+          1285
+        ],
+        [
+          260,
+          1414
+        ],
+        [
+          260,
+          1610
+        ],
+        [
+          260,
+          2451
+        ],
+        [
+          260,
+          2539
+        ],
+        [
+          260,
+          2563
+        ],
+        [
+          260,
+          2649
+        ],
+        [
+          260,
+          2724
+        ],
+        [
+          260,
+          2896
+        ],
+        [
+          260,
+          3094
+        ],
+        [
+          260,
+          3238
+        ],
+        [
+          260,
+          3256
+        ],
+        [
+          260,
+          3610
+        ],
+        [
+          260,
+          3948
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.0302734375,
+        0.0302734375
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_15",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_16",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_17",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_18",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_19",
+      "elements": 2097152,
+      "strict_outside_tolerance": 5,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          466,
+          780
+        ],
+        [
+          466,
+          2342
+        ],
+        [
+          466,
+          2406
+        ],
+        [
+          466,
+          3167
+        ],
+        [
+          466,
+          3944
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_20",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_21",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_22",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.031005859375,
+        0.031005859375
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_23",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_24",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_25",
+      "elements": 2097152,
+      "strict_outside_tolerance": 26,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          35,
+          521
+        ],
+        [
+          35,
+          618
+        ],
+        [
+          35,
+          782
+        ],
+        [
+          35,
+          811
+        ],
+        [
+          35,
+          1437
+        ],
+        [
+          35,
+          1957
+        ],
+        [
+          35,
+          2241
+        ],
+        [
+          35,
+          3603
+        ],
+        [
+          35,
+          3805
+        ],
+        [
+          35,
+          4056
+        ],
+        [
+          166,
+          7
+        ],
+        [
+          166,
+          293
+        ],
+        [
+          166,
+          758
+        ],
+        [
+          166,
+          897
+        ],
+        [
+          166,
+          1178
+        ],
+        [
+          166,
+          1506
+        ],
+        [
+          166,
+          2175
+        ],
+        [
+          166,
+          2626
+        ],
+        [
+          166,
+          2893
+        ],
+        [
+          166,
+          3300
+        ],
+        [
+          166,
+          3370
+        ],
+        [
+          166,
+          3408
+        ],
+        [
+          166,
+          3593
+        ],
+        [
+          166,
+          3658
+        ],
+        [
+          166,
+          3810
+        ],
+        [
+          166,
+          3912
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_26",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_27",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_28",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_29",
+      "elements": 2097152,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_30",
+      "elements": 2097152,
+      "strict_outside_tolerance": 31,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          29,
+          338
+        ],
+        [
+          29,
+          402
+        ],
+        [
+          29,
+          442
+        ],
+        [
+          29,
+          559
+        ],
+        [
+          29,
+          724
+        ],
+        [
+          29,
+          912
+        ],
+        [
+          29,
+          926
+        ],
+        [
+          29,
+          1050
+        ],
+        [
+          29,
+          1248
+        ],
+        [
+          29,
+          1263
+        ],
+        [
+          29,
+          1286
+        ],
+        [
+          29,
+          1445
+        ],
+        [
+          29,
+          1537
+        ],
+        [
+          29,
+          1713
+        ],
+        [
+          29,
+          2135
+        ],
+        [
+          29,
+          2159
+        ],
+        [
+          29,
+          2255
+        ],
+        [
+          29,
+          2414
+        ],
+        [
+          29,
+          2523
+        ],
+        [
+          29,
+          2669
+        ],
+        [
+          29,
+          2741
+        ],
+        [
+          29,
+          3050
+        ],
+        [
+          29,
+          3082
+        ],
+        [
+          29,
+          3228
+        ],
+        [
+          29,
+          3433
+        ],
+        [
+          29,
+          3578
+        ],
+        [
+          29,
+          3672
+        ],
+        [
+          29,
+          3698
+        ],
+        [
+          29,
+          3734
+        ],
+        [
+          29,
+          3992
+        ],
+        [
+          29,
+          4090
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_31",
+      "elements": 2097152,
+      "strict_outside_tolerance": 30,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          308,
+          556
+        ],
+        [
+          308,
+          656
+        ],
+        [
+          308,
+          1209
+        ],
+        [
+          308,
+          1698
+        ],
+        [
+          308,
+          1705
+        ],
+        [
+          308,
+          2000
+        ],
+        [
+          308,
+          2118
+        ],
+        [
+          308,
+          2539
+        ],
+        [
+          308,
+          3282
+        ],
+        [
+          308,
+          3344
+        ],
+        [
+          308,
+          3429
+        ],
+        [
+          308,
+          3814
+        ],
+        [
+          336,
+          68
+        ],
+        [
+          336,
+          680
+        ],
+        [
+          336,
+          755
+        ],
+        [
+          336,
+          763
+        ],
+        [
+          336,
+          1562
+        ],
+        [
+          336,
+          1615
+        ],
+        [
+          336,
+          1697
+        ],
+        [
+          336,
+          1699
+        ],
+        [
+          336,
+          1883
+        ],
+        [
+          336,
+          2122
+        ],
+        [
+          336,
+          2184
+        ],
+        [
+          336,
+          2200
+        ],
+        [
+          336,
+          2297
+        ],
+        [
+          336,
+          2496
+        ],
+        [
+          336,
+          2939
+        ],
+        [
+          336,
+          3302
+        ],
+        [
+          336,
+          3585
+        ],
+        [
+          336,
+          4009
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    }
+  ],
+  "timing": {
+    "ops_per_graph": 32,
+    "round_order": [
+      [
+        "triton_shuffle_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "triton_shuffle_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "triton_shuffle_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "triton_shuffle_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "triton_shuffle_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "triton_shuffle_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "triton_shuffle_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "triton_shuffle_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_shuffle_8warps"
+      ],
+      [
+        "triton_shuffle_8warps",
+        "vllm_0_10_0"
+      ]
+    ],
+    "inputs_restored_bitwise": true,
+    "started_utc": "2026-11-26T09:06:34.754788+00:00",
+    "wall_seconds": 0.02001195913180709,
+    "statistics": {
+      "vllm_0_10_0": {
+        "graph_elapsed_ms": [
+          0.26316800713539124,
+          0.2635200023651123,
+          0.2629440128803253,
+          0.2622399926185608,
+          0.26159998774528503,
+          0.26214399933815,
+          0.2635839879512787,
+          0.262719988822937,
+          0.2621760070323944,
+          0.26316800713539124,
+          0.2622399926185608,
+          0.2613759934902191,
+          0.2614400088787079,
+          0.26259198784828186,
+          0.2622080147266388,
+          0.2619200050830841,
+          0.2629759907722473,
+          0.26316800713539124,
+          0.2616319954395294,
+          0.26259198784828186,
+          0.26236799359321594
+        ],
+        "samples_us": [
+          8.224000222980976,
+          8.23500007390976,
+          8.217000402510166,
+          8.194999769330025,
+          8.174999617040157,
+          8.191999979317188,
+          8.236999623477459,
+          8.209999650716782,
+          8.193000219762325,
+          8.224000222980976,
+          8.194999769330025,
+          8.167999796569347,
+          8.170000277459621,
+          8.205999620258808,
+          8.194000460207462,
+          8.185000158846378,
+          8.217999711632729,
+          8.224000222980976,
+          8.175999857485294,
+          8.205999620258808,
+          8.198999799787998
+        ],
+        "q1_us": 8.191999979317188,
+        "median_us": 8.198999799787998,
+        "q3_us": 8.217999711632729
+      },
+      "triton_shuffle_8warps": {
+        "graph_elapsed_ms": [
+          0.23683199286460876,
+          0.2349119931459427,
+          0.235167995095253,
+          0.23440000414848328,
+          0.23455999791622162,
+          0.2361920028924942,
+          0.23580799996852875,
+          0.23455999791622162,
+          0.23587200045585632,
+          0.23660799860954285,
+          0.23475199937820435,
+          0.23708799481391907,
+          0.2349119931459427,
+          0.23280000686645508,
+          0.2327360063791275,
+          0.2351360023021698,
+          0.23606400191783905,
+          0.23337599635124207,
+          0.23577600717544556,
+          0.23548799753189087,
+          0.23500800132751465
+        ],
+        "samples_us": [
+          7.400999777019024,
+          7.340999785810709,
+          7.348999846726656,
+          7.325000129640102,
+          7.329999934881926,
+          7.381000090390444,
+          7.368999999016523,
+          7.329999934881926,
+          7.37100001424551,
+          7.393999956548214,
+          7.335999980568886,
+          7.408999837934971,
+          7.340999785810709,
+          7.275000214576721,
+          7.2730001993477345,
+          7.348000071942806,
+          7.37700005993247,
+          7.2929998859763145,
+          7.368000224232674,
+          7.35899992287159,
+          7.344000041484833
+        ],
+        "q1_us": 7.329999934881926,
+        "median_us": 7.348000071942806,
+        "q3_us": 7.37100001424551
+      }
+    },
+    "triton_over_vllm": 0.8962068851535774,
+    "passes_5pct": true
+  },
+  "started_utc": "2026-11-26T09:06:19.742722+00:00",
+  "finished_utc": "2026-11-26T09:06:34.775068+00:00",
+  "wall_seconds": 15.032334468327463
+}

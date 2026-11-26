@@ -25,13 +25,13 @@ def verify_methods(torch, methods, outputs, inputs, case):
             "passed": all(result["passed"] for result in comparisons.values())}
 
 
-def trials(torch, methods, seed, device):
+def trials(torch, methods, seed, device, rows=run.ROWS):
     import check
 
     generator = torch.Generator(device=device).manual_seed(seed)
     fixtures = []
     for case in (*check.FIXTURES, "weight_rounding", "signed_zero"):
-        inputs = run.fixture(torch, check, case, generator, device)
+        inputs = run.fixture(torch, check, case, generator, device, rows=rows)
         outputs = []
         for fn in methods.values():
             x, residual, weight = (tensor.clone() for tensor in inputs)
@@ -46,7 +46,7 @@ def trials(torch, methods, seed, device):
         return fixtures, [], None
 
     generator = torch.Generator(device=device).manual_seed(seed)
-    pair = tuple(torch.randn((run.OPS, run.ROWS, run.WIDTH), dtype=torch.bfloat16, device=device, generator=generator)
+    pair = tuple(torch.randn((run.OPS, rows, run.WIDTH), dtype=torch.bfloat16, device=device, generator=generator)
                  for _ in range(2))
     weight = torch.randn(run.WIDTH, dtype=torch.bfloat16, device=device, generator=generator)
     initial_weight = weight.clone()

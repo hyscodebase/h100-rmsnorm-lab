@@ -25,4 +25,4 @@ python3 experiments/rmsnorm-residual/vllm/shuffle_report.py
 python3 experiments/rmsnorm-residual/vllm/shuffle_plot.py
 ```
 
-The report verifies the frozen Git blobs, identical canonical PTX instructions, graph-event units, seed order and the per-seed decision before plotting. The follow-up tests the vLLM launch change at 256 rows and whether the speed gain transfers to other row counts. [Frozen implementation](https://github.com/hyscodebase/h100-rmsnorm-lab/commit/74ae704) · [Shape study](ROW_TRANSFER.md)
+The report verifies the frozen Git blobs, identical canonical PTX instructions, graph-event units, seed order and the per-seed decision before plotting. The follow-up tested the vLLM launch change at 256 rows and measured the same candidate at other row counts. [Frozen implementation](https://github.com/hyscodebase/h100-rmsnorm-lab/commit/74ae704) · [Shape study results](TRANSFER_REPORT.md)
