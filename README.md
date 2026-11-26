@@ -58,6 +58,8 @@ A 16-warp implementation then kept the same ordered FP32 sum and matched vLLM bi
 
 In a sustained 8-stream workload with input restoration, the 16-warp kernel processed 41.254–41.526 million normalized rows per second. It led vLLM by 6.718–7.405% across three seeds and stayed within 0.6% of the 8-warp kernel. The in-window GPU activity medians were 100% in all nine backend-seed groups, with seven groups meeting the sample coverage requirement. [Sustained throughput and NVML record](experiments/rmsnorm-residual/vllm/SUSTAINED_128_REPORT.md)
 
+The staged follow-up measured restoration and the operator separately with coordinated events on eight streams. The 16-warp operator stage was 14.975–15.107% faster than vLLM and within 0.11% of 8 warps in every seed. Restoration took about 52% of the Triton CUDA interval. [Stage timings and follow-up](experiments/rmsnorm-residual/vllm/COPY_SPLIT_REPORT.md)
+
 ## Sustained H100 compute
 
 In 20 runs of a BF16 prefill projection, the H100 completed 1.50 million matrix products over 902.18 measured seconds. The 16,384-row shape reached a median of 682.19 TFLOP/s. Gaps in device sampling limited confirmation of sustained activity to eight runs. [Full results, throughput and resource charts](experiments/prefill-gemm/REPORT.md) · [Workload and protocol](experiments/prefill-gemm/README.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/3)
