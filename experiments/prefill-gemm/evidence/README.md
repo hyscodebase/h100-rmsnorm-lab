@@ -16,6 +16,25 @@ Supplementary GPU activity, memory usage and power are available from seed 44 wh
 
 The controller began saving an attempt record with seed 46 at 8,192 rows. It records a portable command before launch and updates the attempt after checkpoint persistence or a handled error. A retry gets its own ID. If the controller abruptly stops, a local record can retain only the start. Earlier successful runs still have their original completion timestamps. The archive publishes terminal attempt records. The timed-window coverage decision uses the primary collector under the same protocol across all seeds.
 
+## Collect supplementary samples on the GPU host
+
+Start this command in a second terminal on the benchmark's Linux GPU host just before launching a checkpoint. Run from the repository root. The original allocation exposed one H100 at NVIDIA device index 0. With multiple devices, set `device` to the `nvidia-smi` index of the physical GPU running the GEMM. CUDA ordinals can be remapped.
+
+```bash
+device=0
+logs=$(mktemp -d)
+basic=timestamp,utilization.gpu,memory.used,memory.total,power.draw
+extended=temperature.gpu,clocks.current.sm,clocks.current.memory,power.limit,utilization.memory
+fields="$basic,$extended"
+TZ=UTC timeout 90s stdbuf -oL nvidia-smi -i "$device" \
+  --query-gpu="$fields" --format=csv,noheader,nounits -l 1 \
+  | python3 experiments/prefill-gemm/smi_to_jsonl.py > "$logs/gemm-samples.jsonl"
+```
+
+The polling period is one second. The 90-second cap covers one typical 45-second measured checkpoint plus startup. The GPU host supplies the UTC timestamp and polling can miss intervals. If the extended query exits without a usable reading because of an unsupported field, rerun with `fields="$basic"`. This also reproduces the early four-metric collector. The converter leaves unavailable numeric fields null, skips malformed rows, and flushes each sample to disk. [CSV-to-JSONL converter](../smi_to_jsonl.py)
+
+Pass the directory printed by `echo "$logs"` to the exporter as `--telemetry-dir` alongside the matching checkpoint's results directory. Use a fresh output directory for a new campaign. The exporter retains timestamps at or after each timed start and strictly before its end, so starting the collector during warmup is sufficient.
+
 ## Regenerate the index
 
 From a checkout containing the recorded Git revisions:
