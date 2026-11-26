@@ -12,10 +12,6 @@ from split_schedule_report import verify_attempt_clocks
 from sustained_report import verify_graph_records, verify_measurement, verify_recovery
 from transfer_report import verify_revision
 
-RESULTS = run.HERE / "projection-chain-512-results"
-WIDE_RESULTS = run.HERE / "projection-tail-12288-results"
-
-
 def verify_numerical(numerical, expected, *, workload=protocol.SQUARE):
     base = protocol.base
     rows, width, downstream = protocol.ROWS, protocol.WIDTH, workload.downstream_width
@@ -76,7 +72,7 @@ def verify_record(record, seed, anchor, sources, revision, *, workload=protocol.
 
 def read_results(folder=None, *, workload=protocol.SQUARE):
     if folder is None:
-        folder = RESULTS if workload == protocol.SQUARE else WIDE_RESULTS
+        folder = run.HERE / f"{workload.archive_name}-results"
     results = {int(path.stem[1:]): json.loads(path.read_bytes()) for path in folder.glob("s[0-9]*.json")}
     preflight = results[workload.numeric_seed]
     expected = workload.seeds if preflight["gate_passed"] else (workload.numeric_seed,)

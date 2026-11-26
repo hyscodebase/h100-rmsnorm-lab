@@ -45,12 +45,21 @@ class Workload:
     def seeds(self):
         return (self.numeric_seed, *self.timing_seeds)
 
+    @property
+    def archive_name(self):
+        if self.downstream_width == WIDTH:
+            return "projection-chain-512"
+        return f"projection-tail-{self.downstream_width}"
+
 
 SQUARE = Workload(WIDTH, NUMERIC_SEED, TIMING_SEEDS, SOURCES)
+INTERMEDIATE = Workload(6_144, 185, (186, 187, 188), (*SOURCES, str(
+    (run.HERE / "COPY_FREE_PROJECTION_TAIL_6144.md").relative_to(run.ROOT)
+)))
 WIDE = Workload(12_288, 181, (182, 183, 184), (*SOURCES, str(
     (run.HERE / "COPY_FREE_PROJECTION_TAIL_12288.md").relative_to(run.ROOT)
 )))
-WORKLOADS = {workload.downstream_width: workload for workload in (SQUARE, WIDE)}
+WORKLOADS = {workload.downstream_width: workload for workload in (SQUARE, INTERMEDIATE, WIDE)}
 
 
 def expected_kernels(anchor):
