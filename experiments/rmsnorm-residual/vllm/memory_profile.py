@@ -45,7 +45,7 @@ METRICS = {
 }
 UNIT_FORMS = {"byte": {"byte", "bytes"}, "sector": {"sector", "sectors"}, "ns": {"ns", "nsecond"}}
 PROFILE_OPTIONS = (
-    "--replay-mode", "app-range", "--profile-from-start", "off", "--cache-control", "none",
+    "--replay-mode", "app-range", "--cache-control", "none",
     "--clock-control", "none", "--metrics", ",".join(METRICS),
 )
 WARMUP_BURSTS = 2
