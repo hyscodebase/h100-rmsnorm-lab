@@ -16,6 +16,15 @@ SEEDS = (114, 115, 116)
 SOURCES = (*PREFLIGHT_SOURCES, str(Path(__file__).resolve().relative_to(run.ROOT)))
 
 
+def verify_methods(torch, methods, outputs, inputs, case):
+    if len(outputs) == 2:
+        return verify_case(torch, outputs, inputs, case)
+    comparisons = {name: verify_case(torch, (outputs[0], output), inputs, case)
+                   for name, output in zip(tuple(methods)[1:], outputs[1:])}
+    return {"fixture": case, "comparisons": comparisons,
+            "passed": all(result["passed"] for result in comparisons.values())}
+
+
 def trials(torch, methods, seed, device):
     import check
 
@@ -30,7 +39,7 @@ def trials(torch, methods, seed, device):
             check.ensure(torch.equal(weight.view(torch.int16), inputs[2].view(torch.int16)), "mutated_weight")
             outputs.append((x, residual))
         try:
-            fixtures.append(verify_case(torch, outputs, inputs, case))
+            fixtures.append(verify_methods(torch, methods, outputs, inputs, case))
         except AssertionError as exc:
             fixtures.append({"fixture": case, "passed": False, "reason": str(exc)})
     if not all(record["passed"] for record in fixtures):
@@ -51,7 +60,7 @@ def trials(torch, methods, seed, device):
     for i in range(run.OPS):
         try:
             outputs = [(x[i], residual[i]) for _, x, residual in graphs.values()]
-            replay.append(verify_case(torch, outputs, (pair[0][i], pair[1][i], initial_weight), f"captured_{i}"))
+            replay.append(verify_methods(torch, methods, outputs, (pair[0][i], pair[1][i], initial_weight), f"captured_{i}"))
         except AssertionError as exc:
             replay.append({"fixture": f"captured_{i}", "passed": False, "reason": str(exc)})
     check.ensure(torch.equal(weight.view(torch.int16), initial_weight.view(torch.int16)), "mutated_weight")
@@ -78,7 +87,8 @@ def trials(torch, methods, seed, device):
     elapsed = time.perf_counter() - start
     check.ensure(torch.equal(weight.view(torch.int16), initial_weight.view(torch.int16)), "mutated_weight")
     stats = {name: run.original.latency(raw) for name, raw in intervals.items()}
-    vllm, triton = (stats[name]["median_us"] for name in methods)
+    medians = [stats[name]["median_us"] for name in methods]
+    vllm, triton = medians[0], medians[-1]
     return fixtures, replay, {"ops_per_graph": run.OPS, "round_order": order, "inputs_restored_bitwise": True,
                               "started_utc": started, "wall_seconds": elapsed, "statistics": stats,
                               "triton_over_vllm": triton / vllm, "passes_5pct": triton <= vllm * .95}
