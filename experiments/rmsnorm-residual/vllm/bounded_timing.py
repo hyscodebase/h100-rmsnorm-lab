@@ -32,7 +32,7 @@ def bitwise_case(record):
     return all(result["pairs_differ_bitwise"] == 0 for result in comparisons)
 
 
-def trials(torch, methods, seed, device, rows=run.ROWS, *, measure=True, require_bitwise=False):
+def verify_fixtures(torch, methods, seed, device, rows):
     import check
 
     generator = torch.Generator(device=device).manual_seed(seed)
@@ -49,6 +49,13 @@ def trials(torch, methods, seed, device, rows=run.ROWS, *, measure=True, require
             fixtures.append(verify_methods(torch, methods, outputs, inputs, case))
         except AssertionError as exc:
             fixtures.append({"fixture": case, "passed": False, "reason": str(exc)})
+    return fixtures
+
+
+def trials(torch, methods, seed, device, rows=run.ROWS, *, measure=True, require_bitwise=False):
+    import check
+
+    fixtures = verify_fixtures(torch, methods, seed, device, rows)
     if not all(record["passed"] for record in fixtures):
         return fixtures, [], None
 
