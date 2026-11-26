@@ -47,3 +47,5 @@ python3 experiments/rmsnorm-residual/summarize.py experiments/rmsnorm-residual/r
 ```
 
 In a separate H100 checkpoint at fresh seed 104, two isolated Python processes confirmed the precision-cast configuration was effectively OFF and ON. The default compiled expression passed the random control and first tie probe under both settings. At the denominator-sensitive probe it returned normalized values 0.99609375 and 1.9921875 in both processes. Eager and the Triton candidate returned the required 1.0 and 2.0. The observed mismatch persisted with the setting enabled. This experiment does not locate the compiler pass responsible. [Raw values, BF16 bits and source hashes](precision/checkpoint.json). [Precision diagnostic plan](precision/PLAN.md) · [Probe implementation](precision/probe.py)
+
+The next registered accuracy checkpoint compares a materialized two-stage compiled reference and an explicit round-to-nearest-even single graph at seed 105. Both must pass the numerical gate before timing is eligible. [Materialized residual protocol](materialized/PLAN.md)
