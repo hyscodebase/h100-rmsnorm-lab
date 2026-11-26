@@ -31,7 +31,8 @@
 | 512행에서 DRAM과 L2 트래픽 비교 | 호스트 권한 대기 | 시드 165에서 Nsight Compute의 범위 계측이 `ERR_NVGPUCTRPERM`으로 중단됐다. 두 시도의 원시 오류와 자원 표본을 보존했다. [검증 기록](experiments/rmsnorm-residual/vllm/COPY_FREE_MEMORY_512_QUALIFICATION.md) · [측정 이슈](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/36) |
 | 512행에서 잔차 생성과 정규화 사이의 실행 간격 비교 | 완료 | 같은 64개 커널을 쌍마다 이어 실행하면 덧셈을 먼저 모아서 실행할 때보다 세 시드에서 3.176~3.262% 높았다. 두 출력은 일치했고 5% 기준에는 못 미쳤다. [실측·자원 기록](experiments/rmsnorm-residual/vllm/SPLIT_SCHEDULE_512_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/39) |
 | 512행의 복사 없는 덧셈 타일 크기 최적화 | 완료 | 8,192원소 타일은 세 독립 시드에서 2,048원소보다 0.438~0.453% 빨라 5% 채택 기준에는 못 미쳤다. 융합은 더 빠른 분리 구현보다 19.206~19.230% 높은 처리량을 보였으며 두 BF16 출력이 일치했다. [실측·자원 기록](experiments/rmsnorm-residual/vllm/SPLIT_ADD_TILES_512_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/41) |
-| 512행에서 두 BF16 프로젝션 사이의 융합 이득 | 다음 가설 | 행렬곱 → 잔차 덧셈과 정규화 → 행렬곱에서 8,192원소 분리 구현과 융합을 비교한다. 시드 177에서 세 출력의 비트를 확인하고 시드 178~180 각각에서 체인 처리량 1% 개선을 검증한다. [실험 계획](experiments/rmsnorm-residual/vllm/COPY_FREE_PROJECTION_CHAIN_512.md) · [측정 이슈](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/42) |
+| 512행에서 두 BF16 프로젝션 사이의 융합 이득 | 완료 | 융합으로 체인 처리량이 1.256~1.359% 높아 세 독립 시드에서 1% 기준을 통과했다. 두 프로젝션과 잔차·정규화 출력의 비트가 모두 일치했다. [실측·자원 기록](experiments/rmsnorm-residual/vllm/PROJECTION_CHAIN_512_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/43) |
+| 두 번째 BF16 프로젝션의 너비를 늘렸을 때 융합 이득 | 다음 가설 | 마지막 출력 너비를 4,096에서 12,288로 늘려 두 행렬곱의 합산 연산량을 두 배로 만든다. 시드 181에서 정확도를 검증하고 독립 시드 182~184에서 체인 처리량 1%를 기준으로 비교한다. [실험 계획](experiments/rmsnorm-residual/vllm/COPY_FREE_PROJECTION_TAIL_12288.md) · [측정 이슈](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/44) |
 | RMSNorm 4104 인접 너비 재검증 | 후속 후보 | 4103·4104·4105와 4112에서 새로운 시드를 사용해 권장 설정이 유효한 범위를 검증한다. |
 
 ## 다음 가설을 고르는 규칙
