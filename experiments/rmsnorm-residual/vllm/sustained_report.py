@@ -15,13 +15,15 @@ from transfer_report import CASES, timestamp, verify_revision
 PAIR_FIELDS = protocol.PAIR_FIELDS
 
 
-def verify_graph_records(records, *, rows=protocol.ROWS, fields=PAIR_FIELDS):
+def verify_graph_records(records, *, rows=protocol.ROWS, fields=PAIR_FIELDS, field_widths=None):
     if [item["stream"] for item in records] != list(range(protocol.STREAMS)):
         raise ValueError("Missing independent stream records.")
+    widths = field_widths or {}
+    limits = {field: rows * widths.get(field, protocol.WIDTH) for field in fields}
     for item in records:
-        for field in fields:
+        for field, limit in limits.items():
             counts = item[field]
-            if len(counts) != run.OPS or not all(type(n) is int and 0 <= n <= rows * protocol.WIDTH for n in counts):
+            if len(counts) != run.OPS or not all(type(n) is int and 0 <= n <= limit for n in counts):
                 raise ValueError("Invalid per-pair bit difference counts.")
 
 
@@ -92,7 +94,7 @@ def verify_telemetry(data, blocks, groups=protocol.BACKENDS, *, group_by="backen
 
 
 def verify_measurement(seed, timing, *, backends=protocol.BACKENDS, period_s=protocol.PERIOD_S, rows=protocol.ROWS,
-                       rounds=None, fields=PAIR_FIELDS):
+                       rounds=None, fields=PAIR_FIELDS, field_widths=None):
     order = protocol.balanced_order(seed, backends, rounds=rounds)
     blocks = timing["blocks"]
     sequence = [(round_no, i, backend) for round_no, group in enumerate(order) for i, backend in enumerate(group)]
@@ -106,7 +108,7 @@ def verify_measurement(seed, timing, *, backends=protocol.BACKENDS, period_s=pro
         verify_window(block, period_s, rows=rows)
         if block["id"] != number or not previous <= warmup["start_s"] < warmup["end_s"] <= block["start_s"]:
             raise ValueError("Warm-up and measurement windows overlap.")
-        verify_graph_records(block["post_graph_checks"], rows=rows, fields=fields)
+        verify_graph_records(block["post_graph_checks"], rows=rows, fields=fields, field_widths=field_widths)
         previous = block["end_s"]
     if timing["outputs_match_after_timing"] != all(
         protocol.outputs_match(b["post_graph_checks"], fields=fields) for b in blocks
