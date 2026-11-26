@@ -48,7 +48,7 @@ For a single shape, add `--rows 1 --widths 4096`. To regenerate the figure, inst
 
 Grouping two or four token rows per program passed all 60 numerical checks. At the 1024×8192 target, the fastest grouped variant took 8.63 and 8.59 µs across two runs. The best one-row variant took 8.46 and 8.39 µs. The default remains one row. [Row-tiling report](results/row-tiles/REPORT.md)
 
-At 1024×4096 the two-row variant showed a smaller gain. The next experiment sweeps hidden width around that transition. Its plan can run one unit at a time. Completed units persist across sessions. [Current goal and handoff](GOAL.md) · [Experiment plan](plans/width-sweep.json)
+The five-width follow-up found one qualifying shape. At 1024×4104 the two-row, four-warp kernel reduced latency by 5.42–5.77% against the best one-row configuration in two independent processes. [Width-sweep results and reproduction](results/width-sweep/REPORT.md) · [Experiment PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/2)
 
 ```bash
 python3 lab.py init --plan plans/width-sweep.json
