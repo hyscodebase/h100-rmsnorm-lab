@@ -1,0 +1,20 @@
+{
+  "triton": "3.3.1",
+  "target": "sm90",
+  "num_warps": 16,
+  "required_threads": "512",
+  "shared_loads": 4,
+  "barriers": 1,
+  "offsets": [
+    "1",
+    "2",
+    "4",
+    "8",
+    "16"
+  ],
+  "global_vector_loads": 3,
+  "global_vector_stores": 2,
+  "binary_sha256": "d671cd53f45d64b1470aed4fba7dc83a7d3aa532e04d5847af6a02ca31b7248c",
+  "layout": "#tile = #ttg.blocked<{sizePerThread = [1, 8], threadsPerWarp = [32, 1], warpsPerCTA = [16, 1], order = [1, 0]}>",
+  "saved_ir": false
+}

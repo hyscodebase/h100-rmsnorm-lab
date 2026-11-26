@@ -23,8 +23,10 @@ COMPILED_SOURCES = (run.HERE / "grouped_kernel.py", Path(__file__).resolve(), ru
 SOURCES = (*TIMING_SOURCES, *(str(path.relative_to(run.ROOT)) for path in COMPILED_SOURCES))
 
 
-def launch_metadata(kernel):
+def launch_metadata(kernel, *, ttgir=None):
     ptx = kernel.asm["ptx"]
+    if ttgir is None:
+        ttgir = kernel.asm["ttgir"]
     instructions = re.findall(r"^\s*(?:@!?%[a-z0-9]+\s+)?([a-z][a-z0-9]*(?:\.[a-z0-9_]+)*)\s+[^\n]+;",
                               ptx, flags=re.MULTILINE)
     canonical = "\n".join(line.split("//", 1)[0].rstrip() for line in ptx.splitlines()
@@ -34,7 +36,7 @@ def launch_metadata(kernel):
         "shared_bytes": kernel.metadata.shared,
         "registers_per_thread": kernel.n_regs,
         "spill_count": kernel.n_spills,
-        "ttgir_sha256": hashlib.sha256(kernel.asm["ttgir"].encode()).hexdigest(),
+        "ttgir_sha256": hashlib.sha256(ttgir.encode()).hexdigest(),
         "ptx_sha256": hashlib.sha256(ptx.encode()).hexdigest(),
         "ptx_instruction_sha256": hashlib.sha256(canonical.encode()).hexdigest(),
         "ptx_opcodes": dict(sorted(Counter(instructions).items())),

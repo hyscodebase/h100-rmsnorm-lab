@@ -12,7 +12,7 @@ At width 4,096, the released vLLM version uses a 1,024-thread block below 256 ro
 | 131 | 4.016 | 3.974 | 1.046% | Below threshold |
 | 132 | 4.022 | 3.980 | 1.044% | Below threshold |
 
-The candidate matched all 146,800,640 compared normalized elements across seven checkpoints. All three timing seeds showed a latency reduction of 1.044–1.147%, below the registered threshold. The next experiment keeps the same reduction tree and assigns one eight-element vector per physical lane in a 16-warp block. [Follow-up plan](SMALL_ROWS_16W.md)
+The candidate matched all 146,800,640 compared normalized elements across seven checkpoints. All three timing seeds showed a latency reduction of 1.044–1.147%, below the registered threshold. The next experiment kept the reduction tree and assigned one eight-element vector per physical lane in a 16-warp block. [Follow-up result](SMALL_ROWS_16W_REPORT.md)
 
 Each process verified eight fixtures and 32 disjoint captured pairs. The three timing seeds record 126 original CUDA event intervals from 21 randomized replay rounds per backend. The archive includes a separate set of 23 whole-device sensor samples from the seven attempt windows. The operator result applies to this H100 and the released vLLM 0.10.0 CUDA extension. [Raw numerical checks, CUDA events and device samples](small-rows-results)
 

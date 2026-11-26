@@ -1,0 +1,39 @@
+{
+  "compiler": "Triton 3.3.1",
+  "target": "sm90",
+  "rows": 128,
+  "width": 4096,
+  "attempts": [
+    {
+      "code_revision": "4fb986f8bf860a45d8a49a18733504aaafdf24d0",
+      "kind": "H100 preflight",
+      "outcome": "rejected_by_eight_warp_instruction_hash_check",
+      "numerical_results": false
+    },
+    {
+      "code_revision": "c028c7d9aa6fb433b9f4e17058f8b5cd50db1ba8",
+      "kind": "H100 preflight and compiler cache inspection",
+      "outcome": "rejected_by_candidate_instruction_count_check",
+      "required_threads": 512,
+      "inline_collectives": 4,
+      "used_collective_results": 1,
+      "ptx_butterfly_shuffles": 20,
+      "ptx_shared_vector_loads": 16,
+      "ptx_block_barriers": 4,
+      "numerical_results": false
+    },
+    {
+      "code_revision": "d12c41f20635ac8066493b91ebfb945b34efade7",
+      "kind": "offline SM90 lane-pack compilation",
+      "outcome": "layout_still_duplicates_the_collective",
+      "required_threads": 512,
+      "inline_collectives": 2,
+      "used_collective_results": 1,
+      "ptx_butterfly_shuffles": 10,
+      "ptx_shared_vector_loads": 8,
+      "ptx_block_barriers": 17,
+      "binary_sha256": "d579ddd7de2ff382c97c33038f4e2511347b99461f4ed1355341dc1e58da9e84",
+      "numerical_results": false
+    }
+  ]
+}

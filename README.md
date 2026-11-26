@@ -54,6 +54,8 @@ The same kernel matched output bits at 256, 512 and 2,048 rows. Latency fell by 
 
 At 128 rows, reducing the two groups per lane independently resolved all 238 recorded bit differences. The new kernel matched the vLLM outputs in all seven checkpoints. Its latency improvement of 1.044–1.147% fell below the 5% threshold. [128-row report and replay evidence](experiments/rmsnorm-residual/vllm/SMALL_ROWS_REPORT.md)
 
+A 16-warp implementation then kept the same ordered FP32 sum and matched vLLM bitwise in every checked case. At 128 rows, the three median latencies were 3.364–3.370 µs, about 15.8–16.0% lower than vLLM and 15.0–15.2% lower than the eight-warp kernel. [Three-way results, compiler evidence and chart](experiments/rmsnorm-residual/vllm/SMALL_ROWS_16W_REPORT.md)
+
 ## Sustained H100 compute
 
 In 20 runs of a BF16 prefill projection, the H100 completed 1.50 million matrix products over 902.18 measured seconds. The 16,384-row shape reached a median of 682.19 TFLOP/s. Gaps in device sampling limited confirmation of sustained activity to eight runs. [Full results, throughput and resource charts](experiments/prefill-gemm/REPORT.md) · [Workload and protocol](experiments/prefill-gemm/README.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/3)

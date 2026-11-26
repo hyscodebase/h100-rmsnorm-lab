@@ -25,11 +25,15 @@ def verify_methods(torch, methods, outputs, inputs, case):
             "passed": all(result["passed"] for result in comparisons.values())}
 
 
+def bitwise_case(record):
+    if not record["passed"]:
+        return False
+    comparisons = record["comparisons"].values() if "comparisons" in record else (record,)
+    return all(result["pairs_differ_bitwise"] == 0 for result in comparisons)
+
+
 def trials(torch, methods, seed, device, rows=run.ROWS, *, measure=True, require_bitwise=False):
     import check
-
-    if require_bitwise and len(methods) != 2:
-        raise ValueError("The exact timing gate requires one candidate.")
 
     generator = torch.Generator(device=device).manual_seed(seed)
     fixtures = []
@@ -69,7 +73,7 @@ def trials(torch, methods, seed, device, rows=run.ROWS, *, measure=True, require
     check.ensure(torch.equal(weight.view(torch.int16), initial_weight.view(torch.int16)), "mutated_weight")
     if not measure or not all(record["passed"] for record in replay):
         return fixtures, replay, None
-    if require_bitwise and any(record["pairs_differ_bitwise"] for record in fixtures + replay):
+    if require_bitwise and not all(bitwise_case(record) for record in fixtures + replay):
         return fixtures, replay, None
 
     first, last = (torch.cuda.Event(enable_timing=True) for _ in range(2))

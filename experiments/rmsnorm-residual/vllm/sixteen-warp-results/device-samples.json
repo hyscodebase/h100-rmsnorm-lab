@@ -1,0 +1,408 @@
+{
+  "source": "nvidia-smi at one-second nominal cadence",
+  "scope": "GPU-wide samples from the residual observer within each recorded attempt window",
+  "observations": [
+    {
+      "rows": 128,
+      "seed": 133,
+      "attempt_id": "85f9f1bf00124fc9a64dec6d899ade28",
+      "samples": [
+        {
+          "timestamp_utc": "2026-11-26T09:27:57.143000+00:00",
+          "util_pct": 3.0,
+          "used_mib": 1.0,
+          "total_mib": 81559.0,
+          "power_w": 120.45,
+          "temperature_c": 29.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:27:58.150000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 23.0,
+          "total_mib": 81559.0,
+          "power_w": 120.11,
+          "temperature_c": 29.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:27:59.152000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 1.0,
+          "total_mib": 81559.0,
+          "power_w": 120.0,
+          "temperature_c": 29.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        }
+      ]
+    },
+    {
+      "rows": 128,
+      "seed": 133,
+      "attempt_id": "86c2b28809e243c19beec72ee3314e9e",
+      "samples": [
+        {
+          "timestamp_utc": "2026-11-26T09:40:24.369000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 1.0,
+          "total_mib": 81559.0,
+          "power_w": 117.46,
+          "temperature_c": 29.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:40:25.383000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 1.0,
+          "total_mib": 81559.0,
+          "power_w": 120.99,
+          "temperature_c": 29.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:40:26.479000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 1.0,
+          "total_mib": 81559.0,
+          "power_w": 121.0,
+          "temperature_c": 29.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:40:27.700000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 1.0,
+          "total_mib": 81559.0,
+          "power_w": 71.69,
+          "temperature_c": 27.0,
+          "sm_clock_mhz": 345.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:40:34.308000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 1.0,
+          "total_mib": 81559.0,
+          "power_w": 71.67,
+          "temperature_c": 27.0,
+          "sm_clock_mhz": 345.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:40:37.804000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 1.0,
+          "total_mib": 81559.0,
+          "power_w": 71.55,
+          "temperature_c": 27.0,
+          "sm_clock_mhz": 345.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:40:40.411000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 4.0,
+          "total_mib": 81559.0,
+          "power_w": 71.62,
+          "temperature_c": 27.0,
+          "sm_clock_mhz": 345.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:40:41.422000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 4.0,
+          "total_mib": 81559.0,
+          "power_w": 71.54,
+          "temperature_c": 27.0,
+          "sm_clock_mhz": 345.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:40:42.811000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 23.0,
+          "total_mib": 81559.0,
+          "power_w": 74.47,
+          "temperature_c": 27.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:40:43.817000+00:00",
+          "util_pct": 4.0,
+          "used_mib": 954.0,
+          "total_mib": 81559.0,
+          "power_w": 117.28,
+          "temperature_c": 28.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:40:44.818000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 1.0,
+          "total_mib": 81559.0,
+          "power_w": 119.16,
+          "temperature_c": 28.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        }
+      ]
+    },
+    {
+      "rows": 128,
+      "seed": 133,
+      "attempt_id": "9cf2d61acbd14aa8aef605e883e9d086",
+      "samples": [
+        {
+          "timestamp_utc": "2026-11-26T09:28:53.483000+00:00",
+          "util_pct": 2.0,
+          "used_mib": 1.0,
+          "total_mib": 81559.0,
+          "power_w": 121.11,
+          "temperature_c": 28.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:28:54.499000+00:00",
+          "util_pct": 2.0,
+          "used_mib": 618.0,
+          "total_mib": 81559.0,
+          "power_w": 119.88,
+          "temperature_c": 28.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:28:55.499000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 1.0,
+          "total_mib": 81559.0,
+          "power_w": 119.66,
+          "temperature_c": 28.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        }
+      ]
+    },
+    {
+      "rows": 128,
+      "seed": 134,
+      "attempt_id": "5c653fa8ada040dd9fe0b5ea9e0ad879",
+      "samples": [
+        {
+          "timestamp_utc": "2026-11-26T09:41:14.476000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 1.0,
+          "total_mib": 81559.0,
+          "power_w": 120.95,
+          "temperature_c": 28.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:41:20.237000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 4.0,
+          "total_mib": 81559.0,
+          "power_w": 120.89,
+          "temperature_c": 28.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:41:21.551000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 4.0,
+          "total_mib": 81559.0,
+          "power_w": 120.89,
+          "temperature_c": 28.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:41:22.765000+00:00",
+          "util_pct": 6.0,
+          "used_mib": 846.0,
+          "total_mib": 81559.0,
+          "power_w": 118.99,
+          "temperature_c": 28.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:41:23.766000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 1.0,
+          "total_mib": 81559.0,
+          "power_w": 120.9,
+          "temperature_c": 28.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        }
+      ]
+    },
+    {
+      "rows": 128,
+      "seed": 135,
+      "attempt_id": "b7641483cafb42b9b14df6f5920aa416",
+      "samples": [
+        {
+          "timestamp_utc": "2026-11-26T09:41:47.950000+00:00",
+          "util_pct": 3.0,
+          "used_mib": 1.0,
+          "total_mib": 81559.0,
+          "power_w": 121.07,
+          "temperature_c": 28.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:41:48.966000+00:00",
+          "util_pct": 2.0,
+          "used_mib": 618.0,
+          "total_mib": 81559.0,
+          "power_w": 119.67,
+          "temperature_c": 28.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:41:49.967000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 1.0,
+          "total_mib": 81559.0,
+          "power_w": 120.93,
+          "temperature_c": 28.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        }
+      ]
+    },
+    {
+      "rows": 128,
+      "seed": 136,
+      "attempt_id": "9a2390429aab4e2898c26b23ce2ccdca",
+      "samples": [
+        {
+          "timestamp_utc": "2026-11-26T09:42:37.642000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 1.0,
+          "total_mib": 81559.0,
+          "power_w": 121.22,
+          "temperature_c": 28.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:42:39.022000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 1.0,
+          "total_mib": 81559.0,
+          "power_w": 121.07,
+          "temperature_c": 28.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:42:40.235000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 4.0,
+          "total_mib": 81559.0,
+          "power_w": 120.64,
+          "temperature_c": 28.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:42:41.235000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 638.0,
+          "total_mib": 81559.0,
+          "power_w": 118.82,
+          "temperature_c": 28.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        },
+        {
+          "timestamp_utc": "2026-11-26T09:42:42.236000+00:00",
+          "util_pct": 0.0,
+          "used_mib": 1.0,
+          "total_mib": 81559.0,
+          "power_w": 121.5,
+          "temperature_c": 28.0,
+          "sm_clock_mhz": 1980.0,
+          "memory_clock_mhz": 2619.0,
+          "power_limit_w": 700.0,
+          "memory_busy_pct": 0.0
+        }
+      ]
+    }
+  ]
+}
