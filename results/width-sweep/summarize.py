@@ -3,6 +3,7 @@ import hashlib
 import json
 import re
 import statistics
+import subprocess
 import sys
 from decimal import Decimal
 from itertools import product
@@ -17,6 +18,21 @@ BACKENDS = {*ONE_ROW, *CANDIDATES, "torch_eager", "torch_compile"}
 def require(condition, message):
     if not condition:
         raise ValueError(message)
+
+
+def verify_revision(revision, sources):
+    require(isinstance(revision, str) and re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", revision),
+            f"Expected a full, clean Git commit ID, got {revision!r}.")
+    git = ["git", "--no-replace-objects", "-C", str(HERE.parents[1])]
+    kind = subprocess.run([*git, "cat-file", "-t", revision], capture_output=True)
+    require(kind.returncode == 0,
+            f"Missing Git commit {revision}. Run in a Git checkout with the experiment history. "
+            "For a shallow clone, run 'git fetch --unshallow origin' and retry.")
+    require(kind.stdout.strip() == b"commit", f"Recorded revision {revision} is not a commit.")
+    for path, digest in sources.items():
+        blob = subprocess.run([*git, "show", f"{revision}:{path}"], capture_output=True)
+        require(blob.returncode == 0, f"Cannot read {path} from Git commit {revision}.")
+        require(hashlib.sha256(blob.stdout).hexdigest() == digest, f"Source hash mismatch for {path} at {revision}.")
 
 
 def load_archive(plan, raw):
@@ -42,6 +58,8 @@ def load_archive(plan, raw):
 
     check = read_task("check")
     checks = check["checks"]
+    check_settings = {"seed": 42, "eps": Decimal("1e-6"), "rtol": Decimal("0.005"), "atol": Decimal("1e-6")}
+    require(all(check.get(k) == v for k, v in check_settings.items()), "Correctness seed or tolerances differ.")
     require(check["passed"] is True and check["dtype"] == "bfloat16" and check["reference"] == "fp32"
             and len(checks) == 60 and all(c["passed"] is True and Decimal(c["max_abs_error"]).is_finite()
                                         and c["max_abs_error"] >= 0 for c in checks), "Correctness check failed.")
@@ -52,16 +70,24 @@ def load_archive(plan, raw):
 
     medians = {}
     environment = None
+    verified_revisions = set()
     for name, (seed, width) in cells.items():
         result = read_task(name)
+        revision = result.get("code_revision")
+        if revision not in verified_revisions:
+            verify_revision(revision, sources)
+            verified_revisions.add(revision)
         env = result["environment"]
         require("H100" in env["gpu"] and env["compute_capability"] == [9, 0], f"Expected H100 evidence in {name}.")
         require(environment in (None, env), f"Inconsistent GPU environment in {name}.")
         environment = env
         method = result["method"]
         expected_method = {"seed": seed, "row_tiles": plan["row_tiles"], "rounds": plan["rounds"],
-                           "ops_per_graph": plan["ops"], "dtype": "bfloat16", "backends_shuffled_each_round": True}
-        require(all(method[k] == v for k, v in expected_method.items()), f"Method mismatch in {name}.")
+                           "ops_per_graph": plan["ops"], "dtype": "bfloat16", "backends_shuffled_each_round": True,
+                           "eps": Decimal("1e-6"), "cache": "same input addresses; no explicit L2 flush",
+                           "timing": "CUDA events around one graph replay, microseconds per operation",
+                           "reference": "FP32 RMSNorm, rtol=0.016, atol=1e-5"}
+        require(all(method.get(k) == v for k, v in expected_method.items()), f"Method mismatch in {name}.")
         entries = result["results"]
         require(len(entries) == len(BACKENDS) and {r["backend"] for r in entries} == BACKENDS,
                 f"Backend mismatch in {name}.")
