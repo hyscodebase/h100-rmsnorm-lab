@@ -20,20 +20,23 @@ REFERENCE, EIGHT_WARPS, CANDIDATE = small.shuffle.REFERENCE, small.CANDIDATE, "t
 BACKENDS = (REFERENCE, EIGHT_WARPS, CANDIDATE)
 ANCHOR = run.HERE / "small-rows-results/s130.json"
 SOURCES = (*small.SOURCES, *(str(path.relative_to(run.ROOT)) for path in (
-    ANCHOR, Path(__file__).resolve(), run.HERE / "sixteen_warp_kernel.py", run.HERE / "SMALL_ROWS_16W.md",
+    ANCHOR, Path(__file__).resolve(), run.HERE / "sixteen_warp_kernel.py",
+    run.HERE / "sixteen_warp.ttgir.in", run.HERE / "SMALL_ROWS_16W.md",
 )))
 
 
 def compile_sixteen(torch, implementation):
     x = torch.zeros((ROWS, run.WIDTH), dtype=torch.bfloat16, device="cuda:0")
     compiled = implementation(x, x.clone(), torch.ones_like(x[0]))
-    code = grouped.launch_metadata(compiled)
+    code = grouped.launch_metadata(compiled, ttgir=compiled.src.src)
     ptx = compiled.asm["ptx"]
     offsets = [int(value) for value in re.findall(r"shfl\.sync\.bfly\.b32\s+\w+,\s*\w+,\s*(\d+),", ptx)]
     loads = code["ptx_opcodes"].get("ld.shared.v4.f32", 0)
-    if (code["num_warps"], offsets, loads, code["ptx_opcodes"].get("bar.sync")) != (16, [1, 2, 4, 8, 16], 4, 1):
+    threads = re.search(r"\.reqntid\s+(\d+)", ptx)
+    if (not threads or int(threads.group(1)) != 512 or code["num_warps"] != 16
+            or offsets != [1, 2, 4, 8, 16] or loads != 4 or code["ptx_opcodes"].get("bar.sync") != 1):
         raise ValueError("The compiler emitted an unexpected 16-warp reduction.")
-    code.update(warp_shuffle_offsets=offsets, emitted_shared_loads=loads, inline_cta_shared_bytes=64,
+    code.update(required_threads=512, warp_shuffle_offsets=offsets, emitted_shared_loads=loads, inline_cta_shared_bytes=64,
                 binary_sha256=hashlib.sha256(compiled.asm["cubin"]).hexdigest(),
                 reduction_instructions=[line.strip() for line in ptx.splitlines()
                                         if re.match(r"\s*(shfl\.sync\.bfly\.|ld\.shared\.|bar\.sync\s+|@leader st\.shared\.)", line)])
