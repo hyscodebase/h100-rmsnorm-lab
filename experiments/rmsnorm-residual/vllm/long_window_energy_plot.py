@@ -34,7 +34,9 @@ def draw(records, output):
             padding.plot(padding_ns / 1_000_000, y, "o", color=color, ms=4.6)
         if (comparison := summary[seed]["comparison"]) is None:
             accepted = len(summary[seed]["eligible_pair_indices"])
-            saving.text(.18, row, f"{accepted}/2 eligible pairs", transform=saving.get_yaxis_transform(),
+            saved = summary[seed]["saved_periods"]
+            label = f"{saved} period saved" if saved == 1 else f"{saved} periods saved"
+            saving.text(.14, row, f"{label}  ·  {accepted}/2 eligible pairs", transform=saving.get_yaxis_transform(),
                         va="center", color=gray, fontsize=9)
             continue
         for wattage, color, shift in ((700, green, -.12), (1000, blue, .12)):

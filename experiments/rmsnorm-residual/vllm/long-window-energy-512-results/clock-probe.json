@@ -1,24 +1,24 @@
 {
   "method": "Remote wall time returned between the two local wall timestamps",
-  "collected_utc": "2026-11-26T14:47:01.554802+00:00",
+  "collected_utc": "2026-11-26T14:51:55.908745+00:00",
   "probes": [
     {
-      "local_sent_unix_ns": 1795704421225478000,
-      "remote_unix_ns": 1795704423620403222,
-      "local_received_unix_ns": 1795704421473092000,
-      "local_elapsed_ns": 247601042
+      "local_sent_unix_ns": 1795704715616857000,
+      "remote_unix_ns": 1795704717979303284,
+      "local_received_unix_ns": 1795704715840847000,
+      "local_elapsed_ns": 223979583
     },
     {
-      "local_sent_unix_ns": 1795704421473101000,
-      "remote_unix_ns": 1795704423651930316,
-      "local_received_unix_ns": 1795704421510963000,
-      "local_elapsed_ns": 37861125
+      "local_sent_unix_ns": 1795704715840861000,
+      "remote_unix_ns": 1795704718011551726,
+      "local_received_unix_ns": 1795704715872680000,
+      "local_elapsed_ns": 31819791
     },
     {
-      "local_sent_unix_ns": 1795704421510968000,
-      "remote_unix_ns": 1795704423702780981,
-      "local_received_unix_ns": 1795704421554764000,
-      "local_elapsed_ns": 43795333
+      "local_sent_unix_ns": 1795704715872689000,
+      "remote_unix_ns": 1795704718046618611,
+      "local_received_unix_ns": 1795704715908700000,
+      "local_elapsed_ns": 36011500
     }
   ]
 }

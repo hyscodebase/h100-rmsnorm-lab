@@ -1,6 +1,6 @@
 # H100 energy sensitivity over longer fixed-work periods
 
-Seed 206 completed both backend orders with bitwise agreement in both BF16 outputs. The gross energy saving for four warps was **1.180%**. The 1,000 W padding scenario put it between **1.174% and 2.341%**, with the lower endpoint below the registered 1.5% criterion. Seeds 207 and 208 are the remaining independent repeats. [Machine-readable results](long-window-energy-512-results/summary.json)
+Seed 206 completed both backend orders with bitwise agreement in both BF16 outputs. The gross energy saving for four warps was **1.180%**. The 1,000 W padding scenario put it between **1.174% and 2.341%**, with the lower endpoint below the registered 1.5% criterion. The opening period of seed 207 is saved. Its eight-warp counterpart is the next work unit. [Machine-readable results](long-window-energy-512-results/summary.json)
 
 ## Work and evidence
 
@@ -16,13 +16,13 @@ Seed 205 reproduced both BF16 outputs and passed the eight numerical fixtures. I
 | ---: | :---: | ---: | ---: | ---: | ---: |
 | 206 | 2 / 2 | 1.180% | 1.175–1.993% | 1.174–2.341% | −0.045% |
 
-The closing NVML call in seed 206's final four-warp period took 2.273 seconds. The combined padding bound was 2.274 seconds, with the opening side contributing 0.037 ms. The qualified period kept the full counter delta and the sensitivity calculation accounted for the padding. This interval spans the 1.5% target. [Longest-boundary checkpoint](long-window-energy-512-results/s206-p3.json)
+The closing NVML call in seed 206's final four-warp period took 2.273 seconds. The combined padding bound was 2.274 seconds, with the opening side contributing 0.037 ms. The qualified period kept the full counter delta and the sensitivity calculation accounted for the padding. This interval spans the 1.5% target. The opening period of seed 207 qualified with a 5.030 ms padding bound. [Longest-boundary checkpoint](long-window-energy-512-results/s206-p3.json) · [Seed 207 opening period](long-window-energy-512-results/s207-p0.json)
 
 ![Measured sample padding and energy sensitivity intervals](long-window-energy-512.png)
 
 ## H100 resource observations
 
-Seed 206 completed 68,719,476,736 normalized rows over **750.986 seconds** of fixed work, with 12.100 seconds of recorded warm-up. Four post-query GPU activity readings were 100%, 100%, 100% and 0%. The 0% reading followed the longest closing query. The post-query peak power was 525.629 W, the maximum temperature was 46 °C and peak device memory usage was 8,431.25 MiB. The device reported a 700 W enforced power limit. These readings come from snapshots outside the measured periods. [Raw device snapshots](long-window-energy-512-results)
+The five archived periods completed 85,899,345,920 normalized rows over **938.779 seconds** of fixed work, with 15.126 seconds of recorded warm-up. Four of the five post-query activity readings were 100%. The 0% reading followed the longest closing query. The post-query peak power was 525.629 W, the maximum temperature was 46 °C and peak device memory usage was 8,431.25 MiB. The device reported a 700 W enforced power limit. These readings come from snapshots outside the measured periods. [Raw device snapshots](long-window-energy-512-results)
 
 ## Checkpoint and recovery
 

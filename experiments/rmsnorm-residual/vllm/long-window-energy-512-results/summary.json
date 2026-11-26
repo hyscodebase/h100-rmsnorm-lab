@@ -57,9 +57,9 @@
       }
     },
     "207": {
-      "saved_periods": 0,
+      "saved_periods": 1,
       "eligible_pair_indices": [],
-      "numerically_exact": null,
+      "numerically_exact": true,
       "comparison": null
     },
     "208": {
@@ -70,68 +70,68 @@
     }
   },
   "resources": {
-    "measured_periods": 4,
-    "fixed_work_seconds": 750.9863978666253,
-    "warmup_seconds": 12.100178456865251,
-    "normalized_rows": 68719476736,
+    "measured_periods": 5,
+    "fixed_work_seconds": 938.7791713983752,
+    "warmup_seconds": 15.12620105361566,
+    "normalized_rows": 85899345920,
     "field_status_counts": {
-      "qualified": 4
+      "qualified": 5
     },
     "auxiliary_scope": "Serialized NVML snapshots before warm-up and after the closing energy query",
     "auxiliary": {
       "auxiliary_before": {
-        "snapshots": 4,
+        "snapshots": 5,
         "metrics": {
           "gpu_busy_pct": {
-            "count": 4,
+            "count": 5,
             "min": 0,
-            "median": 1.0,
+            "median": 2,
             "max": 2
           },
           "memory_busy_pct": {
-            "count": 4,
+            "count": 5,
             "min": 0,
-            "median": 0.0,
+            "median": 0,
             "max": 0
           },
           "vram_used_mib": {
-            "count": 4,
+            "count": 5,
             "min": 8431.25,
             "median": 8431.25,
             "max": 8431.25
           },
           "vram_total_mib": {
-            "count": 4,
+            "count": 5,
             "min": 81559.0,
             "median": 81559.0,
             "max": 81559.0
           },
           "power_w": {
-            "count": 4,
+            "count": 5,
             "min": 116.902,
-            "median": 119.219,
+            "median": 120.919,
             "max": 123.478
           },
           "power_limit_w": {
-            "count": 4,
+            "count": 5,
             "min": 700.0,
             "median": 700.0,
             "max": 700.0
           },
           "temperature_c": {
-            "count": 4,
+            "count": 5,
             "min": 28.0,
             "median": 29.0,
             "max": 31.0
           },
           "sm_clock_mhz": {
-            "count": 4,
+            "count": 5,
             "min": 1980.0,
             "median": 1980.0,
             "max": 1980.0
           },
           "memory_clock_mhz": {
-            "count": 4,
+            "count": 5,
             "min": 2619.0,
             "median": 2619.0,
             "max": 2619.0
@@ -139,58 +139,58 @@
         }
       },
       "auxiliary_after": {
-        "snapshots": 4,
+        "snapshots": 5,
         "metrics": {
           "gpu_busy_pct": {
-            "count": 4,
+            "count": 5,
             "min": 0,
-            "median": 100.0,
+            "median": 100,
             "max": 100
           },
           "memory_busy_pct": {
-            "count": 4,
+            "count": 5,
             "min": 0,
-            "median": 100.0,
+            "median": 100,
             "max": 100
           },
           "vram_used_mib": {
-            "count": 4,
+            "count": 5,
             "min": 8431.25,
             "median": 8431.25,
             "max": 8431.25
           },
           "vram_total_mib": {
-            "count": 4,
+            "count": 5,
             "min": 81559.0,
             "median": 81559.0,
             "max": 81559.0
           },
           "power_w": {
-            "count": 4,
+            "count": 5,
             "min": 125.241,
-            "median": 521.3845,
+            "median": 519.061,
             "max": 525.629
           },
           "power_limit_w": {
-            "count": 4,
+            "count": 5,
             "min": 700.0,
             "median": 700.0,
             "max": 700.0
           },
           "temperature_c": {
-            "count": 4,
+            "count": 5,
             "min": 39.0,
-            "median": 45.5,
+            "median": 45.0,
             "max": 46.0
           },
           "sm_clock_mhz": {
-            "count": 4,
+            "count": 5,
             "min": 1980.0,
             "median": 1980.0,
             "max": 1980.0
           },
           "memory_clock_mhz": {
-            "count": 4,
+            "count": 5,
             "min": 2619.0,
             "median": 2619.0,
             "max": 2619.0
