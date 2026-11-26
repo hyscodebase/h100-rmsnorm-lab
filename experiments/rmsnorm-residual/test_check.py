@@ -42,6 +42,24 @@ class ResidualChecks(unittest.TestCase):
         self.assertFalse(evidence["passed"])
         self.assertEqual(ties["reason"], "rounding_sensitive_bits")
 
+    def test_rejects_unrounded_denominator_with_correct_numerator(self):
+        def wrong_denominator(x, residual, weight):
+            raw = x.float() + residual.float()
+            updated = raw.to(torch.bfloat16)
+            inverse = torch.rsqrt(raw.square().mean(-1, keepdim=True) + check.EPS)
+            return updated, (updated.float() * inverse * weight.float()).to(torch.bfloat16)
+
+        evidence = check.validate_backend(wrong_denominator, 1, 101, "cpu")
+        self.assertEqual(evidence["failure"], {"fixture": "bf16_denominator_tie", "reason": "rounding_sensitive_bits"})
+        self.assertTrue(all(f["passed"] for f in evidence["fixtures"] if f["fixture"] != "bf16_denominator_tie"))
+
+        inputs = check.make_inputs("bf16_denominator_tie", 1, None, "cpu")
+        expected = check.oracle(*inputs)
+        wrong = wrong_denominator(*inputs)
+        check.verify_outputs(wrong, expected, inputs)  # Tolerance alone accepts every element.
+        self.assertEqual(expected[1][0, :2].bfloat16().tolist(), [1.0, 2.0])
+        self.assertEqual(wrong[1][0, :2].tolist(), [0.99609375, 1.9921875])
+
     def test_requires_both_outputs_and_rejects_input_mutation(self):
         def overwrites_input(x, residual, weight):
             outputs = check.eager_reference(x, residual, weight)

@@ -36,7 +36,7 @@ def result_for(plan, sources, seed=101, rows=1024, reject_candidate=False):
         if name == residual.CANDIDATE and reject_candidate:
             failure = {"fixture": "bf16_ties", "reason": "rounding_sensitive_bits"}
             checks.update(passed=False, failure=failure)
-            checks["fixtures"][-1] = {**failure, "passed": False}
+            checks["fixtures"][residual.FIXTURES.index(failure["fixture"])] = {**failure, "passed": False}
             results[name] = {"status": "excluded", "excluded_at": "numerical_fixtures", "correctness": checks}
         elif name == residual.COMPILED[-1]:
             results[name] = {"status": "excluded", "excluded_at": "compile",
@@ -89,7 +89,7 @@ class ResidualCheckpoint(unittest.TestCase):
     def test_cross_checks_evidence_and_reported_winner(self):
         original = result_for(self.plan, self.sources)
         residual.validate_result(original, (101, 1024), self.plan)
-        for key in ("backends", "round_order", "summary", "replay", "fixtures", "comparison", "wall"):
+        for key in ("backends", "round_order", "summary", "replay", "fixtures", "missing_denominator", "comparison", "wall"):
             with self.subTest(key=key):
                 bad = copy.deepcopy(original)
                 candidate = bad["backends"][residual.CANDIDATE]
@@ -103,6 +103,8 @@ class ResidualCheckpoint(unittest.TestCase):
                     candidate["replay_checks"].pop()
                 elif key == "fixtures":
                     candidate["correctness"]["fixtures"][0]["updated_sum"] = float("nan")
+                elif key == "missing_denominator":
+                    candidate["correctness"]["fixtures"].pop()
                 elif key == "comparison":
                     bad["comparison"]["fastest_correct_compiled"] = residual.EAGER
                 else:

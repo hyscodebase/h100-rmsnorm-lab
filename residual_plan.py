@@ -17,7 +17,7 @@ EAGER, CANDIDATE = "eager_explicit", "triton_1row_4warps"
 COMPILED = tuple(f"compiled_{spelling}_{mode}" for spelling, mode in
                  product(("explicit", "native"), ("default", "max-autotune-no-cudagraphs")))
 BACKENDS = (EAGER, CANDIDATE, *COMPILED)
-FIXTURES = ("random", "zero_rows", "cancellation", "tiny", "bf16_ties")
+FIXTURES = ("random", "zero_rows", "cancellation", "tiny", "bf16_ties", "bf16_denominator_tie")
 FIXED = {"rows": [1024, 1, 16, 128], "width": 4096, "seeds": [101, 102, 103], "ops": 32, "rounds": 21}
 
 

@@ -6,7 +6,9 @@ WIDTH = 4096
 EPS = 1e-6
 RTOL = 0.005
 ATOL = 1e-6
-FIXTURES = ("random", "zero_rows", "cancellation", "tiny", "bf16_ties")
+# Correctly rounded outputs at columns 0 and 3, away from BF16 midpoints.
+ROUNDING_TARGETS = {"bf16_ties": (0.9921875, 1.765625), "bf16_denominator_tie": (1.0, 2.0)}
+FIXTURES = ("random", "zero_rows", "cancellation", "tiny", *ROUNDING_TARGETS)
 
 
 def eager_reference(x, residual, weight):
@@ -29,17 +31,20 @@ def oracle(x, residual, weight):
     return updated, (z / denominator) * weight.double()
 
 
-def rounding_fixture(rows, device):
-    # With these exact BF16 inputs, columns 0 and 3 distinguish the two reduction inputs.
+def rounding_fixture(rows, device, *, uniform_residual=False):
     x = torch.ones(rows, WIDTH, dtype=torch.bfloat16, device=device)
+    if uniform_residual:
+        # 1 + 1/256 ties to 1. A rounded numerator divided by the raw RMS
+        # gives 0.99609375 at weight 1; power-of-two weights preserve that relative error.
+        return x, torch.full_like(x, 1/256), x.new_tensor([1, 2]).repeat(WIDTH // 2)
     terms = torch.tensor([1/256, 3/256, 1/256, 3/256], dtype=torch.bfloat16, device=device)
     weights = torch.tensor([1, 1.25, 1.5, 1.75], dtype=torch.bfloat16, device=device)
     return x, terms.repeat(rows, WIDTH // 4), weights.repeat(WIDTH // 4)
 
 
 def make_inputs(name, rows, generator, device):
-    if name == "bf16_ties":
-        return rounding_fixture(rows, device)
+    if name in ROUNDING_TARGETS:
+        return rounding_fixture(rows, device, uniform_residual=name == "bf16_denominator_tie")
     def normal(*shape):
         return torch.randn(shape, dtype=torch.float32, generator=generator, device=device)
 
@@ -92,12 +97,10 @@ def verify_outputs(outputs, expected, inputs=()):
             "max_abs_error": diff.max().item()}
 
 
-def check_rounding_entries(normalized, reference):
-    # These correctly rounded outputs are at least 0.22 BF16 ULP from the nearest midpoint.
-    # Using the unrounded sum instead gives 0.99609375 and 1.7578125 at the same columns.
+def check_rounding_entries(normalized, reference, targets):
     rows = [0, 0, -1, -1]
     cols = [0, 3, WIDTH - 4, WIDTH - 1]
-    target = normalized.new_tensor([0.9921875, 1.765625, 0.9921875, 1.765625])
+    target = normalized.new_tensor(targets * 2)
     ensure(torch.equal(reference[rows, cols].to(torch.bfloat16), target), "rounding_oracle_drift")
     ensure(torch.equal(normalized[rows, cols].view(torch.int16), target.view(torch.int16)), "rounding_sensitive_bits")
 
@@ -117,8 +120,8 @@ def validate_backend(fn, rows, seed, device):
             ensure(all(torch.equal(x.view(torch.int16), copy.view(torch.int16)) for x, copy in zip(inputs, originals)),
                    "mutated_inputs")
             diagnostics = verify_outputs(outputs, expected, inputs)
-            if name == "bf16_ties":
-                check_rounding_entries(outputs[1], expected[1])
+            if name in ROUNDING_TARGETS:
+                check_rounding_entries(outputs[1], expected[1], ROUNDING_TARGETS[name])
             fixtures.append({"fixture": name, "passed": True, **diagnostics})
         except AssertionError as exc:
             fixtures.append({"fixture": name, "passed": False, "reason": str(exc)})
