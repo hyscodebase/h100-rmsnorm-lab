@@ -17,7 +17,8 @@
 | vLLM과 동일한 제자리 연산 비교 | 정확도 단계 완료 | 공식 vLLM 커널과 Triton이 상쇄 입력 419만 개를 비트 단위로 동일하게 출력했다. FP64 사전 기준은 BF16 반올림 경계의 10개 원소에서 두 구현 모두 충족하지 못해 속도 측정을 보류했다. [재현 데이터와 다음 검증](experiments/rmsnorm-residual/vllm/REPORT.md) |
 | vLLM의 FP32 누산과 BF16 경계 검증 | 완료 | 새 시드 113은 통과했다. 114–116에서는 허용 범위 끝의 인접 BF16 값에서 구현 간 비트가 갈려 각 시드의 판정 기준을 통과하지 못했다. 시드 114의 탈락 47개를 재현했다. [원시 결과](experiments/rmsnorm-residual/vllm/REPORT.md) |
 | vLLM에 맞춘 FP32 합산 순서 | 완료 | 이전 47개 차이를 해소했다. 다섯 시드에서 비교한 약 5.70억 개의 결과가 비트 단위로 일치했다. 세 타이밍 시드에서 지연시간은 vLLM보다 7.37~7.82% 높았다. [보고서](experiments/rmsnorm-residual/vllm/GROUPED_REPORT.md) |
-| 동일한 합산 순서의 워프 셔플 구현 | 다음 가설 | 생성된 128개 공유 메모리 읽기 명령을 줄인 뒤 정확도와 성능을 재검증한다. [계획](experiments/rmsnorm-residual/vllm/SHUFFLE_PLAN.md) |
+| 동일한 합산 순서의 워프 셔플 구현 | 완료 | 비트 일치를 유지하면서 공유 메모리 읽기 명령이 128개에서 2개로 줄었다. vLLM 대비 세 시드에서 지연시간이 7.43~7.58% 줄어 5% 기준을 통과했다. [결과와 그래프](experiments/rmsnorm-residual/vllm/SHUFFLE_REPORT.md) |
+| 256행 경계와 다른 크기에서 재검증 | 다음 가설 | 128·256·512·2048행에서 vLLM의 실행 방식이 바뀌어도 같은 정확도와 5% 지연시간 이득을 확보하는지 확인한다. [사전등록](experiments/rmsnorm-residual/vllm/ROW_TRANSFER.md) |
 | RMSNorm 4104 인접 너비 재검증 | 후속 후보 | 4103·4104·4105와 4112에서 새로운 시드를 사용해 권장 설정이 유효한 범위를 검증한다. |
 
 ## 다음 가설을 고르는 규칙
