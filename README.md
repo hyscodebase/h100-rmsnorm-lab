@@ -44,6 +44,10 @@ For a single shape, add `--rows 1 --widths 4096`. To regenerate the figure, inst
 - All implementations use the same seeded synthetic inputs and return a new output. Validation, JIT compilation and graph capture finish before timing. Each round shuffles backend order. CUDA events bracket the replay, and the raw JSON records the median, quartiles and per-round averages. [Benchmark harness](benchmark.py)
 - Inputs reuse the same addresses without an explicit cache flush. GPU clocks were unmanaged. These measurements cover this operator and graph-replay workload. Model serving latency, cold-cache performance and FlashInfer performance remain open questions.
 
+## Sustained H100 compute
+
+A companion workload measures a larger part of LLM prefill: a BF16 dense projection with up to 16,384 token rows. Each checkpoint measures at least 45 seconds of matrix products and captures in-window GPU utilization, power and memory. [Workload and protocol](experiments/prefill-gemm/README.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/3)
+
 ## Row tiling and the continuing experiment
 
 Grouping two or four token rows per program passed all 60 numerical checks. At the 1024×8192 target, the fastest grouped variant took 8.63 and 8.59 µs across two runs. The best one-row variant took 8.46 and 8.39 µs. The default remains one row. [Row-tiling report](results/row-tiles/REPORT.md)

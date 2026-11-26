@@ -16,6 +16,8 @@ from datetime import datetime, timezone
 from itertools import product
 from pathlib import Path
 
+import gemm_plan
+
 ROOT = Path(__file__).resolve().parent
 SOURCES = ("kernels.py", "check.py", "benchmark.py")
 
@@ -76,14 +78,19 @@ def validate_plan(plan):
     require(isinstance(plan, dict), "The plan must be a JSON object.")
     for key in ("id", "hypothesis"):
         require(isinstance(plan.get(key), str) and plan[key].strip(), f"{key} must be nonempty text.")
-    for key in ("rows", "widths", "seeds", "row_tiles"):
+    kind = plan.get("kind", "rmsnorm")
+    require(kind in ("rmsnorm", "prefill_gemm"), f"Unknown experiment kind: {kind}")
+    for key in (("seeds",) if kind == "prefill_gemm" else ("seeds", "rows", "widths", "row_tiles")):
         values = plan.get(key)
         require(isinstance(values, list) and values and all(type(v) is int for v in values),
                 f"{key} must contain integers.")
         require(len(set(values)) == len(values), f"{key} must contain distinct values.")
+    require(min(plan["seeds"]) >= 0 and max(plan["seeds"]) < 2**64, "Seeds must fit unsigned 64 bits.")
+    if kind == "prefill_gemm":
+        gemm_plan.validate_plan(plan)
+        return
     require(min(plan["rows"]) > 0 and min(plan["widths"]) > 0 and max(plan["widths"]) <= 16384,
             "rows must be positive and widths must be in [1, 16384].")
-    require(min(plan["seeds"]) >= 0 and max(plan["seeds"]) < 2**64, "Seeds must fit unsigned 64 bits.")
     require(1 in plan["row_tiles"] and set(plan["row_tiles"]) <= {1, 2, 4}, "row_tiles must include 1 and use 1, 2 or 4.")
     for key, minimum in (("ops", 1), ("rounds", 2)):
         require(type(plan.get(key)) is int and plan[key] >= minimum, f"{key} must be at least {minimum}.")
@@ -91,12 +98,16 @@ def validate_plan(plan):
 
 
 def manifest(plan):
-    hashes = {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in SOURCES}
+    sources = (gemm_plan.SOURCE,) if plan.get("kind") == "prefill_gemm" else SOURCES
+    hashes = {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in sources}
     payload = json.dumps([plan, hashes], sort_keys=True, allow_nan=False).encode()
     return {"version": 1, "experiment_hash": hashlib.sha256(payload).hexdigest(), "sources": hashes}
 
 
 def tasks(plan):
+    if plan.get("kind") == "prefill_gemm":
+        yield from gemm_plan.tasks(plan)
+        return
     yield "check", None
     for seed, rows, width in product(plan["seeds"], plan["rows"], plan["widths"]):
         yield f"s{seed}-r{rows}-w{width}", (seed, rows, width)
@@ -147,13 +158,22 @@ def validate_result(result, shape, plan):
                     "A numerical check failed or returned a nonfinite error.")
         return None
 
-    seed, rows, width = shape
     env = result["environment"]
-    for key in ("gpu", "cuda_runtime", "torch", "triton"):
+    gemm = plan.get("kind") == "prefill_gemm"
+    required_versions = ("driver", "python") if gemm else ("triton",)
+    for key in ("gpu", "cuda_runtime", "torch", *required_versions):
         require(isinstance(env.get(key), str) and env[key].strip(), f"Missing GPU environment field {key}.")
     cap = env.get("compute_capability")
     require(isinstance(cap, list) and len(cap) == 2 and all(type(v) is int and v >= 0 for v in cap)
             and cap[0] >= 8, "Expected a CUDA compute capability supporting native BF16.")
+    environment = {key: env.get(key) for key in ("gpu", "compute_capability", "cuda_runtime", "driver", "torch", "triton", "python")}
+    if gemm:
+        for key in ("total_memory_bytes", "sm_count"):
+            require(type(env.get(key)) is int and env[key] > 0, f"Missing GPU hardware field {key}.")
+            environment[key] = env[key]
+        gemm_plan.validate_result(result, shape, plan)
+        return environment
+    seed, rows, width = shape
     expected = {"seed": seed, "rounds": plan["rounds"], "ops_per_graph": plan["ops"],
                 "row_tiles": plan["row_tiles"], "dtype": "bfloat16"}
     require(all(result["method"].get(k) == v for k, v in expected.items()), "Benchmark method differs from plan.")
@@ -173,7 +193,7 @@ def validate_result(result, shape, plan):
         q1, median, q3 = statistics.quantiles(samples, n=4, method="inclusive")
         for key, expected_value in (("q1_us", q1), ("median_us", median), ("q3_us", q3)):
             require(math.isclose(entry[key], expected_value, rel_tol=1e-10), f"{key} differs from raw samples.")
-    return {key: env.get(key) for key in ("gpu", "compute_capability", "cuda_runtime", "driver", "torch", "triton", "python")}
+    return environment
 
 
 def progress(state, plan, experiment_hash):
@@ -195,6 +215,9 @@ def progress(state, plan, experiment_hash):
 
 
 def command(runner, shape, plan):
+    if plan.get("kind") == "prefill_gemm":
+        cmd = [str(runner), "gemm"] if runner else [sys.executable, str(ROOT / gemm_plan.SOURCE)]
+        return cmd + gemm_plan.arguments(shape, plan)
     mode = "bench" if shape else "check"
     cmd = [str(runner), mode] if runner else [sys.executable, str(ROOT / ("benchmark.py" if shape else "check.py"))]
     if shape:
@@ -260,7 +283,7 @@ def main():
             sub.add_argument("--plan", type=Path, required=True)
         if name in ("step", "run"):
             sub.add_argument("--runner", type=Path,
-                             help="Executable accepting check or bench. Defaults to local Git setting rmsnorm.runner, then local Python.")
+                             help="Executable accepting check, bench or gemm. Defaults to local Git setting rmsnorm.runner, then local Python.")
         if name == "run":
             sub.add_argument("--max-steps", type=int, help="Stop after this many newly completed tasks.")
     args = parser.parse_args()
@@ -284,7 +307,7 @@ def main():
         print("Resumed. Use step or run to execute pending tasks.")
         return
     pending, _ = progress(state, plan, experiment_hash)
-    total = 1 + len(plan["seeds"]) * len(plan["rows"]) * len(plan["widths"])
+    total = sum(1 for _ in tasks(plan))
     paused = (state / "paused").exists()
     if worker_active(state):
         phase = "pausing" if paused else "running"
