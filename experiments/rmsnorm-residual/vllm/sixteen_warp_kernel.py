@@ -92,16 +92,45 @@ def render_kernel(*, out_of_place=False):
     return name, ir
 
 
-@lru_cache(maxsize=2)
-def compile_kernel(*, out_of_place=False):
+def render_normalization():
+    fused_name, ir = render_kernel(out_of_place=True)
+    name = "sixteen_warp_rmsnorm_from_residual"
+    module = ir[:ir.index(f"  tt.func public @{fused_name}(")]
+    row_layout = ir[ir.index("    %width ="):ir.index("    %x_base =")]
+    normalization = ir[ir.index("    // Sum adjacent squared pairs"):]
+    signature = f"""  tt.func public @{name}(
+      %residual: !tt.ptr<bf16> {{tt.divisibility = 16 : i32}},
+      %weight: !tt.ptr<bf16> {{tt.divisibility = 16 : i32}},
+      %x_out: !tt.ptr<bf16> {{tt.divisibility = 16 : i32}}) {{
+"""
+    load_residual = """    %r_base = tt.splat %residual : !tt.ptr<bf16> -> tensor<512x8x!tt.ptr<bf16>, #tile>
+    %r_addr = tt.addptr %r_base, %positions : tensor<512x8x!tt.ptr<bf16>, #tile>, tensor<512x8xi32, #tile>
+    %rounded = tt.load %r_addr : tensor<512x8x!tt.ptr<bf16>, #tile>
+    %x_out_base = tt.splat %x_out : !tt.ptr<bf16> -> tensor<512x8x!tt.ptr<bf16>, #tile>
+    %x_out_addr = tt.addptr %x_out_base, %positions : tensor<512x8x!tt.ptr<bf16>, #tile>, tensor<512x8xi32, #tile>
+
+"""
+    return name, module + signature + row_layout + load_residual + normalization
+
+
+def compile_ttgir(name, ir):
     import triton
     from triton.backends.compiler import GPUTarget
 
-    name, ir = render_kernel(out_of_place=out_of_place)
     with TemporaryDirectory(prefix="rmsnorm-ttgir-") as directory:
         path = Path(directory) / f"{name}.ttgir"
         path.write_text(ir)
         return triton.compile(str(path), target=GPUTarget("cuda", 90, 32), options={"enable_fp_fusion": False})
+
+
+@lru_cache(maxsize=2)
+def compile_kernel(*, out_of_place=False):
+    return compile_ttgir(*render_kernel(out_of_place=out_of_place))
+
+
+@lru_cache(maxsize=1)
+def compile_residual_normalization():
+    return compile_ttgir(*render_normalization())
 
 
 def fused_sixteen_warps(x, residual, weight):
@@ -110,8 +139,7 @@ def fused_sixteen_warps(x, residual, weight):
     return compiled
 
 
-def fused_out_of_place(x, residual, weight, x_out, residual_out):
-    """Write contiguous BF16 outputs to disjoint buffers on an SM90 GPU."""
+def validate_output_buffers(x, residual, weight, x_out, residual_out):
     import torch
 
     sources, outputs = (x, residual, weight), (x_out, residual_out)
@@ -133,6 +161,13 @@ def fused_out_of_place(x, residual, weight, x_out, residual_out):
         occupied.append((start, end))
     if torch.cuda.get_device_capability(x.device) != (9, 0):
         raise ValueError("The explicit kernel targets SM90.")
+
+
+def fused_out_of_place(x, residual, weight, x_out, residual_out):
+    """Write contiguous BF16 outputs to disjoint buffers on an SM90 GPU."""
+    import torch
+
+    validate_output_buffers(x, residual, weight, x_out, residual_out)
     with torch.cuda.device(x.device):
         compiled = compile_kernel(out_of_place=True)
         compiled[(x.shape[0], 1, 1)](x, residual, weight, x_out, residual_out)
