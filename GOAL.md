@@ -37,7 +37,8 @@
 | 기존 합산 순서를 유지한 4개 물리 워프 | 완료 | 두 BF16 출력이 일치했다. 세 독립 시드에서 처리량은 0.032~0.090% 낮았고, 관측 전력 중앙값은 10.07~11.56W 낮았다. [실측·컴파일·자원 기록](experiments/rmsnorm-residual/vllm/FOUR_PHYSICAL_WARPS_512_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/49) |
 | 같은 수의 행을 처리할 때 4워프와 8워프의 에너지 비교 | 완료 | 누적 카운터 구간의 행당 에너지는 0.844~2.183% 줄었다. 두 시드에서만 1.5%를 넘었고 조회 경계 여유가 최대 2.274초였다. [측정·민감도 분석](experiments/rmsnorm-residual/vllm/FOUR_WARP_ENERGY_512_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/51) |
 | 에너지 카운터 경계를 50ms 이내로 제한 | 완료 | 두 완전한 시드에서 행당 에너지가 2.237~2.244% 줄었다. 시드 199는 조회 지연으로 한 쌍만 채택됐다. [실측·지연 분석](experiments/rmsnorm-residual/vllm/ENERGY_COUNTER_BOUNDARIES_512_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/53) |
-| NVML 표본 시각으로 에너지 작업 구간 검증 | 다음 가설 | 시드 201에서 에너지 필드·표본 시각의 지원 여부와 정확도를 확인한다. 표본 경계를 검증하면 시드 202~204에 같은 작업량과 에너지·처리량 기준을 적용한다. [실험 계획](experiments/rmsnorm-residual/vllm/COPY_FREE_TIMESTAMPED_NVML_ENERGY_512.md) · [측정 이슈](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/54) |
+| NVML 표본 시각으로 에너지 작업 구간 검증 | 완료 | 시작 조회 지연이 있었던 세 구간의 표본 경계가 8ms 이내였다. 두 순서가 모두 유효한 시드에서 행당 에너지는 1.360~1.779% 줄었다. 한 시드만 1.5% 기준을 넘었고, 시드 202는 한 쌍만 채택됐다. [실측과 자원 기록](experiments/rmsnorm-residual/vllm/TIMESTAMPED_NVML_ENERGY_512_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/55) |
+| 고정 작업량을 8배 늘려 에너지 경계 오차 평가 | 다음 가설 | 시드 205에서 두 출력과 에너지 표본 구간을 확인한다. 통과하면 시드 206~208을 구간별로 저장하며 측정하고, 경계 평균 전력 가정 700W와 1,000W에서 에너지 절감 하한을 산출한다. [실험 계획](experiments/rmsnorm-residual/vllm/COPY_FREE_LONG_WINDOW_ENERGY_512.md) · [측정 이슈](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/56) |
 | RMSNorm 4104 인접 너비 재검증 | 후속 후보 | 4103·4104·4105와 4112에서 새로운 시드를 사용해 권장 설정이 유효한 범위를 검증한다. |
 
 ## 다음 가설을 고르는 규칙

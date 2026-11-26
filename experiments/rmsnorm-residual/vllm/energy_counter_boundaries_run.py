@@ -41,19 +41,19 @@ def pair_eligible(blocks):
     )
 
 
-def collect_pair(torch, verified, sensor, origin, order, order_index):
+def collect_pair(torch, verified, sensor, origin, order, order_index, *, measure_window, qualifies_pair):
     base = energy.base
     blocks = []
     for backend in order[order_index]:
         graphs = verified.graphs[backend]
         before = auxiliary_snapshot(sensor, origin)
         warmup = base.collect_window(verified.runner, graphs, energy.WARMUP_S, origin, rows=ROWS)
-        work = energy.fixed_window(verified.runner, graphs, sensor, origin, energy.MEASURED_BURSTS)
+        work = measure_window(verified.runner, graphs, sensor, origin, energy.MEASURED_BURSTS)
         after = auxiliary_snapshot(sensor, origin)
         work.update(backend=backend, warmup=warmup, auxiliary_before=before, auxiliary_after=after,
                     post_graph_checks=base.compare(torch, verified.works, verified.reference))
         blocks.append(work)
-    return {"order_index": order_index, "eligible": pair_eligible(blocks), "blocks": blocks}
+    return {"order_index": order_index, "eligible": qualifies_pair(blocks), "blocks": blocks}
 
 
 def accepted_summary(pairs):
@@ -65,15 +65,20 @@ def accepted_summary(pairs):
             "monotonic_counter": energy.monotonic_counter(blocks)}
 
 
-def measure(torch, seed, verified, sensor, _cuda_uuid):
+def measure(torch, seed, verified, sensor, _cuda_uuid, *, measure_window=energy.fixed_window,
+            qualifies_pair=pair_eligible):
     base = energy.base
     utc = run.original.utc_now()
     origin = time.perf_counter()
     order = base.balanced_order(seed, BACKENDS)
-    pairs = [collect_pair(torch, verified, sensor, origin, order, index) for index in range(len(order))]
+    def collect(index):
+        return collect_pair(torch, verified, sensor, origin, order, index,
+                            measure_window=measure_window, qualifies_pair=qualifies_pair)
+
+    pairs = [collect(index) for index in range(len(order))]
     rejected = next((pair["order_index"] for pair in pairs if not pair["eligible"]), None)
     if rejected is not None:
-        pairs.append(collect_pair(torch, verified, sensor, origin, order, rejected))
+        pairs.append(collect(rejected))
     return {"origin_utc": utc, "order": order, "pairs": pairs, "auxiliary_scope": AUXILIARY_SCOPE,
             **accepted_summary(pairs),
             "inputs_unchanged_after_timing": base.input_fingerprints(verified.works, verified.weight)
