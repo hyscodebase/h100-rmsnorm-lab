@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "experiment_hash": "bb58f5b87dd1d1e0de4da7a89e01220cf7200f0b9325738de07317dda2ed16ee",
+  "sources": {
+    "experiments/rmsnorm-residual/materialized/campaign.py": "64df446ae8e0f3e213410fa2da2f47b1636203f0f9c78418e615ea4a241fbea5",
+    "experiments/rmsnorm-residual/materialized/PLAN.md": "a5a6b7c4fd4f57ae515146f0d9859768fa43f0f4e63965629974aff372de98a3",
+    "experiments/rmsnorm-residual/materialized/baselines.py": "3ebd22743282fca9cda511dea806603b4f83aae50598825cf420669f24f9355b",
+    "experiments/rmsnorm-residual/benchmark.py": "a2be59cd09dcbf15ed279df860e8220944a7bddeedc2e7f1c74cf655c5da6f05",
+    "experiments/rmsnorm-residual/check.py": "06fc94defcc7b4223a1675db0f5eadff52215236681922c9890a1b5112d5a7df",
+    "experiments/rmsnorm-residual/kernel.py": "158240beb4c7523973dae2511a8a044ab5b012bf508e284f5e039ecf60f9afd0",
+    "materialized_plan.py": "9128465798bfcff1a218b4edbd85ae0edfeff8104801d14b244c135d8741b1f0",
+    "residual_plan.py": "a13f0edf426d354017063356f5b1bc5280d3eb467e69718ef38ee6201b5044c5"
+  }
+}
