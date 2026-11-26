@@ -19,6 +19,7 @@ from itertools import product
 from pathlib import Path
 
 import gemm_plan
+import materialized_plan
 import residual_plan
 
 ROOT = Path(__file__).resolve().parent
@@ -82,7 +83,10 @@ def validate_plan(plan):
     for key in ("id", "hypothesis"):
         require(isinstance(plan.get(key), str) and plan[key].strip(), f"{key} must be nonempty text.")
     kind = plan.get("kind", "rmsnorm")
-    require(kind in ("rmsnorm", "prefill_gemm", "residual_rmsnorm"), f"Unknown experiment kind: {kind}")
+    require(kind in ("rmsnorm", "prefill_gemm", "residual_rmsnorm", materialized_plan.KIND), f"Unknown experiment kind: {kind}")
+    if kind == materialized_plan.KIND:
+        materialized_plan.validate_plan(plan)
+        return
     if kind == "residual_rmsnorm":
         residual_plan.validate_plan(plan)
         return
@@ -104,13 +108,20 @@ def validate_plan(plan):
 
 
 def manifest(plan):
-    sources = {"prefill_gemm": (gemm_plan.SOURCE,), "residual_rmsnorm": residual_plan.SOURCES}.get(plan.get("kind"), SOURCES)
+    sources = {
+        "prefill_gemm": (gemm_plan.SOURCE,),
+        "residual_rmsnorm": residual_plan.SOURCES,
+        materialized_plan.KIND: materialized_plan.SOURCES,
+    }.get(plan.get("kind"), SOURCES)
     hashes = {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in sources}
     payload = json.dumps([plan, hashes], sort_keys=True, allow_nan=False).encode()
     return {"version": 1, "experiment_hash": hashlib.sha256(payload).hexdigest(), "sources": hashes}
 
 
 def tasks(plan):
+    if plan.get("kind") == materialized_plan.KIND:
+        yield from materialized_plan.tasks(plan)
+        return
     if plan.get("kind") == "residual_rmsnorm":
         yield from residual_plan.tasks(plan)
         return
@@ -153,6 +164,11 @@ def initialize(state, plan_file):
 
 def validate_result(result, shape, plan, sources=None):
     require(isinstance(result, dict), "Expected a JSON object from the runner.")
+    if plan.get("kind") == materialized_plan.KIND:
+        source_hashes = sources if sources is not None else manifest(plan)["sources"]
+        environment = materialized_plan.validate_result(result, shape, source_hashes)
+        residual_plan.verify_revision(ROOT, result["code_revision"], tuple(sorted(source_hashes.items())))
+        return environment
     if shape is None:
         checks = result.get("checks")
         require(result.get("passed") is True and result.get("reference") == "fp32"
@@ -214,10 +230,25 @@ def validate_result(result, shape, plan, sources=None):
     return environment
 
 
+def materialized_preflight(state, plan):
+    task_id, _ = next(materialized_plan.tasks(plan))
+    path = state / "tasks" / f"{task_id}.json"
+    return read_json(path)["result"] if path.is_file() else None
+
+
+def check_materialized_followup(preflight, result):
+    if result["phase"] == "timing":
+        require(preflight and preflight["gate_passed"] and preflight["code_revision"] == result["code_revision"]
+                and preflight["verified_backends"] == result["selected_backends"],
+                "Timing selection or source revision differs from the verified preflight.")
+
+
 def progress(state, plan, experiment_hash):
     pending = []
     environment = None
-    sources = read_json(state / "manifest.json")["sources"] if plan.get("kind") == "residual_rmsnorm" else None
+    kind = plan.get("kind")
+    sources = read_json(state / "manifest.json")["sources"] if kind in ("residual_rmsnorm", materialized_plan.KIND) else None
+    preflight = None
     for task_id, shape in tasks(plan):
         path = state / "tasks" / f"{task_id}.json"
         if not path.exists():
@@ -226,7 +257,12 @@ def progress(state, plan, experiment_hash):
         artifact = read_json(path)
         require(artifact.get("experiment_hash") == experiment_hash and artifact.get("task_id") == task_id,
                 f"Checkpoint identity mismatch in {path}.")
-        backend = validate_result(artifact["result"], shape, plan, sources)
+        result = artifact["result"]
+        backend = validate_result(result, shape, plan, sources)
+        if kind == materialized_plan.KIND:
+            check_materialized_followup(preflight, result)
+            if result["phase"] == "preflight":
+                preflight = result
         if backend:
             require(environment in (None, backend), "Checkpoints have inconsistent GPU environments.")
             environment = backend
@@ -234,6 +270,9 @@ def progress(state, plan, experiment_hash):
 
 
 def command(runner, shape, plan):
+    if plan.get("kind") == materialized_plan.KIND:
+        cmd = [str(runner), "materialized"] if runner else [sys.executable, str(ROOT / materialized_plan.SOURCE)]
+        return cmd + materialized_plan.arguments(shape)
     if plan.get("kind") == "residual_rmsnorm":
         cmd = [str(runner), "residual"] if runner else [sys.executable, str(ROOT / residual_plan.SOURCE)]
         return cmd + residual_plan.arguments(shape)
@@ -324,14 +363,27 @@ def execute(state, runner, max_steps):
         plan, experiment_hash = load_state(state)
         sources = read_json(state / "manifest.json")["sources"]
         pending, environment = progress(state, plan, experiment_hash)
+        materialized = plan.get("kind") == materialized_plan.KIND
         for task_id, shape in pending[:max_steps]:
             if (state / "paused").exists():
                 print("Paused. Resume to start the next task.")
                 return
+            preflight = materialized_preflight(state, plan) if materialized else None
+            if preflight is not None and not preflight["gate_passed"]:
+                print("Preflight failed the numerical gate. No timing tasks are eligible.")
+                return
+            if materialized:
+                attempt_count = len(list((state / "attempts").glob(f"{task_id}-*.json")))
+                require(attempt_count < 3, "Three attempts already recorded for this task. Review the attempt journal.")
+                revision = preflight["code_revision"] if preflight else local_source_revision(ROOT, sources)
+                residual_plan.verify_revision(ROOT, revision, tuple(sorted(sources.items())))
+                eligible = ",".join(preflight["verified_backends"]) if preflight else ""
             print(f"Running {task_id} ...", flush=True)
             with record_attempt(state, task_id, experiment_hash, shape, plan):
                 env = None
-                if runner is None and plan.get("kind") in ("prefill_gemm", "residual_rmsnorm"):
+                if materialized:
+                    env = {**os.environ, "BENCH_REVISION": revision, "MATERIALIZED_PREFLIGHT_BACKENDS": eligible}
+                elif runner is None and plan.get("kind") in ("prefill_gemm", "residual_rmsnorm"):
                     revision = local_source_revision(ROOT, sources)
                     env = {**os.environ, "BENCH_REVISION": revision}
                     if revision == "unversioned" or revision.endswith("-modified"):
@@ -346,6 +398,9 @@ def execute(state, runner, max_steps):
                 )
                 result = json.loads(output.stdout)
                 backend = validate_result(result, shape, plan, sources)
+                if materialized:
+                    require(result["code_revision"] == revision, "The recorded source revision differs from the requested revision.")
+                    check_materialized_followup(preflight, result)
                 if backend:
                     require(environment in (None, backend), "GPU environment changed. Initialize a new state directory.")
                     environment = backend
@@ -370,7 +425,7 @@ def main():
             sub.add_argument("--plan", type=Path, required=True)
         if name in ("step", "run"):
             sub.add_argument("--runner", type=Path,
-                             help="Executable accepting check, bench, gemm or residual. Defaults to local Git setting rmsnorm.runner, then local Python.")
+                             help="Executable accepting check, bench, gemm, residual or materialized. Defaults to local Git setting rmsnorm.runner, then local Python.")
         if name == "run":
             sub.add_argument("--max-steps", type=int, help="Stop after this many newly completed tasks.")
     args = parser.parse_args()
@@ -398,14 +453,18 @@ def main():
     paused = (state / "paused").exists()
     if worker_active(state):
         phase = "pausing" if paused else "running"
+    elif paused and pending:
+        phase = "paused"
+    elif plan.get("kind") == materialized_plan.KIND and (first := materialized_preflight(state, plan)) and not first["gate_passed"]:
+        phase = "preflight gate failed"
     elif pending:
-        phase = "paused" if paused else "ready"
+        phase = "ready"
     else:
         phase = "complete"
     print(f"{plan['id']} — {phase}. {total - len(pending)}/{total} tasks completed.")
     if phase == "pausing":
         print("A worker is finishing its current task. Wait for paused or complete before disconnecting.")
-    if pending:
+    if pending and phase != "preflight gate failed":
         print(f"Next task: {pending[0][0]}")
 
 

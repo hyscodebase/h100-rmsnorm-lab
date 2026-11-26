@@ -14,10 +14,22 @@ Use the existing H100 environment, contiguous BF16 inputs, width 4,096, 1,024 to
 
 Freeze source hashes, versions and the plan. Run preflight with fresh seed **105**. Apply all six original fixtures, including both exact tie probes, against the independent FP64 oracle. Check the updated residual bit for bit, normalized values at `rtol=0.005, atol=1e-6`, both output sums, disjoint output storage and unchanged inputs. Also test the bit implementation on positive and negative values immediately below, at and above BF16 rounding midpoints of both parities. Check the two signed zeros by their BF16 encodings, including an operator row with two negative-zero addends. [Fixtures and output checks](../check.py)
 
-Proceed only if eager, Triton, at least one materialized mode and at least one compiled single-graph mode pass. Record unsupported bit operations, compilation errors and numerical exclusions. If this gate fails, publish the diagnostic and stop before timing.
+Proceed only if eager, Triton, at least one materialized mode and at least one explicit bit-rounding single-graph mode pass. Record unsupported bit operations, compilation errors and numerical exclusions. If this gate fails, publish the diagnostic and stop before timing.
 
 ## Timing and decision
 
 Run fresh seeds **106, 107 and 108** in separate checkpoints. Recheck every preflight survivor on each seed. Retain all 32 output pairs per graph, poison and verify every pair in an untimed replay, then record 21 shuffled rounds of 32 calls with the existing CUDA-event protocol. Exclude compilation and verification. Publish all raw timings and exclusions. [Timing protocol](../benchmark.py)
 
 Recommend the frozen candidate at this shape only if the numerical gate holds in each seed and its median latency is at least 5% below the **fastest correct compiled comparator in that seed**, using unrounded timings. A gain against the split path alone cannot qualify when a faster correct single graph is present. Report this two-output operator's latency on the tested H100 and software stack. Serving throughput requires a separate measurement.
+
+## Replay from checkpoints
+
+From a Git checkout with the registered H100 stack, initialize the plan and run one unit. The first step checks accuracy only. Later steps use the variants verified in the first result and the same source commit.
+
+```bash
+python3 lab.py init --state-dir .lab/materialized --plan plans/materialized-rmsnorm.json
+python3 lab.py step --state-dir .lab/materialized
+python3 lab.py status --state-dir .lab/materialized
+```
+
+Use `lab.py pause --state-dir .lab/materialized` to stop at a boundary and `lab.py resume --state-dir .lab/materialized` to continue. A checkpoint saved with an ineligible accuracy result remains valid evidence.
