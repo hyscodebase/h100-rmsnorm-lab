@@ -58,7 +58,10 @@ def numerical(torch, methods, seed, witness):
 
 def compile_evidence(torch, implementation, rows=run.ROWS):
     a = torch.zeros((rows, run.WIDTH), dtype=torch.bfloat16, device="cuda:0")
-    kernel = implementation(a, a.clone(), torch.ones_like(a[0]))
+    return warp_metadata(implementation(a, a.clone(), torch.ones_like(a[0])))
+
+
+def warp_metadata(kernel):
     data = grouped.launch_metadata(kernel)
     ptx = kernel.asm["ptx"]
     shared_loads = sum(n for name, n in data["ptx_opcodes"].items() if name.startswith("ld.shared."))

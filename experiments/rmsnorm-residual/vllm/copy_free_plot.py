@@ -24,7 +24,7 @@ def draw(data, output, *, workload=protocol.DEFAULT):
             continue
         handles.append(Line2D([], [], ls="", marker=marker, color=color))
         labels.append(f"Seed {seed}")
-        for row, backend in enumerate(protocol.BACKENDS):
+        for row, backend in enumerate(workload.backends):
             center = timing["median_rows_per_second"][backend] / 1e6
             rates = [b["normalized_rows"] / b["wall_seconds"] / 1e6
                      for b in timing["blocks"] if b["backend"] == backend]

@@ -16,14 +16,18 @@ def residual_add(x, residual, residual_out, block: tl.constexpr):
     tl.store(residual_out + offsets, rounded)
 
 
+def launch_residual_add(x, residual, residual_out):
+    return residual_add[(x.numel() // ADD_BLOCK,)](
+        x, residual, residual_out, ADD_BLOCK, num_warps=ADD_WARPS, enable_fp_fusion=False,
+    )
+
+
 def split_out_of_place(x, residual, weight, x_out, residual_out):
     import torch
 
     validate_output_buffers(x, residual, weight, x_out, residual_out)
     with torch.cuda.device(x.device):
-        add = residual_add[(x.numel() // ADD_BLOCK,)](
-            x, residual, residual_out, ADD_BLOCK, num_warps=ADD_WARPS, enable_fp_fusion=False,
-        )
+        add = launch_residual_add(x, residual, residual_out)
         norm = compile_residual_normalization()
         norm[(x.shape[0], 1, 1)](residual_out, weight, x_out)
     return add, norm
