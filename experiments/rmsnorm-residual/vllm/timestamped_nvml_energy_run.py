@@ -74,7 +74,7 @@ def field_reading(sensor, origin):
             "before_clock": before, "after_clock": after}
 
 
-def sample_bounds(work, before, after):
+def sample_bounds(work, before, after, *, max_padding_ns=MAX_PADDING_NS):
     result = dict.fromkeys(("clock_offset_ns", "opening_sample_ns", "closing_sample_ns", "padding_upper_ns"))
     if before["status"] != 0 or after["status"] != 0:
         return {**result, "status": "field_unavailable"}
@@ -101,14 +101,14 @@ def sample_bounds(work, before, after):
     if not opening[1] <= start <= end <= closing[0]:
         return {**result, "status": "sample_does_not_bracket_work"}
     result["padding_upper_ns"] = start - opening[0] + closing[1] - end
-    if result["padding_upper_ns"] > MAX_PADDING_NS:
+    if max_padding_ns is not None and result["padding_upper_ns"] > max_padding_ns:
         return {**result, "status": "padding_exceeds_limit"}
     if energy.energy_delta(before, after) is None:
         return {**result, "status": "counter_not_advancing"}
     return {**result, "status": "qualified"}
 
 
-def fixed_window(runner, graphs, sensor, origin, bursts, *, before=None):
+def fixed_window(runner, graphs, sensor, origin, bursts, *, before=None, max_padding_ns=MAX_PADDING_NS):
     if before is None:
         before = field_reading(sensor, origin)
     work = energy.base.collect_window(runner, graphs, 0.0, origin, rows=ROWS, fixed_bursts=bursts, retain_clock=True)
@@ -116,14 +116,15 @@ def fixed_window(runner, graphs, sensor, origin, bursts, *, before=None):
     delta = energy.energy_delta(before, after)
     work.update(energy_start=before, energy_end=after, energy_mj=delta,
                 joules_per_billion_rows=None if delta is None else delta * 1_000_000 / work["normalized_rows"],
-                sample_bounds=sample_bounds(work, before, after))
+                sample_bounds=sample_bounds(work, before, after, max_padding_ns=max_padding_ns))
     return work
 
 
-def probe_counter(sensor, runner, graphs):
+def probe_counter(sensor, runner, graphs, *, max_padding_ns=MAX_PADDING_NS):
     utc, origin = run.original.utc_now(), time.perf_counter()
     first = field_reading(sensor, origin)
-    window = (fixed_window(runner, graphs, sensor, origin, energy.PROBE_BURSTS, before=first)
+    window = (fixed_window(runner, graphs, sensor, origin, energy.PROBE_BURSTS, before=first,
+                           max_padding_ns=max_padding_ns)
               if first["status"] == 0 else None)
     return {"observer_origin_utc": utc, "monotonic_origin_s": origin, "first": first, "window": window}
 

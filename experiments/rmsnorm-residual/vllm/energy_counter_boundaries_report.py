@@ -33,6 +33,19 @@ def verify_snapshot(sample):
             raise ValueError("An auxiliary measurement is invalid.")
 
 
+def verify_period(block, bursts, verify_energy_window):
+    warmup = block["warmup"]
+    before, after = block["auxiliary_before"], block["auxiliary_after"]
+    verify_window(warmup, protocol.energy.WARMUP_S, rows=protocol.ROWS)
+    verify_energy_window(block, bursts)
+    verify_snapshot(before)
+    verify_snapshot(after)
+    if (not before["query_end_s"] <= warmup["start_s"] < warmup["end_s"] <= block["energy_start"]["query_start_s"]
+            or block["energy_end"]["query_end_s"] > after["query_start_s"]):
+        raise ValueError("An auxiliary query or warm-up overlaps a measured counter interval.")
+    verify_graph_records(block["post_graph_checks"], rows=protocol.ROWS)
+
+
 def verify_timing(seed, timing, *, verify_energy_window=previous.verify_energy_window,
                   qualifies_pair=protocol.pair_eligible):
     energy = protocol.energy
@@ -47,18 +60,11 @@ def verify_timing(seed, timing, *, verify_energy_window=previous.verify_energy_w
         if index not in (0, 1) or [b["backend"] for b in blocks] != order[index]:
             raise ValueError("An attempted pair differs from its assigned order.")
         for block in blocks:
-            warmup = block["warmup"]
             before, after = block["auxiliary_before"], block["auxiliary_after"]
-            verify_window(warmup, energy.WARMUP_S, rows=protocol.ROWS)
-            verify_energy_window(block, energy.MEASURED_BURSTS)
-            verify_snapshot(before)
-            verify_snapshot(after)
-            if (not previous_query_end <= before["query_start_s"] <= before["query_end_s"] <= warmup["start_s"]
-                    < warmup["end_s"] <= block["energy_start"]["query_start_s"]
-                    or block["energy_end"]["query_end_s"] > after["query_start_s"]):
-                raise ValueError("An auxiliary query or warm-up overlaps a measured counter interval.")
+            verify_period(block, energy.MEASURED_BURSTS, verify_energy_window)
+            if previous_query_end > before["query_start_s"]:
+                raise ValueError("Two attempted periods overlap.")
             previous_query_end = after["query_end_s"]
-            verify_graph_records(block["post_graph_checks"], rows=protocol.ROWS)
         if pair["eligible"] != qualifies_pair(blocks):
             raise ValueError("The recorded pair eligibility differs from the counter boundaries.")
     intended = [0, 1]

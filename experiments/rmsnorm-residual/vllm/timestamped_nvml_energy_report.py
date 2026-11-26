@@ -53,7 +53,7 @@ def verify_reading(reading, origin):
         raise ValueError("An unsuccessful field query must leave the counter value missing.")
 
 
-def verify_energy_window(window, bursts):
+def verify_energy_window(window, bursts, *, max_padding_ns=protocol.MAX_PADDING_NS):
     verify_window(window, 0.0, rows=protocol.ROWS, fixed_bursts=bursts)
     origin, before, after = window["monotonic_origin_s"], window["energy_start"], window["energy_end"]
     verify_reading(before, origin)
@@ -68,11 +68,11 @@ def verify_energy_window(window, bursts):
     rate = None if delta is None else delta * 1_000_000 / window["normalized_rows"]
     if (window["energy_mj"], window["joules_per_billion_rows"]) != (delta, rate):
         raise ValueError("Reported energy differs from the raw field values and completed work.")
-    if window["sample_bounds"] != protocol.sample_bounds(window, before, after):
+    if window["sample_bounds"] != protocol.sample_bounds(window, before, after, max_padding_ns=max_padding_ns):
         raise ValueError("The reported bounds differ from the raw field timestamps and clock calibration.")
 
 
-def verify_probe(probe, error):
+def verify_probe(probe, error, *, max_padding_ns=protocol.MAX_PADDING_NS):
     if probe is None:
         previous.verify_probe(probe, error)
         return
@@ -86,7 +86,7 @@ def verify_probe(probe, error):
     if window is not None:
         if window["energy_start"] != first or window["monotonic_origin_s"] != probe["monotonic_origin_s"]:
             raise ValueError("The probe's initial field query or clock origin differs.")
-        verify_energy_window(window, protocol.energy.PROBE_BURSTS)
+        verify_energy_window(window, protocol.energy.PROBE_BURSTS, max_padding_ns=max_padding_ns)
 
 
 def verify_timing(seed, timing):

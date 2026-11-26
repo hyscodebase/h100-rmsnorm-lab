@@ -79,9 +79,7 @@ def verify_timing(seed, timing):
         raise ValueError("The energy medians or monotonic decision differ from the endpoints.")
 
 
-def verify_record(record, seed, anchor, sources, revision, *, timing_seeds=protocol.TIMING_SEEDS,
-                  verify_timing_fn=verify_timing, verify_probe_fn=verify_probe,
-                  qualifies_counter=protocol.counter_passed, expected_counter_function=protocol.COUNTER_FUNCTION):
+def verify_device_record(record, seed, anchor, sources, revision, *, expected_counter_function):
     if ((record["seed"], record["rows"], record["width"]) != (seed, protocol.ROWS, protocol.WIDTH)
             or record["source_sha256"] != sources or record["code_revision"] != revision
             or record["environment"] != anchor["environment"] or record["asset"] != anchor["asset"]
@@ -97,13 +95,21 @@ def verify_record(record, seed, anchor, sources, revision, *, timing_seeds=proto
     digests = verify_numerical(numerical, four.VERIFICATION_BACKENDS, rows=protocol.ROWS)
     if any(set(guards) != GUARDS for guards in numerical["alias_guards"].values()):
         raise ValueError("A registered output alias guard is missing.")
+    if record["numerically_exact"] != copy_free.numeric_gate(numerical, four.VERIFICATION_BACKENDS):
+        raise ValueError("The numerical decision differs from the fixtures and graph outputs.")
+    return digests
+
+
+def verify_record(record, seed, anchor, sources, revision, *, timing_seeds=protocol.TIMING_SEEDS,
+                  verify_timing_fn=verify_timing, verify_probe_fn=verify_probe,
+                  qualifies_counter=protocol.counter_passed, expected_counter_function=protocol.COUNTER_FUNCTION):
+    digests = verify_device_record(record, seed, anchor, sources, revision,
+                                   expected_counter_function=expected_counter_function)
     probe = record["counter_probe"]
     verify_probe_fn(probe, record["counter_error"])
-    exact = copy_free.numeric_gate(numerical, four.VERIFICATION_BACKENDS)
-    eligible = exact and qualifies_counter(probe)
+    eligible = record["numerically_exact"] and qualifies_counter(probe)
     timing = record["timing"]
-    if (record["numerically_exact"] != exact or record["gate_passed"] != eligible
-            or (timing is not None) != (eligible and seed in timing_seeds)):
+    if record["gate_passed"] != eligible or (timing is not None) != (eligible and seed in timing_seeds):
         raise ValueError("Exactness, counter qualification or timing eligibility differs.")
     if timing:
         verify_timing_fn(seed, timing)
