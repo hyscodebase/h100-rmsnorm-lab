@@ -1,0 +1,1929 @@
+{
+  "seed": 127,
+  "rows": 128,
+  "width": 4096,
+  "code_revision": "d998b0dc273d37b7543e153f76e0e020a731c69f",
+  "source_sha256": {
+    "experiments/rmsnorm-residual/vllm/PLAN.md": "8bf7df499b2931cecb93c423bc829a5813577df8710857155492023b1d5c6480",
+    "experiments/rmsnorm-residual/vllm/run.py": "8495521eb03e0a2da6a8321ce74c99dc97e441b38e8553fc2e7320f2b90a7f5f",
+    "experiments/rmsnorm-residual/vllm/kernel.py": "b9d6f67e0c5e6e9cfc9da78def0ccec046d3b609bf1c7862ac407a3becffb8cd",
+    "experiments/rmsnorm-residual/vllm/wheel.py": "9b8956435559569d88d0a5b9f9e32db55d33f9b4f494638a1c8d010c7e73ae52",
+    "experiments/rmsnorm-residual/benchmark.py": "a2be59cd09dcbf15ed279df860e8220944a7bddeedc2e7f1c74cf655c5da6f05",
+    "experiments/rmsnorm-residual/check.py": "06fc94defcc7b4223a1675db0f5eadff52215236681922c9890a1b5112d5a7df",
+    "experiments/rmsnorm-residual/vllm/PRECISION_PLAN.md": "9044cc966bf098e23513234cfdcdc0c7ea2b07ef576576b5f34f8df97bed2e97",
+    "experiments/rmsnorm-residual/vllm/float32_gate.py": "a7f9de4c5cb8b859c1addc911ff694f20203171f49dc583fbe553d9c6518eaf9",
+    "experiments/rmsnorm-residual/vllm/bounded_preflight.py": "cc23b30e47936066c58503d972cf1c1fc0fb48e9dfb7e18d70c6a2db01eb934d",
+    "experiments/rmsnorm-residual/vllm/bounded_timing.py": "5480b185b8c9e8ba3812eeb3e18fe1699cf3b055c92b5d8512a616c8eb023941",
+    "experiments/rmsnorm-residual/vllm/grouped_kernel.py": "aac1b46f1e644bf454c05ac47e95cd9118b221085aed9dedae1f40f5aa785c27",
+    "experiments/rmsnorm-residual/vllm/grouped_run.py": "7cdd077162b62123387e242af0502b004efa8aca18855d1787119de731389583",
+    "experiments/rmsnorm-residual/vllm/REDUCTION_PLAN.md": "b9e968dd6efa1e63e65b695cba441e2c7870852691fb1765df6a7dc3ffc815f9",
+    "experiments/rmsnorm-residual/vllm/shuffle_run.py": "75cae46a127cb711a8e1169a5bc2a06d2a8de0492aaa9bd04180b87bcd142c89",
+    "experiments/rmsnorm-residual/vllm/shuffle_kernel.py": "d6bcff1669b46fea47cee1736012fbb6c62570874ff7e93ff4585bc34159ba71",
+    "experiments/rmsnorm-residual/vllm/SHUFFLE_PLAN.md": "30c506614837256406c628890a9cd16fc8415ef7259ef3239f9b86e1ad6b6d5f",
+    "experiments/rmsnorm-residual/vllm/row_transfer.py": "a55dcfbfc9833dd7a9a2d4431197312527d0f9581583fc12a61ea80df2735fcb",
+    "experiments/rmsnorm-residual/vllm/ROW_TRANSFER.md": "910aeab61a54572648976a2772a01bd8a9c941247cbe0ccd6f0c390ba05f5998",
+    "experiments/rmsnorm-residual/vllm/small_rows_run.py": "d5d909344fe673d1d14bb1c855a714a8986110818cc8cf9f536645451dddae48",
+    "experiments/rmsnorm-residual/vllm/small_rows_kernel.py": "1737653e206fca75d30b111b8b1870821366835457fe2c9456bddd394617f363",
+    "experiments/rmsnorm-residual/vllm/SMALL_ROWS.md": "84a30d235e496baea9cbe298e79aedc18774e16f842c975716d0ae859220d6d0",
+    "experiments/rmsnorm-residual/vllm/transfer-results/r128-s125.json": "50cfdc9761085a35a1bc9609ca52571863b5204e8bf36c6aa66b912909556473",
+    "experiments/rmsnorm-residual/vllm/transfer-results/r128-s126.json": "2b093056c5297697e8f7758257e215b27f971f1e71be985222041b37c756f1d3",
+    "experiments/rmsnorm-residual/vllm/transfer-results/r128-s127.json": "6bf663ef074ca878969ee05ec0725178672949dea94cdea4fd894bb83e1ff711",
+    "experiments/rmsnorm-residual/vllm/transfer-results/r128-s128.json": "22fb5bde7c33bccb035cb14f71122e3228da0f43394fa237875360d93a1eb3d5"
+  },
+  "environment": {
+    "gpu": "NVIDIA H100 80GB HBM3",
+    "compute_capability": [
+      9,
+      0
+    ],
+    "total_memory_bytes": 84929216512,
+    "sm_count": 132,
+    "driver": "550.144.03",
+    "cuda": "12.8",
+    "torch": "2.7.1+cu128",
+    "triton": "3.3.1",
+    "python": "3.12.16"
+  },
+  "asset": {
+    "version": "0.10.0",
+    "wheel": "vllm-0.10.0-cp38-abi3-manylinux1_x86_64.whl",
+    "wheel_sha256": "8ca37559d82b43b5e8c8248d2e4a1ecb51d6d4e5d517491d656df6491ed93dab",
+    "extension": "_C.abi3.so",
+    "extension_sha256": "0bdeda3d6ef7f1df23bcbd128f27c003dc2750475632d8d1d5658e5af15a1e74",
+    "extension_size_bytes": 339450440
+  },
+  "codegen": {
+    "num_warps": 8,
+    "shared_bytes": 0,
+    "registers_per_thread": 32,
+    "spill_count": 0,
+    "ttgir_sha256": "3416343d31d51590a82269f876bfa7aef99bc63209f21f780984ced8ea9bb52c",
+    "ptx_sha256": "933edb9366d79b82e26d208cc9c0149b48b606b94f3670488ad0c19490e88358",
+    "ptx_instruction_sha256": "653d0cd5eb92b8e688d6fe648ceb4a19f8a16955f9551753e5bc5ba388ac006d",
+    "ptx_opcodes": {
+      "add.rn.bf16x2": 8,
+      "add.rn.f32": 40,
+      "add.s64": 6,
+      "add.u64": 1,
+      "and.b32": 1,
+      "bar.sync": 1,
+      "cvt.f32.bf16": 16,
+      "cvt.rn.bf16x2.f32": 8,
+      "div.full.f32": 1,
+      "ld.global.v4.b32": 6,
+      "ld.param.u64": 3,
+      "ld.shared.v4.f32": 4,
+      "mov.b32": 8,
+      "mov.f32": 4,
+      "mov.u32": 28,
+      "mov.u64": 1,
+      "mul.rn.bf16x2": 8,
+      "mul.rn.f32": 32,
+      "mul.wide.s32": 1,
+      "mul.wide.u32": 2,
+      "or.b32": 1,
+      "rsqrt.approx.ftz.f32": 1,
+      "setp.eq.u32": 1,
+      "setp.ne.u32": 1,
+      "shfl.sync.bfly.b32": 10,
+      "shl.b32": 2,
+      "shr.u32": 1,
+      "st.global.v4.b32": 4
+    },
+    "fp_fusion": false,
+    "logical_group_width": 8,
+    "warp_shuffle_offsets": [
+      1,
+      1,
+      2,
+      2,
+      4,
+      4,
+      8,
+      8,
+      16,
+      16
+    ],
+    "emitted_shared_loads": 4,
+    "inline_cta_shared_bytes": 64,
+    "binary_sha256": "ac38c22661d53201e49d2673f97af6435e7bd43ffbccdc00867240d5879ee875"
+  },
+  "archived_comparison_reproduced": true,
+  "gate_passed": true,
+  "fixtures": [
+    {
+      "fixture": "random",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "random",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.030517578125,
+            0.030517578125
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "random",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.030517578125,
+            0.030517578125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "zero_rows",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "zero_rows",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0302734375,
+            0.0302734375
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "zero_rows",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0302734375,
+            0.0302734375
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "cancellation",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "cancellation",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "cancellation",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "tiny",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "tiny",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0004119873046875,
+            0.0004119873046875
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "tiny",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0004119873046875,
+            0.0004119873046875
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "bf16_ties",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "bf16_ties",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.00390625,
+            0.00390625
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "bf16_ties",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.00390625,
+            0.00390625
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "bf16_denominator_tie",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "bf16_denominator_tie",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0,
+            0.0
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "bf16_denominator_tie",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0,
+            0.0
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "weight_rounding",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "weight_rounding",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.00390625,
+            0.00390625
+          ],
+          "passed": true,
+          "weight_probe": [
+            1.46875,
+            1.46875
+          ]
+        },
+        "triton_split_warps": {
+          "fixture": "weight_rounding",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.00390625,
+            0.00390625
+          ],
+          "passed": true,
+          "weight_probe": [
+            1.46875,
+            1.46875
+          ]
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "signed_zero",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "signed_zero",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0,
+            0.0
+          ],
+          "passed": true,
+          "normalized_zero_bits": [
+            [
+              32768,
+              0
+            ],
+            [
+              32768,
+              0
+            ]
+          ]
+        },
+        "triton_split_warps": {
+          "fixture": "signed_zero",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0,
+            0.0
+          ],
+          "passed": true,
+          "normalized_zero_bits": [
+            [
+              32768,
+              0
+            ],
+            [
+              32768,
+              0
+            ]
+          ]
+        }
+      },
+      "passed": true
+    }
+  ],
+  "replay_checks": [
+    {
+      "fixture": "captured_0",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_0",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.030517578125,
+            0.030517578125
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_0",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.030517578125,
+            0.030517578125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_1",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_1",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.031005859375,
+            0.031005859375
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_1",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.031005859375,
+            0.031005859375
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_2",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_2",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_2",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_3",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_3",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_3",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_4",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_4",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_4",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_5",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_5",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_5",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_6",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_6",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_6",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_7",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_7",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_7",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_8",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_8",
+          "elements": 524288,
+          "strict_outside_tolerance": 14,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              101,
+              232
+            ],
+            [
+              101,
+              834
+            ],
+            [
+              101,
+              1601
+            ],
+            [
+              101,
+              1831
+            ],
+            [
+              101,
+              1975
+            ],
+            [
+              101,
+              2066
+            ],
+            [
+              101,
+              2257
+            ],
+            [
+              101,
+              2330
+            ],
+            [
+              101,
+              2595
+            ],
+            [
+              101,
+              2893
+            ],
+            [
+              101,
+              3357
+            ],
+            [
+              101,
+              3441
+            ],
+            [
+              101,
+              3549
+            ],
+            [
+              101,
+              4088
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0361328125,
+            0.0361328125
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_8",
+          "elements": 524288,
+          "strict_outside_tolerance": 14,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              101,
+              232
+            ],
+            [
+              101,
+              834
+            ],
+            [
+              101,
+              1601
+            ],
+            [
+              101,
+              1831
+            ],
+            [
+              101,
+              1975
+            ],
+            [
+              101,
+              2066
+            ],
+            [
+              101,
+              2257
+            ],
+            [
+              101,
+              2330
+            ],
+            [
+              101,
+              2595
+            ],
+            [
+              101,
+              2893
+            ],
+            [
+              101,
+              3357
+            ],
+            [
+              101,
+              3441
+            ],
+            [
+              101,
+              3549
+            ],
+            [
+              101,
+              4088
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0361328125,
+            0.0361328125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_9",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_9",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03076171875,
+            0.03076171875
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_9",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03076171875,
+            0.03076171875
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_10",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_10",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.031005859375,
+            0.031005859375
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_10",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.031005859375,
+            0.031005859375
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_11",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_11",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0302734375,
+            0.0302734375
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_11",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0302734375,
+            0.0302734375
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_12",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_12",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.031005859375,
+            0.031005859375
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_12",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.031005859375,
+            0.031005859375
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_13",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_13",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.05908203125,
+            0.05908203125
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_13",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.05908203125,
+            0.05908203125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_14",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_14",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.05810546875,
+            0.05810546875
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_14",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.05810546875,
+            0.05810546875
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_15",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_15",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_15",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_16",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_16",
+          "elements": 524288,
+          "strict_outside_tolerance": 10,
+          "bounded_rejected": 10,
+          "pairs_differ_bitwise": 21,
+          "accepted_coords": [],
+          "rejected_coords": [
+            [
+              63,
+              269
+            ],
+            [
+              63,
+              659
+            ],
+            [
+              63,
+              825
+            ],
+            [
+              63,
+              1358
+            ],
+            [
+              63,
+              1528
+            ],
+            [
+              63,
+              1574
+            ],
+            [
+              63,
+              2977
+            ],
+            [
+              63,
+              3002
+            ],
+            [
+              63,
+              3418
+            ],
+            [
+              63,
+              3633
+            ]
+          ],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": false
+        },
+        "triton_split_warps": {
+          "fixture": "captured_16",
+          "elements": 524288,
+          "strict_outside_tolerance": 10,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              63,
+              269
+            ],
+            [
+              63,
+              659
+            ],
+            [
+              63,
+              825
+            ],
+            [
+              63,
+              1358
+            ],
+            [
+              63,
+              1528
+            ],
+            [
+              63,
+              1574
+            ],
+            [
+              63,
+              2977
+            ],
+            [
+              63,
+              3002
+            ],
+            [
+              63,
+              3418
+            ],
+            [
+              63,
+              3633
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": false
+    },
+    {
+      "fixture": "captured_17",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_17",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0458984375,
+            0.0458984375
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_17",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0458984375,
+            0.0458984375
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_18",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_18",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03076171875,
+            0.03076171875
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_18",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03076171875,
+            0.03076171875
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_19",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_19",
+          "elements": 524288,
+          "strict_outside_tolerance": 7,
+          "bounded_rejected": 7,
+          "pairs_differ_bitwise": 27,
+          "accepted_coords": [],
+          "rejected_coords": [
+            [
+              77,
+              178
+            ],
+            [
+              77,
+              1386
+            ],
+            [
+              77,
+              1433
+            ],
+            [
+              77,
+              1806
+            ],
+            [
+              77,
+              1818
+            ],
+            [
+              77,
+              2355
+            ],
+            [
+              77,
+              3814
+            ]
+          ],
+          "max_abs_error": [
+            0.030029296875,
+            0.030029296875
+          ],
+          "passed": false
+        },
+        "triton_split_warps": {
+          "fixture": "captured_19",
+          "elements": 524288,
+          "strict_outside_tolerance": 7,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              77,
+              178
+            ],
+            [
+              77,
+              1386
+            ],
+            [
+              77,
+              1433
+            ],
+            [
+              77,
+              1806
+            ],
+            [
+              77,
+              1818
+            ],
+            [
+              77,
+              2355
+            ],
+            [
+              77,
+              3814
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.030029296875,
+            0.030029296875
+          ],
+          "passed": true
+        }
+      },
+      "passed": false
+    },
+    {
+      "fixture": "captured_20",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_20",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0302734375,
+            0.0302734375
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_20",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0302734375,
+            0.0302734375
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_21",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_21",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_21",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_22",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_22",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.029296875,
+            0.029296875
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_22",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.029296875,
+            0.029296875
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_23",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_23",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.06201171875,
+            0.06201171875
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_23",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.06201171875,
+            0.06201171875
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_24",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_24",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_24",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_25",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_25",
+          "elements": 524288,
+          "strict_outside_tolerance": 25,
+          "bounded_rejected": 25,
+          "pairs_differ_bitwise": 49,
+          "accepted_coords": [],
+          "rejected_coords": [
+            [
+              85,
+              0
+            ],
+            [
+              85,
+              42
+            ],
+            [
+              85,
+              70
+            ],
+            [
+              85,
+              100
+            ],
+            [
+              85,
+              153
+            ],
+            [
+              85,
+              190
+            ],
+            [
+              85,
+              542
+            ],
+            [
+              85,
+              630
+            ],
+            [
+              85,
+              693
+            ],
+            [
+              85,
+              882
+            ],
+            [
+              85,
+              1169
+            ],
+            [
+              85,
+              1441
+            ],
+            [
+              85,
+              1592
+            ],
+            [
+              85,
+              1801
+            ],
+            [
+              85,
+              2008
+            ],
+            [
+              85,
+              2084
+            ]
+          ],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": false
+        },
+        "triton_split_warps": {
+          "fixture": "captured_25",
+          "elements": 524288,
+          "strict_outside_tolerance": 25,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [
+            [
+              85,
+              0
+            ],
+            [
+              85,
+              42
+            ],
+            [
+              85,
+              70
+            ],
+            [
+              85,
+              100
+            ],
+            [
+              85,
+              153
+            ],
+            [
+              85,
+              190
+            ],
+            [
+              85,
+              542
+            ],
+            [
+              85,
+              630
+            ],
+            [
+              85,
+              693
+            ],
+            [
+              85,
+              882
+            ],
+            [
+              85,
+              1169
+            ],
+            [
+              85,
+              1441
+            ],
+            [
+              85,
+              1592
+            ],
+            [
+              85,
+              1801
+            ],
+            [
+              85,
+              2008
+            ],
+            [
+              85,
+              2084
+            ],
+            [
+              85,
+              2313
+            ],
+            [
+              85,
+              2496
+            ],
+            [
+              85,
+              2747
+            ],
+            [
+              85,
+              2804
+            ],
+            [
+              85,
+              2924
+            ],
+            [
+              85,
+              2971
+            ],
+            [
+              85,
+              3511
+            ],
+            [
+              85,
+              3599
+            ],
+            [
+              85,
+              4032
+            ]
+          ],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": false
+    },
+    {
+      "fixture": "captured_26",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_26",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_26",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_27",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_27",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.06201171875,
+            0.06201171875
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_27",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.06201171875,
+            0.06201171875
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_28",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_28",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03076171875,
+            0.03076171875
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_28",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03076171875,
+            0.03076171875
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_29",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_29",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.031005859375,
+            0.031005859375
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_29",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.031005859375,
+            0.031005859375
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_30",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_30",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0302734375,
+            0.0302734375
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_30",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.0302734375,
+            0.0302734375
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    },
+    {
+      "fixture": "captured_31",
+      "comparisons": {
+        "triton_shuffle_8warps": {
+          "fixture": "captured_31",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        },
+        "triton_split_warps": {
+          "fixture": "captured_31",
+          "elements": 524288,
+          "strict_outside_tolerance": 0,
+          "bounded_rejected": 0,
+          "pairs_differ_bitwise": 0,
+          "accepted_coords": [],
+          "rejected_coords": [],
+          "max_abs_error": [
+            0.03125,
+            0.03125
+          ],
+          "passed": true
+        }
+      },
+      "passed": true
+    }
+  ],
+  "timing": null,
+  "started_utc": "2026-11-26T09:15:41.626579+00:00",
+  "finished_utc": "2026-11-26T09:15:43.826389+00:00",
+  "wall_seconds": 2.1998104620724916
+}

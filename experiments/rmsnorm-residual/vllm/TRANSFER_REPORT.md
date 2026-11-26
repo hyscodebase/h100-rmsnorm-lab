@@ -22,7 +22,7 @@ The three new shapes at and above 256 rows had zero bit disagreements across 1,4
 
 The 128-row preflight and the eight standard fixtures in each timing seed matched bitwise. The capture-input checks found 238 differing BF16 activations across eight input pairs, of which 126 failed the preregistered numerical gate. The same checks verified the stored residual for both implementations. Each of the three seeds stopped before collecting CUDA events. [Seed 126](transfer-results/r128-s126.json) · [Seed 127](transfer-results/r128-s127.json) · [Seed 128](transfer-results/r128-s128.json)
 
-At this width, released vLLM selects 1,024 threads per block below 256 rows and 256 threads from that boundary onward. The candidate has the same canonical PTX instruction hash across all measured shapes. One hypothesis is that adding two groups within each of 256 logical threads causes different rounding from keeping the groups separate until after the warp reduction. The next experiment tests that one change at 128 rows. [Released CUDA source](https://raw.githubusercontent.com/vllm-project/vllm/v0.10.0/csrc/layernorm_kernels.cu) · [Follow-up protocol](SMALL_ROWS.md)
+At this width, released vLLM selects 1,024 threads per block below 256 rows and 256 threads from that boundary onward. The candidate has the same canonical PTX instruction hash across all measured shapes. The follow-up kept the two groups separate until after the warp reduction and resolved all checked bit disagreements at 128 rows. [Released CUDA source](https://raw.githubusercontent.com/vllm-project/vllm/v0.10.0/csrc/layernorm_kernels.cu) · [Follow-up result](SMALL_ROWS_REPORT.md)
 
 ## Evidence and reproduction
 

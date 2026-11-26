@@ -37,14 +37,14 @@ def verify_cases(records, names, elements):
     return all(record["passed"] for record in records)
 
 
-def timing_medians(record):
+def timing_medians(record, backends=BACKENDS):
     timing = record["timing"]
     if (timing["ops_per_graph"] != run.OPS or not timing["inputs_restored_bitwise"]
-            or timing["round_order"] != run.original.schedule(BACKENDS, record["seed"])
-            or set(timing["statistics"]) != set(BACKENDS)):
+            or timing["round_order"] != run.original.schedule(backends, record["seed"])
+            or set(timing["statistics"]) != set(backends)):
         raise ValueError("The capture, restoration or randomization contract differs.")
     medians = []
-    for backend in BACKENDS:
+    for backend in backends:
         stats = timing["statistics"][backend]
         if stats != run.original.latency(stats["graph_elapsed_ms"]):
             raise ValueError("The reported quartiles differ from the CUDA events.")
