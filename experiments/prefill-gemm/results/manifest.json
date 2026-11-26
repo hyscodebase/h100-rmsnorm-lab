@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "experiment_hash": "6bbf32225add1e59a571c530b34beb5165ed36484a0595dfd0858c80fdfea3c7",
+  "sources": {
+    "experiments/prefill-gemm/benchmark.py": "072144cf988695e2b94ce420f6f7049ee290d62be68149a36ba8c2cfe8495e75"
+  }
+}
