@@ -33,16 +33,16 @@ def reference(x, residual, weight):
     return updated, scaled.double() * weight.double()
 
 
-def fixture(torch, check, name, generator, device):
+def fixture(torch, check, name, generator, device, rows=ROWS):
     if name == "weight_rounding":
-        x = torch.tensor([1, 1.25, 2, .75], dtype=torch.bfloat16, device=device).repeat(ROWS, WIDTH // 4)
+        x = torch.tensor([1, 1.25, 2, .75], dtype=torch.bfloat16, device=device).repeat(rows, WIDTH // 4)
         weight = x.new_tensor([.375, 1.5625, .7421875, 1.1328125]).repeat(WIDTH // 4)
         return x, torch.zeros_like(x), weight
     if name == "signed_zero":
-        x = torch.zeros((ROWS, WIDTH), dtype=torch.bfloat16, device=device)
+        x = torch.zeros((rows, WIDTH), dtype=torch.bfloat16, device=device)
         x[0].fill_(-0.)
         return x, x.clone(), x.new_ones(WIDTH)
-    return check.make_inputs(name, ROWS, generator, device)
+    return check.make_inputs(name, rows, generator, device)
 
 
 def validate(torch, check, name, fn, inputs):

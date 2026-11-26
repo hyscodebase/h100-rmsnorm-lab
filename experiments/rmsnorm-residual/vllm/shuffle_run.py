@@ -56,8 +56,8 @@ def numerical(torch, methods, seed, witness):
     return fixtures, coordinates
 
 
-def compile_evidence(torch, implementation):
-    a = torch.zeros((run.ROWS, run.WIDTH), dtype=torch.bfloat16, device="cuda:0")
+def compile_evidence(torch, implementation, rows=run.ROWS):
+    a = torch.zeros((rows, run.WIDTH), dtype=torch.bfloat16, device="cuda:0")
     kernel = implementation(a, a.clone(), torch.ones_like(a[0]))
     data = grouped.launch_metadata(kernel)
     ptx = kernel.asm["ptx"]
