@@ -127,6 +127,27 @@ class LabCLI(unittest.TestCase):
         self.assertEqual(self.calls(), ["check", "s42", "s43", "s43"])
         self.assertEqual(self.completed(), {"check.json", "s42-r1-w4096.json", "s43-r1-w4096.json"})
 
+    def test_attempt_history_records_failures_and_retries(self):
+        self.prepare_gemm()
+        task = "s42-m2-k3-n4"
+        fault = self.directory / ("fail-" + task)
+        fault.touch()
+        self.cli("step", expect_success=False)
+        fault.unlink()
+        self.cli("step")
+        directory = self.state / "attempts"
+        attempts = sorted((json.loads(p.read_text()) for p in directory.glob("*.json")),
+                          key=lambda entry: entry["started_utc"])
+        self.assertEqual([a["outcome"] for a in attempts], ["failed", "checkpoint_saved"])
+        self.assertEqual(attempts[0]["exit_code"], 17)
+        self.assertNotEqual(attempts[0]["attempt_id"], attempts[1]["attempt_id"])
+        for attempt in attempts:
+            self.assertEqual(attempt["task_id"], task)
+            self.assertEqual(attempt["reproduce_argv"][:2],
+                             ["python3", "experiments/prefill-gemm/benchmark.py"])
+            self.assertLessEqual(attempt["started_utc"], attempt["finished_utc"])
+            self.assertGreaterEqual(attempt["controller_elapsed_s"], 0)
+
     def test_bad_output_cannot_complete_a_unit(self):
         self.cli("step")
         fixture = self.directory / "s42.json"

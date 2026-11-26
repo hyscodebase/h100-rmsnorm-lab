@@ -11,6 +11,8 @@ import statistics
 import subprocess
 import sys
 import tempfile
+import time
+import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from itertools import product
@@ -243,6 +245,39 @@ def resolve_runner(explicit):
     return None
 
 
+@contextmanager
+def record_attempt(state, task_id, experiment_hash, shape, plan):
+    directory = state / "attempts"
+    directory.mkdir(exist_ok=True)
+    attempt_id = uuid.uuid4().hex
+    path = directory / f"{task_id}-{attempt_id}.json"
+    _, program, *arguments = command(None, shape, plan)
+    record = {
+        "attempt_id": attempt_id,
+        "task_id": task_id,
+        "experiment_hash": experiment_hash,
+        "started_utc": datetime.now(timezone.utc).isoformat(),
+        "reproduce_argv": ["python3", str(Path(program).relative_to(ROOT)), *arguments],
+        "outcome": "started",
+    }
+    save_json(path, record)
+    start = time.monotonic()
+    try:
+        yield
+    except BaseException as exc:
+        record["outcome"] = "interrupted" if isinstance(exc, KeyboardInterrupt) else "failed"
+        record["error_type"] = type(exc).__name__
+        if isinstance(exc, subprocess.CalledProcessError):
+            record["exit_code"] = exc.returncode
+        raise
+    else:
+        record["outcome"] = "checkpoint_saved"
+    finally:
+        record["controller_elapsed_s"] = time.monotonic() - start
+        record["finished_utc"] = datetime.now(timezone.utc).isoformat()
+        save_json(path, record)
+
+
 def execute(state, runner, max_steps):
     with worker_lock(state) as lock:
         plan, experiment_hash = load_state(state)
@@ -252,21 +287,22 @@ def execute(state, runner, max_steps):
                 print("Paused. Resume to start the next task.")
                 return
             print(f"Running {task_id} ...", flush=True)
-            # Keep a surviving local runner locked even if its coordinator is killed.
-            output = subprocess.run(
-                command(runner, shape, plan), cwd=ROOT, stdout=subprocess.PIPE,
-                text=True, check=True, pass_fds=(lock.fileno(),),
-            )
-            result = json.loads(output.stdout)
-            backend = validate_result(result, shape, plan)
-            if backend:
-                require(environment in (None, backend), "GPU environment changed. Initialize a new state directory.")
-                environment = backend
-            load_state(state)  # Detect source edits during a long subprocess before accepting its result.
-            save_json(state / "tasks" / f"{task_id}.json", {
-                "task_id": task_id, "experiment_hash": experiment_hash, "result": result,
-                "completed_utc": datetime.now(timezone.utc).isoformat(),
-            })
+            with record_attempt(state, task_id, experiment_hash, shape, plan):
+                # Keep a surviving local runner locked even if its coordinator is killed.
+                output = subprocess.run(
+                    command(runner, shape, plan), cwd=ROOT, stdout=subprocess.PIPE,
+                    text=True, check=True, pass_fds=(lock.fileno(),),
+                )
+                result = json.loads(output.stdout)
+                backend = validate_result(result, shape, plan)
+                if backend:
+                    require(environment in (None, backend), "GPU environment changed. Initialize a new state directory.")
+                    environment = backend
+                load_state(state)  # Detect source edits during a long subprocess before accepting its result.
+                save_json(state / "tasks" / f"{task_id}.json", {
+                    "task_id": task_id, "experiment_hash": experiment_hash, "result": result,
+                    "completed_utc": datetime.now(timezone.utc).isoformat(),
+                })
             print(f"Saved {task_id}.", flush=True)
         if max_steps is None or len(pending) <= max_steps:
             print("Experiment complete.")
