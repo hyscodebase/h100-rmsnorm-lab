@@ -66,6 +66,8 @@ With restoration copies absent from both graphs, the fused direct-output kernel 
 
 At 255 rows, the same binaries passed every bitwise check and the fused kernel gave 12.77–14.03% more throughput than the copy-free two-kernel baseline across three independent timing seeds. [255-row results, chart and raw records](experiments/rmsnorm-residual/vllm/COPY_FREE_ROWS_255_REPORT.md)
 
+At 256 rows, the prior 16-warp kernel disagreed with vLLM on 1,161 captured activations. An eight-warp implementation matched the new FP32 reduction order and both output bits. Fusion gave 12.38–12.48% more throughput than the matched copy-free two-kernel graph over three timing seeds. [Dispatch-boundary results, chart and diagnostic](experiments/rmsnorm-residual/vllm/COPY_FREE_ROWS_256_REPORT.md)
+
 ## Sustained H100 compute
 
 In 20 runs of a BF16 prefill projection, the H100 completed 1.50 million matrix products over 902.18 measured seconds. The 16,384-row shape reached a median of 682.19 TFLOP/s. Gaps in device sampling limited confirmation of sustained activity to eight runs. [Full results, throughput and resource charts](experiments/prefill-gemm/REPORT.md) · [Workload and protocol](experiments/prefill-gemm/README.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/3)
