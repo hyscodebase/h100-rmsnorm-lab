@@ -1,0 +1,10 @@
+{
+  "seed": 150,
+  "rows": 128,
+  "code_revision": "be04c0880e53922869bbc43437e5b46450407d77",
+  "canonical_json_bytes": 412558,
+  "read_utc": "2026-11-26T10:54:24.455623+00:00",
+  "result_origin": "cached",
+  "matches_local_result": true,
+  "canonical_json_sha256": "709bd340949540122647b3b51c3775dfb1df44359ab412324ea425b1466b93a0"
+}

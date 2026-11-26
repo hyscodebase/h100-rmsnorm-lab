@@ -9,7 +9,8 @@ import sixteen_warp_run as protocol
 from transfer_report import CASES, CAPTURES, counts, timestamp, timing_medians, verify_cases, verify_revision
 
 
-def verify_attempts(folder, data):
+def verify_attempts(folder, data, *, remote_clock_bounds_s=(0.0, 0.0)):
+    earliest_offset, latest_offset = remote_clock_bounds_s
     completed = set()
     for path in sorted((folder / "attempts").glob("*.json")):
         attempt = json.loads(path.read_bytes())
@@ -28,8 +29,12 @@ def verify_attempts(folder, data):
             continue
         result = data[seed]
         started, finished = timestamp(result["started_utc"]), timestamp(result["finished_utc"])
+        # The attempt log uses the local clock and the checkpoint uses the GPU host clock.
+        earliest_offset = max(earliest_offset, (finished - last).total_seconds())
+        if phase == "checkpoint_saved":
+            latest_offset = min(latest_offset, (started - first).total_seconds())
         if (seed in completed or attempt["code_revision"] != result["code_revision"]
-                or not started <= finished <= last or (phase == "checkpoint_saved" and first > started)):
+                or started > finished or earliest_offset > latest_offset):
             raise ValueError("Invalid or duplicate completed attempt.")
         completed.add(seed)
     if completed != data.keys():
