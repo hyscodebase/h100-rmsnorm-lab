@@ -1,0 +1,47 @@
+{
+  "preflight": true,
+  "physical_uuid_matched": true,
+  "passed": true,
+  "checks": {
+    "cli": {
+      "passed": true,
+      "values": {
+        "gpu_busy_pct": 0.0,
+        "memory_busy_pct": 0.0,
+        "device_memory_used_mib": 4.0,
+        "device_power_w": 120.64,
+        "sm_clock_mhz": 1980.0
+      }
+    },
+    "nvml": {
+      "passed": true,
+      "values": {
+        "gpu_busy_pct": 0.0,
+        "memory_busy_pct": 0.0,
+        "device_memory_used_mib": 567.6875,
+        "device_power_w": 120.608,
+        "sm_clock_mhz": 1980.0
+      }
+    }
+  },
+  "environment": {
+    "gpu": "NVIDIA H100 80GB HBM3",
+    "compute_capability": [
+      9,
+      0
+    ],
+    "total_memory_bytes": 84929216512,
+    "sm_count": 132,
+    "driver": "550.144.03",
+    "cuda_runtime": "12.8",
+    "torch": "2.7.1+cu128",
+    "python": "3.12.16",
+    "observer_versions": {
+      "binding_version": "nvml-ctypes-v1",
+      "nvml_version": "12.550.144.03",
+      "driver_version": "550.144.03",
+      "nvidia_smi_version": "550.144.03"
+    }
+  },
+  "code_revision": "5bd202d11edce993949342e8b9fb4726a7407f5c"
+}

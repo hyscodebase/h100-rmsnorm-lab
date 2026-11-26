@@ -1,0 +1,14 @@
+{
+  "attempt_id": "272eae31b2f64331bd035f493e7577ee",
+  "task_id": "preflight",
+  "experiment_hash": "09b3d5dbcbada428aa68099fb05a277cda7eedd3f6d257a11fddad797801ae26",
+  "started_utc": "2026-11-26T07:16:44.694028+00:00",
+  "reproduce_argv": [
+    "python3",
+    "experiments/observer/benchmark.py",
+    "--preflight"
+  ],
+  "outcome": "checkpoint_saved",
+  "controller_elapsed_s": 10.756066208938137,
+  "finished_utc": "2026-11-26T07:16:55.450277+00:00"
+}

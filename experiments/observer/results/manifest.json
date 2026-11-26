@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "experiment_hash": "09b3d5dbcbada428aa68099fb05a277cda7eedd3f6d257a11fddad797801ae26",
+  "sources": {
+    "experiments/observer/benchmark.py": "51f1da4c9ca42f31f5a35ed692260db8fb4377c786a8d3d62e6ad073c645da2b",
+    "experiments/observer/sensors.py": "5b61aec969a392b9030f388b57f5301bfd2f8dab2e0e81592dc25136769aa564",
+    "experiments/prefill-gemm/benchmark.py": "072144cf988695e2b94ce420f6f7049ee290d62be68149a36ba8c2cfe8495e75"
+  }
+}
