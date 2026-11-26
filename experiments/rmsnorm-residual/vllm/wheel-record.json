@@ -1,0 +1,10 @@
+{
+  "version": "0.10.0",
+  "wheel": "vllm-0.10.0-cp38-abi3-manylinux1_x86_64.whl",
+  "wheel_sha256": "8ca37559d82b43b5e8c8248d2e4a1ecb51d6d4e5d517491d656df6491ed93dab",
+  "extension": "_C.abi3.so",
+  "extension_sha256": "0bdeda3d6ef7f1df23bcbd128f27c003dc2750475632d8d1d5658e5af15a1e74",
+  "extension_size_bytes": 339450440,
+  "started_utc": "2026-11-26T08:18:09.059113+00:00",
+  "finished_utc": "2026-11-26T08:19:12.834060+00:00"
+}
