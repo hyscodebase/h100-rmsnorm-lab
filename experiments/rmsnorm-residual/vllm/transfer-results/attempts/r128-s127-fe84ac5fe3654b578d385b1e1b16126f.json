@@ -1,0 +1,10 @@
+{
+  "attempt_id": "fe84ac5fe3654b578d385b1e1b16126f",
+  "rows": 128,
+  "seed": 127,
+  "code_revision": "f6c1018fc6885622b65ab3cd16d52f002984905d",
+  "started_utc": "2026-11-26T09:01:16.368311+00:00",
+  "outcome": "checkpoint_saved",
+  "finished_utc": "2026-11-26T09:01:22.634201+00:00",
+  "elapsed_s": 6.265269874944352
+}

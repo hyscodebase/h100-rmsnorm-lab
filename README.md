@@ -50,6 +50,8 @@ The next experiment fused two operations at width 4,096. At 1,024 rows, three H1
 
 The in-place follow-up matched the released vLLM 0.10.0 CUDA operator at width 4,096. At 1,024 rows, the ordered warp-shuffle implementation lowered latency by 7.43–7.58% over three independent seeds with matching output bits. [Operator comparison, raw evidence and chart](experiments/rmsnorm-residual/vllm/SHUFFLE_REPORT.md)
 
+The same kernel matched output bits at 256, 512 and 2,048 rows. Latency fell by 12.02–12.18% at 256 rows, 10.38–10.51% at 512 rows and 4.892–4.997% at 2,048 rows. The 128-row capture checks found differences in all three timing seeds and excluded those seeds before timing. [Row-count results, GPU samples and follow-up](experiments/rmsnorm-residual/vllm/TRANSFER_REPORT.md)
+
 ## Sustained H100 compute
 
 In 20 runs of a BF16 prefill projection, the H100 completed 1.50 million matrix products over 902.18 measured seconds. The 16,384-row shape reached a median of 682.19 TFLOP/s. Gaps in device sampling limited confirmation of sustained activity to eight runs. [Full results, throughput and resource charts](experiments/prefill-gemm/REPORT.md) · [Workload and protocol](experiments/prefill-gemm/README.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/3)
