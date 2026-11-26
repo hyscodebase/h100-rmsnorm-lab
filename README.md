@@ -62,6 +62,8 @@ The staged follow-up measured restoration and the operator separately with coord
 
 For the immutable-input workload, a direct-output kernel matched both outputs bitwise while preserving the original activation and residual. It processed 85.572–86.463 million normalized rows per second over three seeds, 2.059–2.080 times the fastest input-preserving in-place baseline. [Throughput, power and raw evidence](experiments/rmsnorm-residual/vllm/SUSTAINED_OUT_OF_PLACE_REPORT.md)
 
+With restoration copies absent from both graphs, the fused direct-output kernel delivered 15.12–21.43% more throughput than a vectorized BF16 addition followed by the matched 16-warp RMSNorm. Both paths preserved their input buffers and passed the bitwise output checks in all four seeds. [Comparison, H100 use and raw records](experiments/rmsnorm-residual/vllm/COPY_FREE_FUSION_REPORT.md)
+
 ## Sustained H100 compute
 
 In 20 runs of a BF16 prefill projection, the H100 completed 1.50 million matrix products over 902.18 measured seconds. The 16,384-row shape reached a median of 682.19 TFLOP/s. Gaps in device sampling limited confirmation of sustained activity to eight runs. [Full results, throughput and resource charts](experiments/prefill-gemm/REPORT.md) · [Workload and protocol](experiments/prefill-gemm/README.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/3)

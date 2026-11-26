@@ -27,7 +27,10 @@ SOURCES = (*small.SOURCES, *(str(path.relative_to(run.ROOT)) for path in (
 
 def compile_sixteen(torch, implementation):
     x = torch.zeros((ROWS, run.WIDTH), dtype=torch.bfloat16, device="cuda:0")
-    compiled = implementation(x, x.clone(), torch.ones_like(x[0]))
+    return warp_metadata(implementation(x, x.clone(), torch.ones_like(x[0])))
+
+
+def warp_metadata(compiled):
     code = grouped.launch_metadata(compiled, ttgir=compiled.src.src)
     ptx = compiled.asm["ptx"]
     offsets = [int(value) for value in re.findall(r"shfl\.sync\.bfly\.b32\s+\w+,\s*\w+,\s*(\d+),", ptx)]

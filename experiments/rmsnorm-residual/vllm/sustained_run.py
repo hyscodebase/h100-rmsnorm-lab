@@ -244,15 +244,19 @@ def validate_stack(torch, triton, library, anchor):
     return environment
 
 
-def prepare_backends(torch, library, anchor):
-    from sixteen_warp_kernel import fused_sixteen_warps
-    from small_rows_kernel import fused_split_warps
-
+def load_vllm(torch, library):
     torch.cuda.set_device(0)
     torch.cuda.reset_peak_memory_stats(0)
     torch.ops.load_library(str(library.resolve()))
     op = torch.ops._C.fused_add_rms_norm
-    methods = {BACKENDS[0]: lambda x, r, w: op(x, r, w, 1e-6), BACKENDS[1]: fused_split_warps,
+    return lambda x, r, w: op(x, r, w, 1e-6)
+
+
+def prepare_backends(torch, library, anchor):
+    from sixteen_warp_kernel import fused_sixteen_warps
+    from small_rows_kernel import fused_split_warps
+
+    methods = {BACKENDS[0]: load_vllm(torch, library), BACKENDS[1]: fused_split_warps,
                BACKENDS[2]: fused_sixteen_warps}
     codegen = {BACKENDS[1]: single.small.compile_split(torch, fused_split_warps),
                BACKENDS[2]: single.compile_sixteen(torch, fused_sixteen_warps)}

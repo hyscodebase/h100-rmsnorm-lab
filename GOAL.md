@@ -24,7 +24,8 @@
 | 128행을 8개 CUDA 스트림에서 연속 처리 | 완료 | 162.355초에 65.72억 행을 반복 처리했다. 16워프 처리량은 vLLM 대비 6.718~7.405% 높았고 8워프와는 −0.578~+0.040% 차이였다. NVML 사용률 중앙값은 9개 조합 모두 100%였고, 7개가 관측 범위 기준을 통과했다. [실측과 자원 기록](experiments/rmsnorm-residual/vllm/SUSTAINED_128_REPORT.md) |
 | 8개 스트림의 입력 복사와 커널 실행 시간 분리 | 완료 | 연산만 계측해도 16워프는 8워프 대비 0.003~0.103% 높아 5% 기준에는 못 미쳤다. Triton의 복사는 분리된 CUDA 시간의 52.23~52.46%였다. [원시 이벤트와 실측](experiments/rmsnorm-residual/vllm/COPY_SPLIT_REPORT.md) |
 | 원본을 보존하며 출력 버퍼에 직접 쓰기 | 완료 | 8스트림에서 두 출력의 비트를 맞추고 원본을 보존했다. 직접 출력 처리량은 세 시드에서 초당 8,557만~8,646만 행으로 가장 빠른 기준선의 2.059~2.080배였다. [실측·자원 기록](experiments/rmsnorm-residual/vllm/SUSTAINED_OUT_OF_PLACE_REPORT.md) |
-| 복사 없는 두 커널과 융합 커널 비교 | 다음 가설 | 같은 원본 보존 조건에서 BF16 잔차를 갱신한 뒤 별도 RMSNorm으로 출력하는 기준을 추가한다. 시드 149 수치 검사와 시드 150~152 실측에서 융합의 5% 기준을 검증한다. [후속 계획](experiments/rmsnorm-residual/vllm/COPY_FREE_FUSION.md) |
+| 복사 없는 두 커널과 융합 커널 비교 | 완료 | 128×4096에서 두 출력의 비트를 맞추고 원본을 보존했다. 융합은 두 커널 기준보다 세 독립 시드에서 15.125%, 21.429%, 16.547% 높은 처리량을 기록해 5%를 모두 넘었다. [실측·자원 기록](experiments/rmsnorm-residual/vllm/COPY_FREE_FUSION_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/29) |
+| 255행에서 복사 없는 융합 이득 재검증 | 다음 가설 | 동일한 커널과 8스트림 조건에서 행을 255로 늘린다. 시드 153 정확도 검사 후 154~156에서 두 커널 기준 대비 처리량 5%를 검증한다. [후속 계획](experiments/rmsnorm-residual/vllm/COPY_FREE_ROWS_255.md) · [측정 이슈](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/30) |
 | RMSNorm 4104 인접 너비 재검증 | 후속 후보 | 4103·4104·4105와 4112에서 새로운 시드를 사용해 권장 설정이 유효한 범위를 검증한다. |
 
 ## 다음 가설을 고르는 규칙

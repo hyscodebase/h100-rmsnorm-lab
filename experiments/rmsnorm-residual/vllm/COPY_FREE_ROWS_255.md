@@ -1,0 +1,9 @@
+# Check copy-free residual RMSNorm at 255 rows
+
+At 128 rows, the direct-output fused kernel beat the copy-free add-then-normalize implementation. Test whether the gain holds at 255 rows, the largest shape in the same released vLLM thread-block regime. Going from 128 to 255 rows changes the kernel grids and nearly doubles the live input and output footprint. Keep the BF16 width at 4,096. [128-row results](COPY_FREE_FUSION_REPORT.md) · [Released vLLM dispatch](https://github.com/vllm-project/vllm/blob/v0.10.0/csrc/layernorm_kernels.cu#L161-L199)
+
+Use the same H100 stack, vLLM release, 16-warp ordered FP32 reduction, BF16 rounding boundaries, and 2,048-element four-warp addition tiles. Keep the eight CUDA streams, 32 disjoint pairs per stream, and immutable BF16 inputs and weight. The two copy-free graphs use the same output addresses. vLLM with its two restoration copies provides a reference for both bits and throughput. Check the canonical PTX and cubin identities against the 128-row experiment.
+
+Run seed 153 as a standalone numerical checkpoint. Check both outputs bitwise, including signed zero and weight rounding, with poisoned writable buffers and unchanged source hashes and the same alias guards. Run seeds 154–156 as independent timing checkpoints after qualification. Use three balanced periods per backend in each seed, with at least one second of warm-up and six seconds of measurement per period. Replay 32 graphs per stream in each coordinated burst.
+
+Extend the recommendation to 255 rows if the fused kernel provides at least 5% more median wall throughput than add-then-normalize in each timing seed, with both output bits and unchanged source hashes verified. Retain original wall and CUDA intervals, completed rows, binary hashes, direct NVML samples, coverage and cache-only recovery.
