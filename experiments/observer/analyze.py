@@ -13,6 +13,8 @@ ORDER = dict(zip(range(51, 57), ("ABC", "BCA", "CAB", "CBA", "BAC", "ACB")))
 READERS = {"A": {"cli"}, "B": {"nvml"}, "C": {"cli", "nvml"}}
 METRICS = {"gpu_busy_pct", "memory_busy_pct", "device_memory_used_mib", "device_power_w", "sm_clock_mhz"}
 STATES = {"valid", "skipped", "error", "timeout", "crossing"}
+QUERY_DEADLINE_S = 5.0
+TIMESTAMP_TOLERANCE_S = 1e-6
 M, K, N = 8192, 4096, 11008
 GEMM_FLOPS = 2 * M * K * N
 ENV_KEYS = ("gpu", "compute_capability", "total_memory_bytes", "sm_count", "driver", "cuda_runtime", "torch", "python")
@@ -37,7 +39,8 @@ def validate_slots(slots, elapsed):
     need(isinstance(slots, list) and len(slots) == 45, "Each observer must account for 45 scheduled slots.")
     need(all(type(s["slot"]) is int for s in slots) and {s["slot"] for s in slots} == set(range(45)),
          "Missing, invalid or duplicate slot IDs.")
-    for slot in slots:
+    previous_end = 0.0
+    for slot in sorted(slots, key=lambda s: s["slot"]):
         need(set(slot) == {"slot", "status", "query_start_s", "query_end_s", "values"}, "Unexpected slot schema.")
         status, values = slot["status"], slot["values"]
         need(status in STATES and isinstance(values, dict) and set(values) == METRICS, "Invalid slot status or metrics.")
@@ -50,12 +53,16 @@ def validate_slots(slots, elapsed):
                  "A skipped slot cannot have read offsets or measurements.")
             continue
         need(finite(start) and finite(end) and start >= 0 and start <= end, "Invalid query offsets.")
-        need(start + 1e-6 >= slot["slot"], "Query started before its scheduled slot.")
+        need(start + TIMESTAMP_TOLERANCE_S >= slot["slot"], "Query started before its scheduled slot.")
+        need(start + TIMESTAMP_TOLERANCE_S >= previous_end, "Queries from the same reader overlap.")
+        previous_end = end
         if status == "crossing":
             need(end > elapsed, "A crossing read must end beyond the measurement window.")
         else:
             need(end <= elapsed, "A read ending after the window must be marked crossing.")
         if status == "valid":
+            need(end - start <= QUERY_DEADLINE_S + TIMESTAMP_TOLERANCE_S,
+                 "A valid query exceeded the five-second deadline.")
             need(values["gpu_busy_pct"] is not None, "Valid activity reading has no GPU activity.")
 
 

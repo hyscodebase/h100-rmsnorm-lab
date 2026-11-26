@@ -27,6 +27,28 @@ def minimal(tflops, readers):
 
 
 class AnalysisTest(unittest.TestCase):
+    def test_successful_query_deadline(self):
+        rows = slots([0])
+        rows[0]["query_end_s"] = 5.0
+        analyze.validate_slots(rows, 45)
+        rows[0]["query_end_s"] = 6.0
+        with self.assertRaisesRegex(ValueError, "deadline"):
+            analyze.validate_slots(rows, 45)
+        rows[0]["status"] = "timeout"
+        rows[0]["values"]["gpu_busy_pct"] = None
+        analyze.validate_slots(rows, 45)
+
+    def test_a_single_reader_cannot_overlap_attempted_queries(self):
+        rows = slots([0, 2])
+        rows[0]["status"] = "error"
+        rows[0]["values"]["gpu_busy_pct"] = None
+        rows[0]["query_end_s"] = 2.0
+        rows.reverse()  # The slot IDs determine order, even across a skipped slot.
+        analyze.validate_slots(rows, 45)
+        rows[-1]["query_end_s"] = 2.1
+        with self.assertRaisesRegex(ValueError, "overlap"):
+            analyze.validate_slots(rows, 45)
+
     def test_count_gap_and_zero_boundary(self):
         sparse = set(range(45)) - set(range(1, 22, 2))
         self.assertEqual(len(sparse), 34)
