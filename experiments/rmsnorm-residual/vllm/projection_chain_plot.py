@@ -67,5 +67,4 @@ if __name__ == "__main__":
     cli = argparse.ArgumentParser(description=__doc__)
     cli.add_argument("--downstream-width", type=int, choices=protocol.WORKLOADS, default=protocol.WIDTH)
     workload = protocol.WORKLOADS[cli.parse_args().downstream_width]
-    name = "projection-chain-512" if workload == protocol.SQUARE else "projection-tail-12288"
-    draw(read_results(workload=workload), run.HERE / f"{name}-throughput.png", workload=workload)
+    draw(read_results(workload=workload), run.HERE / f"{workload.archive_name}-throughput.png", workload=workload)

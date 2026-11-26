@@ -78,6 +78,8 @@ Between two BF16 projections at 512 × 4,096, fusion led the tuned split by 1.25
 
 At 12,288 downstream columns, the same residual kernels matched all four outputs and fusion improved chain throughput by 0.362–0.536% across three independent seeds, below the 1% threshold. [Wide-projection results and H100 observations](experiments/rmsnorm-residual/vllm/PROJECTION_TAIL_12288_REPORT.md)
 
+At the intermediate 6,144-column width, fusion led by 0.911–1.034%. One of three exact independent seeds cleared 1%. [Three-width comparison and raw results](experiments/rmsnorm-residual/vllm/PROJECTION_TAIL_6144_REPORT.md)
+
 ## Sustained H100 compute
 
 In 20 runs of a BF16 prefill projection, the H100 completed 1.50 million matrix products over 902.18 measured seconds. The 16,384-row shape reached a median of 682.19 TFLOP/s. Gaps in device sampling limited confirmation of sustained activity to eight runs. [Full results, throughput and resource charts](experiments/prefill-gemm/REPORT.md) · [Workload and protocol](experiments/prefill-gemm/README.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/3)

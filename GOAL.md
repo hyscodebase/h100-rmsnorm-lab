@@ -33,7 +33,8 @@
 | 512행의 복사 없는 덧셈 타일 크기 최적화 | 완료 | 8,192원소 타일은 세 독립 시드에서 2,048원소보다 0.438~0.453% 빨라 5% 채택 기준에는 못 미쳤다. 융합은 더 빠른 분리 구현보다 19.206~19.230% 높은 처리량을 보였으며 두 BF16 출력이 일치했다. [실측·자원 기록](experiments/rmsnorm-residual/vllm/SPLIT_ADD_TILES_512_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/41) |
 | 512행에서 두 BF16 프로젝션 사이의 융합 이득 | 완료 | 융합으로 체인 처리량이 1.256~1.359% 높아 세 독립 시드에서 1% 기준을 통과했다. 두 프로젝션과 잔차·정규화 출력의 비트가 모두 일치했다. [실측·자원 기록](experiments/rmsnorm-residual/vllm/PROJECTION_CHAIN_512_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/43) |
 | 두 번째 BF16 프로젝션의 너비를 늘렸을 때 융합 이득 | 완료 | 12,288열에서 세 독립 시드의 융합 이득이 0.362~0.536%로 1% 기준에 못 미쳤다. 네 출력의 비트가 모두 일치했다. [실측·자원 기록](experiments/rmsnorm-residual/vllm/PROJECTION_TAIL_12288_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/45) |
-| 두 번째 BF16 프로젝션이 6,144열일 때 융합 이득 | 다음 가설 | 4,096열과 12,288열 사이에서 1% 기준에 가까운 입력을 검증한다. 시드 185에서 정확도를 확인하고 시드 186~188에서 체인 처리량을 측정한다. [실험 계획](experiments/rmsnorm-residual/vllm/COPY_FREE_PROJECTION_TAIL_6144.md) · [측정 이슈](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/46) |
+| 두 번째 BF16 프로젝션이 6,144열일 때 융합 이득 | 완료 | 체인 처리량이 0.911~1.034% 높았다. 네 출력은 모든 시드에서 일치했고 한 시드만 1%를 넘었다. [실측·자원 기록](experiments/rmsnorm-residual/vllm/PROJECTION_TAIL_6144_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/47) |
+| 기존 합산 순서를 유지한 4개 물리 워프 | 다음 가설 | 512×4096에서 물리 워프마다 논리 워프 두 개를 맡긴다. 시드 189에서 비트 일치를 확인하고 독립 시드 190~192에서 기존 8워프 융합 대비 5% 개선을 검증한다. [실험 계획](experiments/rmsnorm-residual/vllm/COPY_FREE_FOUR_PHYSICAL_WARPS_512.md) · [측정 이슈](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/48) |
 | RMSNorm 4104 인접 너비 재검증 | 후속 후보 | 4103·4104·4105와 4112에서 새로운 시드를 사용해 권장 설정이 유효한 범위를 검증한다. |
 
 ## 다음 가설을 고르는 규칙
