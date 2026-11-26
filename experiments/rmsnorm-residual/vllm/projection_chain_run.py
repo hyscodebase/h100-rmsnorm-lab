@@ -1,5 +1,6 @@
 """Qualify and time residual RMSNorm between two BF16 projections."""
 import argparse
+from dataclasses import dataclass
 from functools import partial
 import hashlib
 import json
@@ -21,7 +22,8 @@ SEEDS = (NUMERIC_SEED, *TIMING_SEEDS)
 TILE, FUSED, REFERENCE = 8192, tiles.FUSED, copy_free.REFERENCE
 SPLIT = tiles.TILE_BACKENDS[TILE]
 BACKENDS = (SPLIT, FUSED)
-OUTPUT_FIELDS = (*base.PAIR_FIELDS, "upstream_bit_differences_by_pair", "downstream_bit_differences_by_pair")
+DOWNSTREAM_FIELD = "downstream_bit_differences_by_pair"
+OUTPUT_FIELDS = (*base.PAIR_FIELDS, "upstream_bit_differences_by_pair", DOWNSTREAM_FIELD)
 WORKSPACE = ":4096:8"
 WEIGHT_SEED_OFFSET = 100_000
 WEIGHT_SCALE = WIDTH ** -0.5
@@ -30,6 +32,25 @@ ANCHOR = run.HERE / "split-add-tiles-512-results/s173.json"
 SOURCES = (*tiles.SOURCES, *(str(path.relative_to(run.ROOT)) for path in (
     ANCHOR, Path(__file__).resolve(), run.HERE / "COPY_FREE_PROJECTION_CHAIN_512.md",
 )))
+
+
+@dataclass(frozen=True)
+class Workload:
+    downstream_width: int
+    numeric_seed: int
+    timing_seeds: tuple[int, ...]
+    sources: tuple[str, ...]
+
+    @property
+    def seeds(self):
+        return (self.numeric_seed, *self.timing_seeds)
+
+
+SQUARE = Workload(WIDTH, NUMERIC_SEED, TIMING_SEEDS, SOURCES)
+WIDE = Workload(12_288, 181, (182, 183, 184), (*SOURCES, str(
+    (run.HERE / "COPY_FREE_PROJECTION_TAIL_12288.md").relative_to(run.ROOT)
+)))
+WORKLOADS = {workload.downstream_width: workload for workload in (SQUARE, WIDE)}
 
 
 def expected_kernels(anchor):
@@ -42,30 +63,41 @@ def expected_kernels(anchor):
     }
 
 
-def gemm_contract():
-    return {"operator": "torch.mm", "dtype": "bfloat16", "shape_mkn": [ROWS, WIDTH, WIDTH],
-            "matmuls_per_pair": 2, "output": "preallocated", "workspace_config": WORKSPACE,
-            "allow_bf16_reduced_precision_reduction": False,
-            "weight_seed_offset": WEIGHT_SEED_OFFSET, "weight_scale": WEIGHT_SCALE}
+def gemm_contract(workload=SQUARE):
+    contract = {"operator": "torch.mm", "dtype": "bfloat16", "shape_mkn": [ROWS, WIDTH, WIDTH],
+                "matmuls_per_pair": 2, "output": "preallocated", "workspace_config": WORKSPACE,
+                "allow_bf16_reduced_precision_reduction": False,
+                "weight_seed_offset": WEIGHT_SEED_OFFSET, "weight_scale": WEIGHT_SCALE}
+    if workload.downstream_width != WIDTH:
+        contract["downstream_shape_mkn"] = [ROWS, WIDTH, workload.downstream_width]
+    return contract
 
 
-def make_work(torch, seed, device):
+def make_work(torch, seed, device, workload):
     rms_works, norm_weight, layout = base.make_work(torch, seed, device, rows=ROWS)
-    works = [base.Work(work.stream, work.source, (*work.buffer, *(torch.empty_like(t) for t in work.buffer)))
-             for work in rms_works]
+    downstream_shape = (run.OPS, ROWS, workload.downstream_width)
+    works = []
+    for work in rms_works:
+        upstream = torch.empty_like(work.buffer[0])
+        downstream = torch.empty(downstream_shape, dtype=torch.bfloat16, device=device)
+        works.append(base.Work(work.stream, work.source, (*work.buffer, upstream, downstream)))
     generator = torch.Generator(device=device).manual_seed(seed + WEIGHT_SEED_OFFSET)
-    weights = tuple(torch.randn((WIDTH, WIDTH), dtype=torch.bfloat16, device=device, generator=generator)
-                    .mul_(WEIGHT_SCALE) for _ in range(2))
+    weights = tuple(torch.randn((WIDTH, columns), dtype=torch.bfloat16, device=device, generator=generator)
+                    .mul_(WEIGHT_SCALE) for columns in (WIDTH, workload.downstream_width))
     tensors = [tensor for work in works for tensor in (*work.source, *work.buffer)] + [norm_weight, *weights]
     spans = sorted((t.data_ptr(), t.data_ptr() + t.numel() * t.element_size()) for t in tensors)
     if (any(start % 16 for start, _ in spans) or any(not t.is_contiguous() for t in tensors)
             or any(a[1] > b[0] for a, b in zip(spans, spans[1:]))):
         raise ValueError("Projection inputs, intermediates and outputs must be aligned and disjoint.")
-    return works, norm_weight, weights, {
+    layout = {
         **layout, "disjoint_allocations": len(spans),
         "input_and_output_bytes": sum(end - start for start, end in spans),
         "writable_arrays_per_stream": len(works[0].buffer),
     }
+    if workload.downstream_width != WIDTH:
+        downstream = works[0].buffer[-1]
+        layout["downstream_pair_tensor_stride_bytes"] = downstream.stride(0) * downstream.element_size()
+    return works, norm_weight, weights, layout
 
 
 def fingerprints(works, norm_weight, weights):
@@ -146,7 +178,9 @@ def chain_effect(timing):
             "passes_1pct": rates[FUSED] >= THRESHOLD * rates[SPLIT]}
 
 
-def checkpoint(seed, asset_dir, qualification, revision):
+def checkpoint(seed, asset_dir, qualification, revision, *, workload=SQUARE):
+    if seed not in workload.seeds:
+        raise ValueError("The seed does not belong to the registered downstream width.")
     if os.environ.get("CUBLAS_WORKSPACE_CONFIG") != WORKSPACE:
         raise ValueError(f"Set CUBLAS_WORKSPACE_CONFIG={WORKSPACE} before running the chain.")
     import torch
@@ -159,15 +193,15 @@ def checkpoint(seed, asset_dir, qualification, revision):
     library = asset_dir / Path(MEMBER).name
     environment = base.validate_stack(torch, triton, library, anchor)
     asset = anchor["asset"]
-    sources = {name: hashlib.sha256((run.ROOT / name).read_bytes()).hexdigest() for name in SOURCES}
-    gemm = gemm_contract()
+    sources = {name: hashlib.sha256((run.ROOT / name).read_bytes()).hexdigest() for name in workload.sources}
+    gemm = gemm_contract(workload)
     pinned = {"rows": ROWS, "width": WIDTH, "code_revision": revision, "source_sha256": sources,
               "environment": environment, "asset": asset, "gemm": gemm}
-    if seed in TIMING_SEEDS and (
-        not qualification or qualification["seed"] != NUMERIC_SEED or not qualification["gate_passed"]
+    if seed in workload.timing_seeds and (
+        not qualification or qualification["seed"] != workload.numeric_seed or not qualification["gate_passed"]
         or not numeric_gate(qualification["numerical"]) or any(qualification[key] != value for key, value in pinned.items())
     ):
-        raise ValueError("An exact seed-177 checkpoint from the same revision and GEMM configuration is required.")
+        raise ValueError(f"An exact seed-{workload.numeric_seed} checkpoint from the same revision is required.")
     torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = False
     if torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction:
         raise RuntimeError("PyTorch did not apply the registered BF16 reduction setting.")
@@ -175,7 +209,7 @@ def checkpoint(seed, asset_dir, qualification, revision):
     with torch.inference_mode():
         vllm = base.load_vllm(torch, library)
         methods = {SPLIT: partial(split_out_of_place, tile=TILE), FUSED: fused_out_of_place}
-        works, norm_weight, weights, layout = make_work(torch, seed, device)
+        works, norm_weight, weights, layout = make_work(torch, seed, device, workload)
         original = fingerprints(works, norm_weight, weights)
         alias_work = base.Work(works[0].stream, works[0].source, works[0].buffer[:2])
         guards = {name: direct.verify_alias_guards(fn, alias_work, norm_weight) for name, fn in methods.items()}
@@ -189,7 +223,7 @@ def checkpoint(seed, asset_dir, qualification, revision):
                      "graph_checks": checks, "capture_audits": audits}
         passed = numeric_gate(numerical)
         timing = None
-        if passed and seed in TIMING_SEEDS:
+        if passed and seed in workload.timing_seeds:
             uuid = getattr(torch.cuda.get_device_properties(device), "uuid", None)
             timing = base.measure(torch, seed, runner, graphs, works, reference, uuid, backends=BACKENDS,
                                   rows=ROWS, compare_outputs=compare_outputs)
@@ -205,7 +239,8 @@ def checkpoint(seed, asset_dir, qualification, revision):
 
 if __name__ == "__main__":
     cli = argparse.ArgumentParser(description=__doc__)
-    cli.add_argument("--seed", type=int, choices=SEEDS, required=True)
+    cli.add_argument("--seed", type=int, required=True)
+    cli.add_argument("--downstream-width", type=int, choices=WORKLOADS, default=WIDTH)
     cli.add_argument("--asset-dir", type=Path, required=True)
     cli.add_argument("--qualified", type=Path)
     args = cli.parse_args()
@@ -213,5 +248,5 @@ if __name__ == "__main__":
     if not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", revision):
         cli.error("Provide the frozen revision.")
     qualification = json.loads(args.qualified.read_bytes()) if args.qualified else None
-    result = checkpoint(args.seed, args.asset_dir, qualification, revision)
+    result = checkpoint(args.seed, args.asset_dir, qualification, revision, workload=WORKLOADS[args.downstream_width])
     print(json.dumps(result, separators=(",", ":"), allow_nan=False))

@@ -1,4 +1,6 @@
 """Plot independent BF16 projection-chain throughput and the fusion effect."""
+import argparse
+
 from matplotlib.lines import Line2D
 from matplotlib.ticker import PercentFormatter
 
@@ -8,7 +10,7 @@ import run
 from shuffle_plot import plt
 
 
-def draw(results, output):
+def draw(results, output, *, workload=protocol.SQUARE):
     measured = [(seed, result) for seed, result in sorted(results.items()) if result["effect"]]
     if not measured:
         raise ValueError("No exact timing checkpoints are available to plot.")
@@ -16,7 +18,10 @@ def draw(results, output):
     fig, (left, right) = plt.subplots(1, 2, figsize=(11.4, 4.6), sharey=True)
     fig.subplots_adjust(left=.12, right=.954, top=.69, bottom=.26, wspace=.30)
     fig.text(.06, .91, "Fused residual RMSNorm between BF16 projections", fontsize=17, color=ink, weight="bold")
-    fig.text(.06, .834, "H100  ·  512 rows × 4,096 features  ·  8 CUDA streams", fontsize=10.5, color=muted)
+    subtitle = "H100  ·  512 rows × 4,096 features  ·  8 CUDA streams"
+    if workload != protocol.SQUARE:
+        subtitle = f"H100  ·  512 rows  ·  {protocol.WIDTH:,} → {workload.downstream_width:,} downstream  ·  8 streams"
+    fig.text(.06, .834, subtitle, fontsize=10.5, color=muted)
 
     styles = [(protocol.SPLIT, -.12, slate, "o", "Tuned split"), (protocol.FUSED, .12, green, "D", "Fused")]
     for row, (_, result) in enumerate(measured):
@@ -59,4 +64,8 @@ def draw(results, output):
 
 
 if __name__ == "__main__":
-    draw(read_results(), run.HERE / "projection-chain-512-throughput.png")
+    cli = argparse.ArgumentParser(description=__doc__)
+    cli.add_argument("--downstream-width", type=int, choices=protocol.WORKLOADS, default=protocol.WIDTH)
+    workload = protocol.WORKLOADS[cli.parse_args().downstream_width]
+    name = "projection-chain-512" if workload == protocol.SQUARE else "projection-tail-12288"
+    draw(read_results(workload=workload), run.HERE / f"{name}-throughput.png", workload=workload)
