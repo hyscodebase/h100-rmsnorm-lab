@@ -11,3 +11,16 @@ A single BF16 rounding step can change the normalized answer. With an activation
 Triton receives one fixed four-warp implementation. Each checkpoint tries four compiled PyTorch variants, including a native RMSNorm spelling, and preserves every exclusion. The timing harness fills the live outputs with NaNs before a verification replay so stale values cannot satisfy the oracle. Its timed graphs retain all 32 pairs of outputs. Raw samples retain execution order and include units. [Kernel](kernel.py) · [Benchmark](benchmark.py)
 
 The adoption gate is a reduction of at least 5% against the fastest correct compiled comparator at the target in each of three fresh seeds. Row counts 1, 16 and 128 test whether the conclusion travels to smaller workloads. The experiment records operator latency in microseconds. [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/7)
+
+## Reproduce on an H100
+
+From a Linux checkout containing CUDA PyTorch and Triton, initialize a fresh state directory and run one unit. Every unit tests one input shape and one seed. The first three address the 1,024-row target, followed by the smaller controls. A subsequent step skips previously verified units.
+
+```bash
+python3 lab.py init --state-dir .lab/residual --plan plans/residual-rmsnorm.json
+python3 lab.py step --state-dir .lab/residual
+python3 lab.py status --state-dir .lab/residual
+python3 experiments/rmsnorm-residual/summarize.py .lab/residual
+```
+
+Use `pause` to stop before the next unit and `resume` to continue. The summary validates the stored source hashes, numerical evidence, comparator eligibility, GPU environment and original graph-event times before computing the target decision.

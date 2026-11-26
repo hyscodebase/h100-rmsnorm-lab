@@ -19,6 +19,7 @@ from itertools import product
 from pathlib import Path
 
 import gemm_plan
+import residual_plan
 
 ROOT = Path(__file__).resolve().parent
 SOURCES = ("kernels.py", "check.py", "benchmark.py")
@@ -81,7 +82,10 @@ def validate_plan(plan):
     for key in ("id", "hypothesis"):
         require(isinstance(plan.get(key), str) and plan[key].strip(), f"{key} must be nonempty text.")
     kind = plan.get("kind", "rmsnorm")
-    require(kind in ("rmsnorm", "prefill_gemm"), f"Unknown experiment kind: {kind}")
+    require(kind in ("rmsnorm", "prefill_gemm", "residual_rmsnorm"), f"Unknown experiment kind: {kind}")
+    if kind == "residual_rmsnorm":
+        residual_plan.validate_plan(plan)
+        return
     for key in (("seeds",) if kind == "prefill_gemm" else ("seeds", "rows", "widths", "row_tiles")):
         values = plan.get(key)
         require(isinstance(values, list) and values and all(type(v) is int for v in values),
@@ -100,13 +104,16 @@ def validate_plan(plan):
 
 
 def manifest(plan):
-    sources = (gemm_plan.SOURCE,) if plan.get("kind") == "prefill_gemm" else SOURCES
+    sources = {"prefill_gemm": (gemm_plan.SOURCE,), "residual_rmsnorm": residual_plan.SOURCES}.get(plan.get("kind"), SOURCES)
     hashes = {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in sources}
     payload = json.dumps([plan, hashes], sort_keys=True, allow_nan=False).encode()
     return {"version": 1, "experiment_hash": hashlib.sha256(payload).hexdigest(), "sources": hashes}
 
 
 def tasks(plan):
+    if plan.get("kind") == "residual_rmsnorm":
+        yield from residual_plan.tasks(plan)
+        return
     if plan.get("kind") == "prefill_gemm":
         yield from gemm_plan.tasks(plan)
         return
@@ -144,7 +151,7 @@ def initialize(state, plan_file):
     print(f"Initialized {plan['id']} in {state}.")
 
 
-def validate_result(result, shape, plan):
+def validate_result(result, shape, plan, sources=None):
     require(isinstance(result, dict), "Expected a JSON object from the runner.")
     if shape is None:
         checks = result.get("checks")
@@ -169,6 +176,15 @@ def validate_result(result, shape, plan):
     require(isinstance(cap, list) and len(cap) == 2 and all(type(v) is int and v >= 0 for v in cap)
             and cap[0] >= 8, "Expected a CUDA compute capability supporting native BF16.")
     environment = {key: env.get(key) for key in ("gpu", "compute_capability", "cuda_runtime", "driver", "torch", "triton", "python")}
+    if plan.get("kind") == "residual_rmsnorm":
+        require("H100" in env["gpu"] and cap == [9, 0] and all(isinstance(env.get(k), str) and env[k].strip()
+                for k in ("driver", "python")), "Residual experiment requires a versioned H100 environment.")
+        for key in ("total_memory_bytes", "sm_count"):
+            require(type(env.get(key)) is int and env[key] > 0, f"Missing GPU hardware field {key}.")
+            environment[key] = env[key]
+        residual_plan.validate_result(result, shape, plan)
+        residual_plan.verify_sources(result, ROOT, sources if sources is not None else manifest(plan)["sources"])
+        return environment
     if gemm:
         for key in ("total_memory_bytes", "sm_count"):
             require(type(env.get(key)) is int and env[key] > 0, f"Missing GPU hardware field {key}.")
@@ -201,6 +217,7 @@ def validate_result(result, shape, plan):
 def progress(state, plan, experiment_hash):
     pending = []
     environment = None
+    sources = read_json(state / "manifest.json")["sources"] if plan.get("kind") == "residual_rmsnorm" else None
     for task_id, shape in tasks(plan):
         path = state / "tasks" / f"{task_id}.json"
         if not path.exists():
@@ -209,7 +226,7 @@ def progress(state, plan, experiment_hash):
         artifact = read_json(path)
         require(artifact.get("experiment_hash") == experiment_hash and artifact.get("task_id") == task_id,
                 f"Checkpoint identity mismatch in {path}.")
-        backend = validate_result(artifact["result"], shape, plan)
+        backend = validate_result(artifact["result"], shape, plan, sources)
         if backend:
             require(environment in (None, backend), "Checkpoints have inconsistent GPU environments.")
             environment = backend
@@ -217,6 +234,9 @@ def progress(state, plan, experiment_hash):
 
 
 def command(runner, shape, plan):
+    if plan.get("kind") == "residual_rmsnorm":
+        cmd = [str(runner), "residual"] if runner else [sys.executable, str(ROOT / residual_plan.SOURCE)]
+        return cmd + residual_plan.arguments(shape)
     if plan.get("kind") == "prefill_gemm":
         cmd = [str(runner), "gemm"] if runner else [sys.executable, str(ROOT / gemm_plan.SOURCE)]
         return cmd + gemm_plan.arguments(shape, plan)
@@ -245,7 +265,7 @@ def resolve_runner(explicit):
     return None
 
 
-def local_gemm_revision(root, expected_hash):
+def local_source_revision(root, sources):
     if not shutil.which("git"):
         return "unversioned"
     git = ["git", "--no-replace-objects", "-C", str(root)]
@@ -253,12 +273,17 @@ def local_gemm_revision(root, expected_hash):
     if head.returncode:
         return "unversioned"
     revision = head.stdout.strip()
-    blob = subprocess.run([*git, "cat-file", "blob", f"{revision}:{gemm_plan.SOURCE}"], capture_output=True)
-    if blob.returncode:
-        return "unversioned"
-    if hashlib.sha256(blob.stdout).hexdigest() != expected_hash:
-        return f"{revision}-modified"
+    for name, expected_hash in sources.items():
+        blob = subprocess.run([*git, "cat-file", "blob", f"{revision}:{name}"], capture_output=True)
+        if blob.returncode:
+            return "unversioned"
+        if hashlib.sha256(blob.stdout).hexdigest() != expected_hash:
+            return f"{revision}-modified"
     return revision
+
+
+def local_gemm_revision(root, expected_hash):
+    return local_source_revision(root, {gemm_plan.SOURCE: expected_hash})
 
 
 @contextmanager
@@ -297,6 +322,7 @@ def record_attempt(state, task_id, experiment_hash, shape, plan):
 def execute(state, runner, max_steps):
     with worker_lock(state) as lock:
         plan, experiment_hash = load_state(state)
+        sources = read_json(state / "manifest.json")["sources"]
         pending, environment = progress(state, plan, experiment_hash)
         for task_id, shape in pending[:max_steps]:
             if (state / "paused").exists():
@@ -305,11 +331,12 @@ def execute(state, runner, max_steps):
             print(f"Running {task_id} ...", flush=True)
             with record_attempt(state, task_id, experiment_hash, shape, plan):
                 env = None
-                if runner is None and plan.get("kind") == "prefill_gemm":
-                    expected_hash = read_json(state / "manifest.json")["sources"][gemm_plan.SOURCE]
-                    revision = local_gemm_revision(ROOT, expected_hash)
+                if runner is None and plan.get("kind") in ("prefill_gemm", "residual_rmsnorm"):
+                    revision = local_source_revision(ROOT, sources)
                     env = {**os.environ, "BENCH_REVISION": revision}
                     if revision == "unversioned" or revision.endswith("-modified"):
+                        require(plan.get("kind") != "residual_rmsnorm",
+                                "Freeze all residual numerical sources in a clean Git commit before running.")
                         print("Local benchmark source has no matching HEAD revision. "
                               "This checkpoint cannot be exported as a verified Git run.", file=sys.stderr)
                 # Keep a surviving local runner locked even if its coordinator is killed.
@@ -318,7 +345,7 @@ def execute(state, runner, max_steps):
                     text=True, check=True, pass_fds=(lock.fileno(),), env=env,
                 )
                 result = json.loads(output.stdout)
-                backend = validate_result(result, shape, plan)
+                backend = validate_result(result, shape, plan, sources)
                 if backend:
                     require(environment in (None, backend), "GPU environment changed. Initialize a new state directory.")
                     environment = backend
@@ -343,7 +370,7 @@ def main():
             sub.add_argument("--plan", type=Path, required=True)
         if name in ("step", "run"):
             sub.add_argument("--runner", type=Path,
-                             help="Executable accepting check, bench or gemm. Defaults to local Git setting rmsnorm.runner, then local Python.")
+                             help="Executable accepting check, bench, gemm or residual. Defaults to local Git setting rmsnorm.runner, then local Python.")
         if name == "run":
             sub.add_argument("--max-steps", type=int, help="Stop after this many newly completed tasks.")
     args = parser.parse_args()
