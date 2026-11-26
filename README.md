@@ -1,6 +1,6 @@
 # H100 RMSNorm Lab
 
-How much does the thread layout of a BF16 RMSNorm kernel matter on an NVIDIA H100? This inference microbenchmark varies the number of token rows while keeping the math and inputs fixed. It compares a single-row Triton kernel with four or eight warps against eager PyTorch and shape-specialized TorchInductor.
+How much does the thread layout of a BF16 RMSNorm kernel matter on an NVIDIA H100? This inference microbenchmark varies the number of token rows while keeping the math and inputs fixed. The initial experiment compares a single-row Triton kernel with four or eight warps against eager PyTorch and shape-specialized TorchInductor.
 
 ![Speed relative to compiled PyTorch at four row counts and two hidden widths](results/warp-comparison.png)
 
@@ -39,13 +39,21 @@ For a single shape, add `--rows 1 --widths 4096`. To regenerate the figure, inst
 
 ## Kernel and measurement
 
-- Each Triton program loads one contiguous row and the shared per-column weight. It accumulates the sum of squares in FP32, applies reciprocal RMS with epsilon 1e-6, multiplies by the weight and stores BF16 output. Masked loads support widths up to 16384. [Kernel](kernels.py)
-- Eight numerical scenarios cover random signed weights, zero rows, tiny and large inputs, and widths on either side of a power of two. Both warp counts passed against an FP32 reference with relative tolerance 0.005 and absolute tolerance 0.000001. Each timed backend also passed a reference check at each measured shape. [Numerical harness](check.py)
+- The baseline Triton program loads one contiguous row and the shared per-column weight. It accumulates the sum of squares in FP32, applies reciprocal RMS with epsilon 1e-6, multiplies by the weight and stores BF16 output. Masked loads support widths up to 16384. [Kernel](kernels.py)
+- The initial eight numerical scenarios cover random signed weights, zero rows, tiny and large inputs, and widths on either side of a power of two. Both warp counts passed against an FP32 reference with relative tolerance 0.005 and absolute tolerance 0.000001. Each timed backend also passed a reference check at each measured shape. [Numerical harness](check.py)
 - All implementations use the same seeded synthetic inputs and return a new output. Validation, JIT compilation and graph capture finish before timing. Each round shuffles backend order. CUDA events bracket the replay, and the raw JSON records the median, quartiles and per-round averages. [Benchmark harness](benchmark.py)
 - Inputs reuse the same addresses without an explicit cache flush. GPU clocks were unmanaged. These measurements cover this operator and graph-replay workload. Model serving latency, cold-cache performance and FlashInfer performance remain open questions.
 
-## Next experiment
+## Row tiling and the continuing experiment
 
-The next experiment changes how many token rows a Triton program handles at width 8192, where compiled PyTorch led at 1,024 rows. The sprint goal defines how to evaluate that change and when the evidence would justify an upstream proposal. [Kernel optimization goal](GOAL.md)
+Grouping two or four token rows per program passed all 60 numerical checks. At the 1024×8192 target, the fastest grouped variant took 8.63 and 8.59 µs across two runs. The best one-row variant took 8.46 and 8.39 µs. The default remains one row. [Row-tiling report](results/row-tiles/REPORT.md)
+
+At 1024×4096 the two-row variant showed a smaller gain. The next experiment sweeps hidden width around that transition. Its plan can run one unit at a time. Completed units persist across sessions. [Current goal and handoff](GOAL.md) · [Experiment plan](plans/width-sweep.json)
+
+```bash
+python3 lab.py init --plan plans/width-sweep.json
+python3 lab.py step
+python3 lab.py status
+```
 
 [PyTorch RMSNorm](https://docs.pytorch.org/docs/2.7/generated/torch.nn.RMSNorm.html) · [Triton reduction tutorial](https://triton-lang.org/main/getting-started/tutorials/05-layer-norm.html) · [FlashInfer RMSNorm](https://docs.flashinfer.ai/generated/flashinfer.norm.rmsnorm.html)

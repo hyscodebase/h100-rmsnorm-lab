@@ -1,13 +1,37 @@
-# H100 kernel optimization sprint
+# 커널 최적화 GOAL
 
-**Question.** At 1024 token rows and hidden width 8192, can grouping multiple rows in a Triton program improve BF16 RMSNorm latency over the current one-row implementation and shape-specialized PyTorch?
+**H100에서 LLM 추론에 쓰이는 커널을 하나씩 개선하고, 다음 실험은 직전 실측 결과로 결정한다.** 한 실험이 끝나면 결과를 공개하고 후속 가설을 하나 선택한다. 연구 주제에는 종료 횟수를 두지 않는다. GPU 사용은 저장·재개할 수 있는 작은 작업으로 나눈다.
 
-| Stage | Experiment | Evidence |
+## 현재 인계 상태
+
+| 실험 | 상태 | 근거와 결정 |
 | --- | --- | --- |
-| 1. Establish the baseline | Compare eager PyTorch, compiled PyTorch and one-row Triton using four and eight warps. | Two recorded H100 runs, 8 shapes, 16 numerical checks. |
-| 2. Change the row tile | Implement a multi-row variant. Measure the two-row and four-row configurations on the target shape and smaller controls. Include a partial final tile and a non-power-of-two width in the numerical checks. | Source, correctness output, and per-replay times for the existing and new kernels. |
-| 3. Decide what to keep | Repeat the comparison in two processes. Record the winning and losing shapes and the strongest baseline at each. | A short report that states the latency delta and a decision for the target shape. |
+| RMSNorm 워프 수 | 완료 | 1×4096에서 8워프가 컴파일된 PyTorch보다 약 14% 빨랐다. 1024×8192에서의 비교를 후속 실험으로 선택했다. [첫 측정](results/h100.json) · [재측정](results/h100-repeat.json) |
+| 프로그램당 1·2·4행 처리 | 완료 | 정확도 60건을 통과했다. 1024×8192에서는 새 설정이 두 기준을 모두 5% 앞서지 못해 기존 1행 구현을 유지했다. [실험 보고서](results/row-tiles/REPORT.md) |
+| 은닉 차원에 따른 2행 타일의 손익 | 진행 | 1024×4096에서 나타난 작은 이점이 어느 너비에서 사라지는지 확인한다. 4096·4104·5120·6144·8192를 시드 두 개로 측정한다. [실행 계획](plans/width-sweep.json) |
 
-A configuration qualifies for adoption on the target shape if its median latency is at least 5% lower than **both** the best existing one-row variant and compiled PyTorch in each of two runs, with all numerical checks passing. This is an engineering decision threshold. The sprint can also conclude by documenting an unsuccessful configuration and retaining the baseline.
+## 다음 가설을 고르는 규칙
 
-Use synthetic data and one H100. A prospective FlashInfer contribution needs the same improvement reproduced against its current implementation and tests. Upstream review and merge are separate milestones.
+1. 하나의 입력 크기, 가장 경쟁력 있는 기준 구현, 바꿀 요소 하나를 정한다. 예상 이득, 수치 정확도, 채택 기준을 먼저 기록한다.
+2. 커널이나 실행 환경을 바꾸면 새 실험으로 구분한다. 같은 커널 소스와 방법으로 후보와 기준을 함께 측정한다.
+3. 정확도와 원시 지연시간을 보관한다. 현재 실험에서 기본 설정을 바꾸려면 동일 후보가 두 시드 모두에서 최선의 기존 1행 설정과 컴파일된 PyTorch보다 각각 5% 이상 빨라야 한다.
+4. 이득이 재현되면 인접 입력 크기와 실제 라이브러리 구현에서 검증한다. 이득이 사라지면 경계 입력이나 프로파일러 지표로 원인 후보 하나를 좁힌다. 새 가설은 직전 결과 파일과 연결한다.
+5. 한 사이클이 끝나면 이 표에 결정과 근거를 추가하고 다음 계획 JSON을 만든다. 결과가 있는 개인 저장소에서 계속 진행한다. 상류 PR을 제안하려면 현재 상류 구현과의 비교 및 기여 범위를 따로 확인한다.
+
+## 끊어서 실행하기
+
+첫 실행에서 `python3 lab.py init --plan plans/width-sweep.json`으로 상태를 만든다. 같은 체크아웃에서 다음 명령을 사용한다.
+
+```bash
+python3 lab.py status
+python3 lab.py step
+python3 lab.py pause
+python3 lab.py resume
+python3 lab.py run --max-steps 2
+```
+
+- **짧게 작업할 때** `step`은 정확도 검사 한 묶음 또는 입력 크기 하나와 시드 하나의 측정만 실행한다. 위 계획은 정확도 1개와 성능 측정 10개로 나뉜다.
+- **이동하기 전** 다른 터미널에서 `pause`를 실행하면 진행 중인 측정이 끝난 뒤 다음 측정을 시작하지 않는다. `status`에서 `pausing`은 마무리 중, `paused`는 연결을 끊어도 되는 상태다. 노트북이 먼저 잠들거나 연결이 끊기면 다음 실행에서 결과를 저장하지 못한 한 구간을 다시 돌린다.
+- **돌아왔을 때** `status`로 저장 지점을 확인하고 `resume` 후 `step` 또는 `run --max-steps N`으로 이어간다. 상태 조회와 일시정지는 오프라인에서도 가능하다.
+- **Codex에서** “이동할게, 커널 GOAL 일시정지”라고 하면 측정 대기열과 채팅 GOAL을 함께 멈춘다. 작업을 재개할 때는 저장 지점과 소스 버전을 먼저 확인한다.
+- **보관 위치** 기본 상태는 이 체크아웃의 `.lab/current`에 남는다. 다른 기기에서 이어갈 때는 같은 소스 버전과 상태 폴더를 함께 옮긴다. 기본 경로를 계속 쓸 때는 완료한 실험의 상태 폴더를 `.lab/history/<실험 ID>`에 보존한 다음 새 계획으로 초기화한다. 별도로 진행 중인 계획은 `--state-dir`로 선택한다.

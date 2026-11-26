@@ -1,0 +1,11 @@
+{
+  "id": "width-sweep",
+  "hypothesis": "At 1024 token rows, the small advantage of grouping two rows near hidden width 4096 shrinks or reverses as hidden width grows. Compare the same row tiles on both sides of the 4096-column block boundary.",
+  "rows": [1024],
+  "widths": [4096, 4104, 5120, 6144, 8192],
+  "row_tiles": [1, 2, 4],
+  "seeds": [42, 43],
+  "rounds": 21,
+  "ops": 32,
+  "compiled": true
+}
