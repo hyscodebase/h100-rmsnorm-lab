@@ -1,0 +1,314 @@
+{
+  "code_revision": "de225a053a097efba960482ed106e7b490268406",
+  "source_sha256": {
+    "experiments/rmsnorm-residual/vllm/PLAN.md": "8bf7df499b2931cecb93c423bc829a5813577df8710857155492023b1d5c6480",
+    "experiments/rmsnorm-residual/vllm/run.py": "24e88100728d67e14494106a888a26ffdf5b49d6f5da7b48bd76f1aa7f551ed5",
+    "experiments/rmsnorm-residual/vllm/kernel.py": "b9d6f67e0c5e6e9cfc9da78def0ccec046d3b609bf1c7862ac407a3becffb8cd",
+    "experiments/rmsnorm-residual/vllm/wheel.py": "9b8956435559569d88d0a5b9f9e32db55d33f9b4f494638a1c8d010c7e73ae52",
+    "experiments/rmsnorm-residual/benchmark.py": "a2be59cd09dcbf15ed279df860e8220944a7bddeedc2e7f1c74cf655c5da6f05",
+    "experiments/rmsnorm-residual/check.py": "06fc94defcc7b4223a1675db0f5eadff52215236681922c9890a1b5112d5a7df",
+    "experiments/rmsnorm-residual/vllm/PRECISION_PLAN.md": "9044cc966bf098e23513234cfdcdc0c7ea2b07ef576576b5f34f8df97bed2e97",
+    "experiments/rmsnorm-residual/vllm/float32_gate.py": "a7f9de4c5cb8b859c1addc911ff694f20203171f49dc583fbe553d9c6518eaf9",
+    "experiments/rmsnorm-residual/vllm/bounded_preflight.py": "cc23b30e47936066c58503d972cf1c1fc0fb48e9dfb7e18d70c6a2db01eb934d",
+    "experiments/rmsnorm-residual/vllm/bounded_timing.py": "92ccd5a1e43e55a061bfabbc0ba8ed0f984233df46858f43b3206afbd68a76f5",
+    "experiments/rmsnorm-residual/vllm/grouped_kernel.py": "aac1b46f1e644bf454c05ac47e95cd9118b221085aed9dedae1f40f5aa785c27",
+    "experiments/rmsnorm-residual/vllm/grouped_run.py": "7cdd077162b62123387e242af0502b004efa8aca18855d1787119de731389583",
+    "experiments/rmsnorm-residual/vllm/REDUCTION_PLAN.md": "b9e968dd6efa1e63e65b695cba441e2c7870852691fb1765df6a7dc3ffc815f9"
+  },
+  "asset": {
+    "version": "0.10.0",
+    "wheel": "vllm-0.10.0-cp38-abi3-manylinux1_x86_64.whl",
+    "wheel_sha256": "8ca37559d82b43b5e8c8248d2e4a1ecb51d6d4e5d517491d656df6491ed93dab",
+    "extension": "_C.abi3.so",
+    "extension_sha256": "0bdeda3d6ef7f1df23bcbd128f27c003dc2750475632d8d1d5658e5af15a1e74",
+    "extension_size_bytes": 339450440
+  },
+  "environment": {
+    "gpu": "NVIDIA H100 80GB HBM3",
+    "compute_capability": [
+      9,
+      0
+    ],
+    "total_memory_bytes": 84929216512,
+    "sm_count": 132,
+    "driver": "550.144.03",
+    "cuda": "12.8",
+    "torch": "2.7.1+cu128",
+    "triton": "3.3.1",
+    "python": "3.12.16"
+  },
+  "seed": 117,
+  "rows": 1024,
+  "width": 4096,
+  "gate_passed": true,
+  "started_utc": "2026-11-26T08:42:01.746310+00:00",
+  "finished_utc": "2026-11-26T08:42:03.922404+00:00",
+  "wall_seconds": 2.176095542963594,
+  "historical_revision": "084e88cc6824ee61c9abd7823e90b44ec6f8201a",
+  "codegen": {
+    "num_warps": 8,
+    "shared_bytes": 2048,
+    "registers_per_thread": 32,
+    "spill_count": 0,
+    "ttgir_sha256": "4a4550d8860a5f5aef4d72ce990587c7a2eb202915986953385836b926e7074c",
+    "ptx_sha256": "362f085c9b2ed732e5c399dc10caf5ea1d8321590f3530c0550a739a8b6c7a3e",
+    "ptx_instruction_sha256": "3729696a089838a760d2639bfda3178418b92fbd5abf3b4c737f2c5d08133041",
+    "ptx_opcodes": {
+      "add.rn.bf16x2": 8,
+      "add.rn.f32": 271,
+      "add.s32": 2,
+      "add.s64": 6,
+      "and.b32": 2,
+      "bar.sync": 1,
+      "cvt.f32.bf16": 16,
+      "cvt.rn.bf16x2.f32": 8,
+      "div.full.f32": 1,
+      "ld.global.v4.b32": 6,
+      "ld.param.u64": 3,
+      "ld.shared.v2.f32": 128,
+      "mov.b32": 9,
+      "mov.f32": 1,
+      "mov.pred": 1,
+      "mov.u32": 27,
+      "mul.rn.bf16x2": 8,
+      "mul.rn.f32": 32,
+      "mul.wide.s32": 1,
+      "mul.wide.u32": 1,
+      "or.b32": 1,
+      "rsqrt.approx.ftz.f32": 1,
+      "shl.b32": 3,
+      "st.global.v4.b32": 4,
+      "st.shared.b32": 1
+    },
+    "fp_fusion": false,
+    "logical_group_width": 8
+  },
+  "fixtures": [
+    {
+      "fixture": "random",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "zero_rows",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "cancellation",
+      "elements": 4194304,
+      "strict_outside_tolerance": 24,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          233,
+          309
+        ],
+        [
+          233,
+          531
+        ],
+        [
+          233,
+          717
+        ],
+        [
+          233,
+          809
+        ],
+        [
+          233,
+          869
+        ],
+        [
+          233,
+          921
+        ],
+        [
+          233,
+          937
+        ],
+        [
+          233,
+          1063
+        ],
+        [
+          233,
+          1559
+        ],
+        [
+          233,
+          1703
+        ],
+        [
+          233,
+          2105
+        ],
+        [
+          233,
+          2429
+        ],
+        [
+          233,
+          2481
+        ],
+        [
+          233,
+          2599
+        ],
+        [
+          233,
+          2641
+        ],
+        [
+          233,
+          2657
+        ],
+        [
+          233,
+          2667
+        ],
+        [
+          233,
+          2675
+        ],
+        [
+          233,
+          2807
+        ],
+        [
+          233,
+          2965
+        ],
+        [
+          233,
+          3019
+        ],
+        [
+          233,
+          3373
+        ],
+        [
+          233,
+          3743
+        ],
+        [
+          233,
+          3891
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.0537109375,
+        0.0537109375
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "tiny",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.00048828125,
+        0.00048828125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "bf16_ties",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.00390625,
+        0.00390625
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "bf16_denominator_tie",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.0,
+        0.0
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "weight_rounding",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.00390625,
+        0.00390625
+      ],
+      "passed": true,
+      "weight_probe": [
+        1.46875,
+        1.46875
+      ]
+    },
+    {
+      "fixture": "signed_zero",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.0,
+        0.0
+      ],
+      "passed": true,
+      "normalized_zero_bits": [
+        [
+          32768,
+          0
+        ],
+        [
+          32768,
+          0
+        ]
+      ]
+    }
+  ],
+  "old_coordinates": [],
+  "replay_checks": [],
+  "timing": null
+}

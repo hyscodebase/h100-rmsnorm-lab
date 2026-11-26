@@ -78,7 +78,7 @@ def trials(torch, methods, seed, device):
     elapsed = time.perf_counter() - start
     check.ensure(torch.equal(weight.view(torch.int16), initial_weight.view(torch.int16)), "mutated_weight")
     stats = {name: run.original.latency(raw) for name, raw in intervals.items()}
-    vllm, triton = (stats[name]["median_us"] for name in run.BACKENDS)
+    vllm, triton = (stats[name]["median_us"] for name in methods)
     return fixtures, replay, {"ops_per_graph": run.OPS, "round_order": order, "inputs_restored_bitwise": True,
                               "started_utc": started, "wall_seconds": elapsed, "statistics": stats,
                               "triton_over_vllm": triton / vllm, "passes_5pct": triton <= vllm * .95}

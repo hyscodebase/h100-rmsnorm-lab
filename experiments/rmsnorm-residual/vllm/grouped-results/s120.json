@@ -1,0 +1,2680 @@
+{
+  "code_revision": "de225a053a097efba960482ed106e7b490268406",
+  "source_sha256": {
+    "experiments/rmsnorm-residual/vllm/PLAN.md": "8bf7df499b2931cecb93c423bc829a5813577df8710857155492023b1d5c6480",
+    "experiments/rmsnorm-residual/vllm/run.py": "24e88100728d67e14494106a888a26ffdf5b49d6f5da7b48bd76f1aa7f551ed5",
+    "experiments/rmsnorm-residual/vllm/kernel.py": "b9d6f67e0c5e6e9cfc9da78def0ccec046d3b609bf1c7862ac407a3becffb8cd",
+    "experiments/rmsnorm-residual/vllm/wheel.py": "9b8956435559569d88d0a5b9f9e32db55d33f9b4f494638a1c8d010c7e73ae52",
+    "experiments/rmsnorm-residual/benchmark.py": "a2be59cd09dcbf15ed279df860e8220944a7bddeedc2e7f1c74cf655c5da6f05",
+    "experiments/rmsnorm-residual/check.py": "06fc94defcc7b4223a1675db0f5eadff52215236681922c9890a1b5112d5a7df",
+    "experiments/rmsnorm-residual/vllm/PRECISION_PLAN.md": "9044cc966bf098e23513234cfdcdc0c7ea2b07ef576576b5f34f8df97bed2e97",
+    "experiments/rmsnorm-residual/vllm/float32_gate.py": "a7f9de4c5cb8b859c1addc911ff694f20203171f49dc583fbe553d9c6518eaf9",
+    "experiments/rmsnorm-residual/vllm/bounded_preflight.py": "cc23b30e47936066c58503d972cf1c1fc0fb48e9dfb7e18d70c6a2db01eb934d",
+    "experiments/rmsnorm-residual/vllm/bounded_timing.py": "92ccd5a1e43e55a061bfabbc0ba8ed0f984233df46858f43b3206afbd68a76f5",
+    "experiments/rmsnorm-residual/vllm/grouped_kernel.py": "aac1b46f1e644bf454c05ac47e95cd9118b221085aed9dedae1f40f5aa785c27",
+    "experiments/rmsnorm-residual/vllm/grouped_run.py": "7cdd077162b62123387e242af0502b004efa8aca18855d1787119de731389583",
+    "experiments/rmsnorm-residual/vllm/REDUCTION_PLAN.md": "b9e968dd6efa1e63e65b695cba441e2c7870852691fb1765df6a7dc3ffc815f9"
+  },
+  "asset": {
+    "version": "0.10.0",
+    "wheel": "vllm-0.10.0-cp38-abi3-manylinux1_x86_64.whl",
+    "wheel_sha256": "8ca37559d82b43b5e8c8248d2e4a1ecb51d6d4e5d517491d656df6491ed93dab",
+    "extension": "_C.abi3.so",
+    "extension_sha256": "0bdeda3d6ef7f1df23bcbd128f27c003dc2750475632d8d1d5658e5af15a1e74",
+    "extension_size_bytes": 339450440
+  },
+  "environment": {
+    "gpu": "NVIDIA H100 80GB HBM3",
+    "compute_capability": [
+      9,
+      0
+    ],
+    "total_memory_bytes": 84929216512,
+    "sm_count": 132,
+    "driver": "550.144.03",
+    "cuda": "12.8",
+    "torch": "2.7.1+cu128",
+    "triton": "3.3.1",
+    "python": "3.12.16"
+  },
+  "seed": 120,
+  "rows": 1024,
+  "width": 4096,
+  "gate_passed": true,
+  "started_utc": "2026-11-26T08:44:17.158947+00:00",
+  "finished_utc": "2026-11-26T08:44:31.533683+00:00",
+  "wall_seconds": 14.37473157607019,
+  "historical_revision": "084e88cc6824ee61c9abd7823e90b44ec6f8201a",
+  "codegen": {
+    "num_warps": 8,
+    "shared_bytes": 2048,
+    "registers_per_thread": 32,
+    "spill_count": 0,
+    "ttgir_sha256": "4a4550d8860a5f5aef4d72ce990587c7a2eb202915986953385836b926e7074c",
+    "ptx_sha256": "362f085c9b2ed732e5c399dc10caf5ea1d8321590f3530c0550a739a8b6c7a3e",
+    "ptx_instruction_sha256": "3729696a089838a760d2639bfda3178418b92fbd5abf3b4c737f2c5d08133041",
+    "ptx_opcodes": {
+      "add.rn.bf16x2": 8,
+      "add.rn.f32": 271,
+      "add.s32": 2,
+      "add.s64": 6,
+      "and.b32": 2,
+      "bar.sync": 1,
+      "cvt.f32.bf16": 16,
+      "cvt.rn.bf16x2.f32": 8,
+      "div.full.f32": 1,
+      "ld.global.v4.b32": 6,
+      "ld.param.u64": 3,
+      "ld.shared.v2.f32": 128,
+      "mov.b32": 9,
+      "mov.f32": 1,
+      "mov.pred": 1,
+      "mov.u32": 27,
+      "mul.rn.bf16x2": 8,
+      "mul.rn.f32": 32,
+      "mul.wide.s32": 1,
+      "mul.wide.u32": 1,
+      "or.b32": 1,
+      "rsqrt.approx.ftz.f32": 1,
+      "shl.b32": 3,
+      "st.global.v4.b32": 4,
+      "st.shared.b32": 1
+    },
+    "fp_fusion": false,
+    "logical_group_width": 8
+  },
+  "fixtures": [
+    {
+      "fixture": "random",
+      "elements": 4194304,
+      "strict_outside_tolerance": 18,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          811,
+          273
+        ],
+        [
+          811,
+          323
+        ],
+        [
+          811,
+          600
+        ],
+        [
+          811,
+          607
+        ],
+        [
+          811,
+          643
+        ],
+        [
+          811,
+          904
+        ],
+        [
+          811,
+          977
+        ],
+        [
+          811,
+          1135
+        ],
+        [
+          811,
+          1169
+        ],
+        [
+          811,
+          1279
+        ],
+        [
+          811,
+          1725
+        ],
+        [
+          811,
+          1735
+        ],
+        [
+          811,
+          1894
+        ],
+        [
+          811,
+          3095
+        ],
+        [
+          811,
+          3611
+        ],
+        [
+          811,
+          3733
+        ],
+        [
+          811,
+          3807
+        ],
+        [
+          811,
+          3968
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "zero_rows",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "cancellation",
+      "elements": 4194304,
+      "strict_outside_tolerance": 17,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          892,
+          61
+        ],
+        [
+          892,
+          109
+        ],
+        [
+          892,
+          123
+        ],
+        [
+          892,
+          397
+        ],
+        [
+          892,
+          427
+        ],
+        [
+          892,
+          553
+        ],
+        [
+          892,
+          1079
+        ],
+        [
+          892,
+          1347
+        ],
+        [
+          892,
+          1785
+        ],
+        [
+          892,
+          1925
+        ],
+        [
+          892,
+          2367
+        ],
+        [
+          892,
+          2395
+        ],
+        [
+          892,
+          2659
+        ],
+        [
+          892,
+          2831
+        ],
+        [
+          892,
+          3761
+        ],
+        [
+          892,
+          3867
+        ],
+        [
+          892,
+          4067
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "tiny",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.000484466552734375,
+        0.000484466552734375
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "bf16_ties",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.00390625,
+        0.00390625
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "bf16_denominator_tie",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.0,
+        0.0
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "weight_rounding",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.00390625,
+        0.00390625
+      ],
+      "passed": true,
+      "weight_probe": [
+        1.46875,
+        1.46875
+      ]
+    },
+    {
+      "fixture": "signed_zero",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.0,
+        0.0
+      ],
+      "passed": true,
+      "normalized_zero_bits": [
+        [
+          32768,
+          0
+        ],
+        [
+          32768,
+          0
+        ]
+      ]
+    }
+  ],
+  "old_coordinates": [],
+  "replay_checks": [
+    {
+      "fixture": "captured_0",
+      "elements": 4194304,
+      "strict_outside_tolerance": 22,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          320,
+          295
+        ],
+        [
+          320,
+          296
+        ],
+        [
+          320,
+          481
+        ],
+        [
+          320,
+          577
+        ],
+        [
+          320,
+          612
+        ],
+        [
+          320,
+          886
+        ],
+        [
+          320,
+          1137
+        ],
+        [
+          320,
+          1421
+        ],
+        [
+          320,
+          1706
+        ],
+        [
+          320,
+          1967
+        ],
+        [
+          320,
+          2502
+        ],
+        [
+          320,
+          2643
+        ],
+        [
+          320,
+          2707
+        ],
+        [
+          320,
+          2785
+        ],
+        [
+          320,
+          2804
+        ],
+        [
+          320,
+          2857
+        ],
+        [
+          320,
+          2889
+        ],
+        [
+          320,
+          3222
+        ],
+        [
+          320,
+          3426
+        ],
+        [
+          320,
+          3428
+        ],
+        [
+          320,
+          3441
+        ],
+        [
+          320,
+          3487
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.031005859375,
+        0.031005859375
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_1",
+      "elements": 4194304,
+      "strict_outside_tolerance": 30,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          414,
+          81
+        ],
+        [
+          414,
+          92
+        ],
+        [
+          414,
+          307
+        ],
+        [
+          414,
+          377
+        ],
+        [
+          414,
+          612
+        ],
+        [
+          414,
+          649
+        ],
+        [
+          414,
+          828
+        ],
+        [
+          414,
+          852
+        ],
+        [
+          414,
+          917
+        ],
+        [
+          414,
+          1400
+        ],
+        [
+          414,
+          1554
+        ],
+        [
+          414,
+          1782
+        ],
+        [
+          414,
+          1990
+        ],
+        [
+          414,
+          2262
+        ],
+        [
+          414,
+          2271
+        ],
+        [
+          414,
+          2339
+        ],
+        [
+          414,
+          2398
+        ],
+        [
+          414,
+          2513
+        ],
+        [
+          414,
+          2570
+        ],
+        [
+          414,
+          2997
+        ],
+        [
+          414,
+          3110
+        ],
+        [
+          414,
+          3170
+        ],
+        [
+          414,
+          3326
+        ],
+        [
+          414,
+          3433
+        ],
+        [
+          414,
+          3479
+        ],
+        [
+          414,
+          3512
+        ],
+        [
+          414,
+          3628
+        ],
+        [
+          414,
+          3699
+        ],
+        [
+          414,
+          3828
+        ],
+        [
+          414,
+          3889
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_2",
+      "elements": 4194304,
+      "strict_outside_tolerance": 18,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          312,
+          269
+        ],
+        [
+          312,
+          458
+        ],
+        [
+          312,
+          502
+        ],
+        [
+          312,
+          626
+        ],
+        [
+          312,
+          983
+        ],
+        [
+          312,
+          1083
+        ],
+        [
+          312,
+          1389
+        ],
+        [
+          312,
+          1528
+        ],
+        [
+          312,
+          1945
+        ],
+        [
+          312,
+          2023
+        ],
+        [
+          312,
+          2103
+        ],
+        [
+          312,
+          2208
+        ],
+        [
+          312,
+          2328
+        ],
+        [
+          312,
+          2599
+        ],
+        [
+          312,
+          3006
+        ],
+        [
+          312,
+          3324
+        ],
+        [
+          312,
+          3416
+        ],
+        [
+          312,
+          3841
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_3",
+      "elements": 4194304,
+      "strict_outside_tolerance": 24,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          471,
+          44
+        ],
+        [
+          471,
+          50
+        ],
+        [
+          471,
+          92
+        ],
+        [
+          471,
+          155
+        ],
+        [
+          471,
+          438
+        ],
+        [
+          471,
+          553
+        ],
+        [
+          471,
+          741
+        ],
+        [
+          471,
+          885
+        ],
+        [
+          471,
+          1174
+        ],
+        [
+          471,
+          1222
+        ],
+        [
+          471,
+          1423
+        ],
+        [
+          471,
+          1444
+        ],
+        [
+          471,
+          1477
+        ],
+        [
+          471,
+          1748
+        ],
+        [
+          471,
+          2006
+        ],
+        [
+          471,
+          2264
+        ],
+        [
+          471,
+          2481
+        ],
+        [
+          471,
+          2610
+        ],
+        [
+          471,
+          2947
+        ],
+        [
+          471,
+          3152
+        ],
+        [
+          471,
+          3159
+        ],
+        [
+          471,
+          3254
+        ],
+        [
+          471,
+          3956
+        ],
+        [
+          471,
+          3975
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_4",
+      "elements": 4194304,
+      "strict_outside_tolerance": 26,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          278,
+          150
+        ],
+        [
+          278,
+          204
+        ],
+        [
+          278,
+          570
+        ],
+        [
+          278,
+          610
+        ],
+        [
+          278,
+          689
+        ],
+        [
+          278,
+          747
+        ],
+        [
+          278,
+          843
+        ],
+        [
+          278,
+          905
+        ],
+        [
+          278,
+          996
+        ],
+        [
+          278,
+          1353
+        ],
+        [
+          278,
+          1458
+        ],
+        [
+          278,
+          1537
+        ],
+        [
+          278,
+          1659
+        ],
+        [
+          278,
+          2077
+        ],
+        [
+          278,
+          2334
+        ],
+        [
+          278,
+          2770
+        ],
+        [
+          278,
+          2878
+        ],
+        [
+          278,
+          3209
+        ],
+        [
+          278,
+          3384
+        ],
+        [
+          278,
+          3550
+        ],
+        [
+          278,
+          3700
+        ],
+        [
+          278,
+          3803
+        ],
+        [
+          278,
+          3912
+        ],
+        [
+          278,
+          3931
+        ],
+        [
+          278,
+          3987
+        ],
+        [
+          278,
+          4050
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_5",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_6",
+      "elements": 4194304,
+      "strict_outside_tolerance": 30,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          360,
+          565
+        ],
+        [
+          360,
+          1127
+        ],
+        [
+          360,
+          1355
+        ],
+        [
+          360,
+          2062
+        ],
+        [
+          360,
+          2896
+        ],
+        [
+          360,
+          2948
+        ],
+        [
+          360,
+          3039
+        ],
+        [
+          360,
+          3170
+        ],
+        [
+          695,
+          379
+        ],
+        [
+          695,
+          529
+        ],
+        [
+          695,
+          553
+        ],
+        [
+          695,
+          589
+        ],
+        [
+          695,
+          633
+        ],
+        [
+          695,
+          794
+        ],
+        [
+          695,
+          795
+        ],
+        [
+          695,
+          1057
+        ],
+        [
+          695,
+          1393
+        ],
+        [
+          695,
+          1664
+        ],
+        [
+          695,
+          1759
+        ],
+        [
+          695,
+          1782
+        ],
+        [
+          695,
+          1878
+        ],
+        [
+          695,
+          2083
+        ],
+        [
+          695,
+          2303
+        ],
+        [
+          695,
+          2674
+        ],
+        [
+          695,
+          3336
+        ],
+        [
+          695,
+          3383
+        ],
+        [
+          695,
+          3573
+        ],
+        [
+          695,
+          3756
+        ],
+        [
+          695,
+          3865
+        ],
+        [
+          695,
+          3881
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_7",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_8",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_9",
+      "elements": 4194304,
+      "strict_outside_tolerance": 4,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          864,
+          31
+        ],
+        [
+          864,
+          1374
+        ],
+        [
+          864,
+          1475
+        ],
+        [
+          864,
+          3129
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_10",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_11",
+      "elements": 4194304,
+      "strict_outside_tolerance": 33,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          948,
+          76
+        ],
+        [
+          948,
+          336
+        ],
+        [
+          948,
+          350
+        ],
+        [
+          948,
+          374
+        ],
+        [
+          948,
+          623
+        ],
+        [
+          948,
+          627
+        ],
+        [
+          948,
+          732
+        ],
+        [
+          948,
+          856
+        ],
+        [
+          948,
+          968
+        ],
+        [
+          948,
+          1362
+        ],
+        [
+          948,
+          1490
+        ],
+        [
+          948,
+          1565
+        ],
+        [
+          948,
+          1843
+        ],
+        [
+          948,
+          2184
+        ],
+        [
+          948,
+          2188
+        ],
+        [
+          948,
+          2275
+        ],
+        [
+          948,
+          2306
+        ],
+        [
+          948,
+          2498
+        ],
+        [
+          948,
+          2508
+        ],
+        [
+          948,
+          2807
+        ],
+        [
+          948,
+          3076
+        ],
+        [
+          948,
+          3221
+        ],
+        [
+          948,
+          3243
+        ],
+        [
+          948,
+          3256
+        ],
+        [
+          948,
+          3295
+        ],
+        [
+          948,
+          3452
+        ],
+        [
+          948,
+          3638
+        ],
+        [
+          948,
+          3787
+        ],
+        [
+          948,
+          3836
+        ],
+        [
+          948,
+          3882
+        ],
+        [
+          948,
+          3959
+        ],
+        [
+          948,
+          3961
+        ],
+        [
+          948,
+          4075
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_12",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_13",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_14",
+      "elements": 4194304,
+      "strict_outside_tolerance": 25,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          57,
+          124
+        ],
+        [
+          57,
+          365
+        ],
+        [
+          57,
+          406
+        ],
+        [
+          57,
+          774
+        ],
+        [
+          57,
+          986
+        ],
+        [
+          57,
+          1261
+        ],
+        [
+          57,
+          1379
+        ],
+        [
+          57,
+          1511
+        ],
+        [
+          57,
+          1560
+        ],
+        [
+          57,
+          1746
+        ],
+        [
+          57,
+          2082
+        ],
+        [
+          57,
+          2309
+        ],
+        [
+          57,
+          2674
+        ],
+        [
+          57,
+          2749
+        ],
+        [
+          57,
+          2822
+        ],
+        [
+          57,
+          3295
+        ],
+        [
+          57,
+          3305
+        ],
+        [
+          57,
+          3889
+        ],
+        [
+          569,
+          1266
+        ],
+        [
+          569,
+          1318
+        ],
+        [
+          569,
+          1699
+        ],
+        [
+          569,
+          2157
+        ],
+        [
+          569,
+          2598
+        ],
+        [
+          569,
+          2721
+        ],
+        [
+          569,
+          3004
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03076171875,
+        0.03076171875
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_15",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_16",
+      "elements": 4194304,
+      "strict_outside_tolerance": 27,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          271,
+          491
+        ],
+        [
+          271,
+          784
+        ],
+        [
+          271,
+          803
+        ],
+        [
+          271,
+          1077
+        ],
+        [
+          271,
+          1161
+        ],
+        [
+          271,
+          1627
+        ],
+        [
+          271,
+          2047
+        ],
+        [
+          271,
+          2503
+        ],
+        [
+          271,
+          2579
+        ],
+        [
+          271,
+          2748
+        ],
+        [
+          271,
+          3819
+        ],
+        [
+          505,
+          694
+        ],
+        [
+          505,
+          940
+        ],
+        [
+          505,
+          1124
+        ],
+        [
+          505,
+          1464
+        ],
+        [
+          505,
+          2358
+        ],
+        [
+          505,
+          2458
+        ],
+        [
+          505,
+          2598
+        ],
+        [
+          505,
+          2689
+        ],
+        [
+          505,
+          2694
+        ],
+        [
+          505,
+          2716
+        ],
+        [
+          505,
+          2961
+        ],
+        [
+          505,
+          3039
+        ],
+        [
+          505,
+          3354
+        ],
+        [
+          505,
+          3506
+        ],
+        [
+          505,
+          3723
+        ],
+        [
+          505,
+          3725
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.031005859375,
+        0.031005859375
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_17",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_18",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_19",
+      "elements": 4194304,
+      "strict_outside_tolerance": 34,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          57,
+          205
+        ],
+        [
+          57,
+          318
+        ],
+        [
+          57,
+          382
+        ],
+        [
+          57,
+          730
+        ],
+        [
+          57,
+          1170
+        ],
+        [
+          57,
+          1210
+        ],
+        [
+          57,
+          1395
+        ],
+        [
+          57,
+          1424
+        ],
+        [
+          57,
+          1609
+        ],
+        [
+          57,
+          1636
+        ],
+        [
+          57,
+          1697
+        ],
+        [
+          57,
+          1736
+        ],
+        [
+          57,
+          1743
+        ],
+        [
+          57,
+          1978
+        ],
+        [
+          57,
+          1990
+        ],
+        [
+          57,
+          2017
+        ],
+        [
+          57,
+          2154
+        ],
+        [
+          57,
+          2250
+        ],
+        [
+          57,
+          2523
+        ],
+        [
+          57,
+          2543
+        ],
+        [
+          57,
+          2685
+        ],
+        [
+          57,
+          2839
+        ],
+        [
+          57,
+          3265
+        ],
+        [
+          57,
+          3266
+        ],
+        [
+          57,
+          3283
+        ],
+        [
+          57,
+          3313
+        ],
+        [
+          57,
+          3432
+        ],
+        [
+          57,
+          3479
+        ],
+        [
+          57,
+          3484
+        ],
+        [
+          57,
+          3523
+        ],
+        [
+          57,
+          3549
+        ],
+        [
+          57,
+          3689
+        ],
+        [
+          57,
+          3730
+        ],
+        [
+          57,
+          3761
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.031005859375,
+        0.031005859375
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_20",
+      "elements": 4194304,
+      "strict_outside_tolerance": 7,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          744,
+          194
+        ],
+        [
+          744,
+          1557
+        ],
+        [
+          744,
+          1975
+        ],
+        [
+          744,
+          2041
+        ],
+        [
+          744,
+          2620
+        ],
+        [
+          744,
+          3444
+        ],
+        [
+          744,
+          3751
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.031005859375,
+        0.031005859375
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_21",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.05029296875,
+        0.05029296875
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_22",
+      "elements": 4194304,
+      "strict_outside_tolerance": 29,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          281,
+          15
+        ],
+        [
+          281,
+          129
+        ],
+        [
+          281,
+          169
+        ],
+        [
+          281,
+          248
+        ],
+        [
+          281,
+          293
+        ],
+        [
+          281,
+          873
+        ],
+        [
+          281,
+          965
+        ],
+        [
+          281,
+          1876
+        ],
+        [
+          281,
+          2273
+        ],
+        [
+          281,
+          2929
+        ],
+        [
+          281,
+          3379
+        ],
+        [
+          281,
+          3659
+        ],
+        [
+          281,
+          3833
+        ],
+        [
+          281,
+          3985
+        ],
+        [
+          891,
+          187
+        ],
+        [
+          891,
+          278
+        ],
+        [
+          891,
+          342
+        ],
+        [
+          891,
+          379
+        ],
+        [
+          891,
+          487
+        ],
+        [
+          891,
+          833
+        ],
+        [
+          891,
+          934
+        ],
+        [
+          891,
+          1270
+        ],
+        [
+          891,
+          2016
+        ],
+        [
+          891,
+          2137
+        ],
+        [
+          891,
+          2147
+        ],
+        [
+          891,
+          2578
+        ],
+        [
+          891,
+          2796
+        ],
+        [
+          891,
+          3226
+        ],
+        [
+          891,
+          3326
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_23",
+      "elements": 4194304,
+      "strict_outside_tolerance": 47,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          37,
+          117
+        ],
+        [
+          37,
+          267
+        ],
+        [
+          37,
+          642
+        ],
+        [
+          37,
+          1100
+        ],
+        [
+          37,
+          1644
+        ],
+        [
+          37,
+          1747
+        ],
+        [
+          37,
+          2199
+        ],
+        [
+          37,
+          2953
+        ],
+        [
+          37,
+          2999
+        ],
+        [
+          37,
+          3161
+        ],
+        [
+          37,
+          4075
+        ],
+        [
+          155,
+          655
+        ],
+        [
+          155,
+          828
+        ],
+        [
+          155,
+          835
+        ],
+        [
+          155,
+          1576
+        ],
+        [
+          155,
+          1959
+        ],
+        [
+          155,
+          2052
+        ],
+        [
+          155,
+          2201
+        ],
+        [
+          155,
+          2222
+        ],
+        [
+          155,
+          2267
+        ],
+        [
+          155,
+          2345
+        ],
+        [
+          155,
+          2691
+        ],
+        [
+          155,
+          2792
+        ],
+        [
+          155,
+          2983
+        ],
+        [
+          155,
+          3029
+        ],
+        [
+          155,
+          3035
+        ],
+        [
+          155,
+          3058
+        ],
+        [
+          155,
+          3411
+        ],
+        [
+          155,
+          3595
+        ],
+        [
+          155,
+          3615
+        ],
+        [
+          155,
+          3791
+        ],
+        [
+          155,
+          3961
+        ],
+        [
+          289,
+          639
+        ],
+        [
+          289,
+          1018
+        ],
+        [
+          289,
+          1507
+        ],
+        [
+          289,
+          1626
+        ],
+        [
+          289,
+          1663
+        ],
+        [
+          289,
+          2782
+        ],
+        [
+          289,
+          2884
+        ],
+        [
+          289,
+          2985
+        ],
+        [
+          289,
+          3232
+        ],
+        [
+          289,
+          3507
+        ],
+        [
+          289,
+          3728
+        ],
+        [
+          289,
+          3863
+        ],
+        [
+          289,
+          3943
+        ],
+        [
+          289,
+          4000
+        ],
+        [
+          289,
+          4044
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03076171875,
+        0.03076171875
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_24",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_25",
+      "elements": 4194304,
+      "strict_outside_tolerance": 7,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          645,
+          377
+        ],
+        [
+          645,
+          391
+        ],
+        [
+          645,
+          602
+        ],
+        [
+          645,
+          682
+        ],
+        [
+          645,
+          1004
+        ],
+        [
+          645,
+          1863
+        ],
+        [
+          645,
+          2994
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.031005859375,
+        0.031005859375
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_26",
+      "elements": 4194304,
+      "strict_outside_tolerance": 12,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          372,
+          252
+        ],
+        [
+          372,
+          647
+        ],
+        [
+          372,
+          714
+        ],
+        [
+          372,
+          1141
+        ],
+        [
+          372,
+          1542
+        ],
+        [
+          372,
+          1693
+        ],
+        [
+          372,
+          1962
+        ],
+        [
+          372,
+          2700
+        ],
+        [
+          372,
+          3141
+        ],
+        [
+          372,
+          3172
+        ],
+        [
+          372,
+          3326
+        ],
+        [
+          372,
+          3710
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.031005859375,
+        0.031005859375
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_27",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_28",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.031005859375,
+        0.031005859375
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_29",
+      "elements": 4194304,
+      "strict_outside_tolerance": 5,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          662,
+          495
+        ],
+        [
+          662,
+          604
+        ],
+        [
+          662,
+          734
+        ],
+        [
+          662,
+          3531
+        ],
+        [
+          662,
+          3957
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_30",
+      "elements": 4194304,
+      "strict_outside_tolerance": 23,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          796,
+          452
+        ],
+        [
+          796,
+          519
+        ],
+        [
+          796,
+          582
+        ],
+        [
+          796,
+          645
+        ],
+        [
+          796,
+          790
+        ],
+        [
+          796,
+          1657
+        ],
+        [
+          796,
+          1869
+        ],
+        [
+          796,
+          2119
+        ],
+        [
+          796,
+          2350
+        ],
+        [
+          796,
+          2771
+        ],
+        [
+          796,
+          2791
+        ],
+        [
+          820,
+          278
+        ],
+        [
+          820,
+          532
+        ],
+        [
+          820,
+          569
+        ],
+        [
+          820,
+          571
+        ],
+        [
+          820,
+          794
+        ],
+        [
+          820,
+          951
+        ],
+        [
+          820,
+          2021
+        ],
+        [
+          820,
+          2154
+        ],
+        [
+          820,
+          2495
+        ],
+        [
+          820,
+          3070
+        ],
+        [
+          820,
+          3840
+        ],
+        [
+          820,
+          3978
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "captured_31",
+      "elements": 4194304,
+      "strict_outside_tolerance": 11,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          47,
+          180
+        ],
+        [
+          47,
+          342
+        ],
+        [
+          47,
+          519
+        ],
+        [
+          47,
+          1074
+        ],
+        [
+          47,
+          1305
+        ],
+        [
+          47,
+          1538
+        ],
+        [
+          47,
+          2023
+        ],
+        [
+          47,
+          2744
+        ],
+        [
+          47,
+          2834
+        ],
+        [
+          47,
+          3214
+        ],
+        [
+          47,
+          3813
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    }
+  ],
+  "timing": {
+    "ops_per_graph": 32,
+    "round_order": [
+      [
+        "triton_grouped_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_grouped_8warps"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_grouped_8warps"
+      ],
+      [
+        "triton_grouped_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "triton_grouped_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_grouped_8warps"
+      ],
+      [
+        "triton_grouped_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "triton_grouped_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "triton_grouped_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "triton_grouped_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_grouped_8warps"
+      ],
+      [
+        "triton_grouped_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "triton_grouped_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "triton_grouped_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_grouped_8warps"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_grouped_8warps"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_grouped_8warps"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_grouped_8warps"
+      ],
+      [
+        "triton_grouped_8warps",
+        "vllm_0_10_0"
+      ],
+      [
+        "vllm_0_10_0",
+        "triton_grouped_8warps"
+      ],
+      [
+        "triton_grouped_8warps",
+        "vllm_0_10_0"
+      ]
+    ],
+    "inputs_restored_bitwise": true,
+    "started_utc": "2026-11-26T08:44:31.496200+00:00",
+    "wall_seconds": 0.03720531705766916,
+    "statistics": {
+      "vllm_0_10_0": {
+        "graph_elapsed_ms": [
+          0.43353599309921265,
+          0.4430080056190491,
+          0.4413119852542877,
+          0.4380800127983093,
+          0.4399999976158142,
+          0.44047999382019043,
+          0.438400000333786,
+          0.43859198689460754,
+          0.4394559860229492,
+          0.43721601366996765,
+          0.44012799859046936,
+          0.4397439956665039,
+          0.44016000628471375,
+          0.4387519955635071,
+          0.4362240135669708,
+          0.4382399916648865,
+          0.4387199878692627,
+          0.44095999002456665,
+          0.44089600443840027,
+          0.43804800510406494,
+          0.44284799695014954
+        ],
+        "samples_us": [
+          13.547999784350395,
+          13.844000175595284,
+          13.790999539196491,
+          13.690000399947166,
+          13.749999925494194,
+          13.764999806880951,
+          13.700000010430813,
+          13.705999590456486,
+          13.732999563217163,
+          13.663000427186489,
+          13.753999955952168,
+          13.741999864578247,
+          13.755000196397305,
+          13.710999861359596,
+          13.632000423967838,
+          13.694999739527702,
+          13.70999962091446,
+          13.779999688267708,
+          13.778000138700008,
+          13.68900015950203,
+          13.838999904692173
+        ],
+        "q1_us": 13.694999739527702,
+        "median_us": 13.732999563217163,
+        "q3_us": 13.764999806880951
+      },
+      "triton_grouped_8warps": {
+        "graph_elapsed_ms": [
+          0.47603198885917664,
+          0.47382399439811707,
+          0.47433599829673767,
+          0.4753279983997345,
+          0.4755200147628784,
+          0.4739840030670166,
+          0.4716159999370575,
+          0.4726080000400543,
+          0.4721919894218445,
+          0.47257599234580994,
+          0.4715839922428131,
+          0.47523200511932373,
+          0.47302401065826416,
+          0.47094398736953735,
+          0.4750399887561798,
+          0.4731520116329193,
+          0.46774399280548096,
+          0.4696959853172302,
+          0.4743039906024933,
+          0.46988800168037415,
+          0.4744639992713928
+        ],
+        "samples_us": [
+          14.87599965184927,
+          14.806999824941158,
+          14.822999946773052,
+          14.853999949991703,
+          14.86000046133995,
+          14.812000095844269,
+          14.737999998033047,
+          14.769000001251698,
+          14.75599966943264,
+          14.76799976080656,
+          14.73699975758791,
+          14.851000159978867,
+          14.782000333070755,
+          14.716999605298042,
+          14.844999648630619,
+          14.786000363528728,
+          14.61699977517128,
+          14.677999541163445,
+          14.821999706327915,
+          14.684000052511692,
+          14.826999977231026
+        ],
+        "q1_us": 14.737999998033047,
+        "median_us": 14.786000363528728,
+        "q3_us": 14.826999977231026
+      }
+    },
+    "triton_over_vllm": 1.0766766790797804,
+    "passes_5pct": false
+  }
+}

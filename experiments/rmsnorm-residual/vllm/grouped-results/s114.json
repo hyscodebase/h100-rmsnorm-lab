@@ -1,0 +1,967 @@
+{
+  "code_revision": "de225a053a097efba960482ed106e7b490268406",
+  "source_sha256": {
+    "experiments/rmsnorm-residual/vllm/PLAN.md": "8bf7df499b2931cecb93c423bc829a5813577df8710857155492023b1d5c6480",
+    "experiments/rmsnorm-residual/vllm/run.py": "24e88100728d67e14494106a888a26ffdf5b49d6f5da7b48bd76f1aa7f551ed5",
+    "experiments/rmsnorm-residual/vllm/kernel.py": "b9d6f67e0c5e6e9cfc9da78def0ccec046d3b609bf1c7862ac407a3becffb8cd",
+    "experiments/rmsnorm-residual/vllm/wheel.py": "9b8956435559569d88d0a5b9f9e32db55d33f9b4f494638a1c8d010c7e73ae52",
+    "experiments/rmsnorm-residual/benchmark.py": "a2be59cd09dcbf15ed279df860e8220944a7bddeedc2e7f1c74cf655c5da6f05",
+    "experiments/rmsnorm-residual/check.py": "06fc94defcc7b4223a1675db0f5eadff52215236681922c9890a1b5112d5a7df",
+    "experiments/rmsnorm-residual/vllm/PRECISION_PLAN.md": "9044cc966bf098e23513234cfdcdc0c7ea2b07ef576576b5f34f8df97bed2e97",
+    "experiments/rmsnorm-residual/vllm/float32_gate.py": "a7f9de4c5cb8b859c1addc911ff694f20203171f49dc583fbe553d9c6518eaf9",
+    "experiments/rmsnorm-residual/vllm/bounded_preflight.py": "cc23b30e47936066c58503d972cf1c1fc0fb48e9dfb7e18d70c6a2db01eb934d",
+    "experiments/rmsnorm-residual/vllm/bounded_timing.py": "92ccd5a1e43e55a061bfabbc0ba8ed0f984233df46858f43b3206afbd68a76f5",
+    "experiments/rmsnorm-residual/vllm/grouped_kernel.py": "aac1b46f1e644bf454c05ac47e95cd9118b221085aed9dedae1f40f5aa785c27",
+    "experiments/rmsnorm-residual/vllm/grouped_run.py": "7cdd077162b62123387e242af0502b004efa8aca18855d1787119de731389583",
+    "experiments/rmsnorm-residual/vllm/REDUCTION_PLAN.md": "b9e968dd6efa1e63e65b695cba441e2c7870852691fb1765df6a7dc3ffc815f9"
+  },
+  "asset": {
+    "version": "0.10.0",
+    "wheel": "vllm-0.10.0-cp38-abi3-manylinux1_x86_64.whl",
+    "wheel_sha256": "8ca37559d82b43b5e8c8248d2e4a1ecb51d6d4e5d517491d656df6491ed93dab",
+    "extension": "_C.abi3.so",
+    "extension_sha256": "0bdeda3d6ef7f1df23bcbd128f27c003dc2750475632d8d1d5658e5af15a1e74",
+    "extension_size_bytes": 339450440
+  },
+  "environment": {
+    "gpu": "NVIDIA H100 80GB HBM3",
+    "compute_capability": [
+      9,
+      0
+    ],
+    "total_memory_bytes": 84929216512,
+    "sm_count": 132,
+    "driver": "550.144.03",
+    "cuda": "12.8",
+    "torch": "2.7.1+cu128",
+    "triton": "3.3.1",
+    "python": "3.12.16"
+  },
+  "seed": 114,
+  "rows": 1024,
+  "width": 4096,
+  "gate_passed": true,
+  "started_utc": "2026-11-26T08:41:31.766044+00:00",
+  "finished_utc": "2026-11-26T08:41:33.851877+00:00",
+  "wall_seconds": 2.0858366140164435,
+  "historical_revision": "084e88cc6824ee61c9abd7823e90b44ec6f8201a",
+  "codegen": {
+    "num_warps": 8,
+    "shared_bytes": 2048,
+    "registers_per_thread": 32,
+    "spill_count": 0,
+    "ttgir_sha256": "4a4550d8860a5f5aef4d72ce990587c7a2eb202915986953385836b926e7074c",
+    "ptx_sha256": "362f085c9b2ed732e5c399dc10caf5ea1d8321590f3530c0550a739a8b6c7a3e",
+    "ptx_instruction_sha256": "3729696a089838a760d2639bfda3178418b92fbd5abf3b4c737f2c5d08133041",
+    "ptx_opcodes": {
+      "add.rn.bf16x2": 8,
+      "add.rn.f32": 271,
+      "add.s32": 2,
+      "add.s64": 6,
+      "and.b32": 2,
+      "bar.sync": 1,
+      "cvt.f32.bf16": 16,
+      "cvt.rn.bf16x2.f32": 8,
+      "div.full.f32": 1,
+      "ld.global.v4.b32": 6,
+      "ld.param.u64": 3,
+      "ld.shared.v2.f32": 128,
+      "mov.b32": 9,
+      "mov.f32": 1,
+      "mov.pred": 1,
+      "mov.u32": 27,
+      "mul.rn.bf16x2": 8,
+      "mul.rn.f32": 32,
+      "mul.wide.s32": 1,
+      "mul.wide.u32": 1,
+      "or.b32": 1,
+      "rsqrt.approx.ftz.f32": 1,
+      "shl.b32": 3,
+      "st.global.v4.b32": 4,
+      "st.shared.b32": 1
+    },
+    "fp_fusion": false,
+    "logical_group_width": 8
+  },
+  "fixtures": [
+    {
+      "fixture": "random",
+      "elements": 4194304,
+      "strict_outside_tolerance": 48,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          286,
+          35
+        ],
+        [
+          286,
+          269
+        ],
+        [
+          286,
+          503
+        ],
+        [
+          286,
+          578
+        ],
+        [
+          286,
+          649
+        ],
+        [
+          286,
+          1072
+        ],
+        [
+          286,
+          1473
+        ],
+        [
+          286,
+          1645
+        ],
+        [
+          286,
+          1976
+        ],
+        [
+          286,
+          2249
+        ],
+        [
+          286,
+          2442
+        ],
+        [
+          286,
+          2543
+        ],
+        [
+          286,
+          2854
+        ],
+        [
+          286,
+          3117
+        ],
+        [
+          286,
+          3566
+        ],
+        [
+          631,
+          65
+        ],
+        [
+          631,
+          93
+        ],
+        [
+          631,
+          344
+        ],
+        [
+          631,
+          448
+        ],
+        [
+          631,
+          797
+        ],
+        [
+          631,
+          824
+        ],
+        [
+          631,
+          909
+        ],
+        [
+          631,
+          1089
+        ],
+        [
+          631,
+          1101
+        ],
+        [
+          631,
+          1155
+        ],
+        [
+          631,
+          1267
+        ],
+        [
+          631,
+          1396
+        ],
+        [
+          631,
+          1440
+        ],
+        [
+          631,
+          1517
+        ],
+        [
+          631,
+          1577
+        ],
+        [
+          631,
+          1589
+        ],
+        [
+          631,
+          2010
+        ],
+        [
+          631,
+          2090
+        ],
+        [
+          631,
+          2134
+        ],
+        [
+          631,
+          2166
+        ],
+        [
+          631,
+          2198
+        ],
+        [
+          631,
+          2390
+        ],
+        [
+          631,
+          2637
+        ],
+        [
+          631,
+          2892
+        ],
+        [
+          631,
+          2918
+        ],
+        [
+          631,
+          3159
+        ],
+        [
+          631,
+          3272
+        ],
+        [
+          631,
+          3631
+        ],
+        [
+          631,
+          3738
+        ],
+        [
+          631,
+          3742
+        ],
+        [
+          631,
+          3854
+        ],
+        [
+          631,
+          3909
+        ],
+        [
+          631,
+          4049
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.0546875,
+        0.0546875
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "zero_rows",
+      "elements": 4194304,
+      "strict_outside_tolerance": 44,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          133,
+          1
+        ],
+        [
+          133,
+          60
+        ],
+        [
+          133,
+          145
+        ],
+        [
+          133,
+          335
+        ],
+        [
+          133,
+          357
+        ],
+        [
+          133,
+          390
+        ],
+        [
+          133,
+          477
+        ],
+        [
+          133,
+          594
+        ],
+        [
+          133,
+          616
+        ],
+        [
+          133,
+          771
+        ],
+        [
+          133,
+          872
+        ],
+        [
+          133,
+          1023
+        ],
+        [
+          133,
+          1270
+        ],
+        [
+          133,
+          1451
+        ],
+        [
+          133,
+          1537
+        ],
+        [
+          133,
+          1663
+        ],
+        [
+          133,
+          1728
+        ],
+        [
+          133,
+          1735
+        ],
+        [
+          133,
+          1887
+        ],
+        [
+          133,
+          1891
+        ],
+        [
+          133,
+          1943
+        ],
+        [
+          133,
+          2030
+        ],
+        [
+          133,
+          2044
+        ],
+        [
+          133,
+          2134
+        ],
+        [
+          133,
+          2188
+        ],
+        [
+          133,
+          2273
+        ],
+        [
+          133,
+          2344
+        ],
+        [
+          133,
+          2393
+        ],
+        [
+          133,
+          2394
+        ],
+        [
+          133,
+          2428
+        ],
+        [
+          133,
+          2517
+        ],
+        [
+          133,
+          2548
+        ],
+        [
+          133,
+          2583
+        ],
+        [
+          133,
+          2910
+        ],
+        [
+          133,
+          2980
+        ],
+        [
+          133,
+          3148
+        ],
+        [
+          133,
+          3214
+        ],
+        [
+          133,
+          3396
+        ],
+        [
+          133,
+          3419
+        ],
+        [
+          133,
+          3488
+        ],
+        [
+          133,
+          3539
+        ],
+        [
+          133,
+          3790
+        ],
+        [
+          133,
+          3803
+        ],
+        [
+          133,
+          3949
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "cancellation",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.05810546875,
+        0.05810546875
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "tiny",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.00048828125,
+        0.00048828125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "bf16_ties",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.00390625,
+        0.00390625
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "bf16_denominator_tie",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.0,
+        0.0
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "weight_rounding",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.00390625,
+        0.00390625
+      ],
+      "passed": true,
+      "weight_probe": [
+        1.46875,
+        1.46875
+      ]
+    },
+    {
+      "fixture": "signed_zero",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.0,
+        0.0
+      ],
+      "passed": true,
+      "normalized_zero_bits": [
+        [
+          32768,
+          0
+        ],
+        [
+          32768,
+          0
+        ]
+      ]
+    }
+  ],
+  "old_coordinates": [
+    {
+      "fixture": "random",
+      "original_rejected": 45,
+      "still_different": 0,
+      "coordinates": [
+        {
+          "row": 286,
+          "column": 35,
+          "vllm": 49087,
+          "triton_four_warp": 49088,
+          "triton_grouped": 49087
+        },
+        {
+          "row": 286,
+          "column": 269,
+          "vllm": 48981,
+          "triton_four_warp": 48982,
+          "triton_grouped": 48981
+        },
+        {
+          "row": 286,
+          "column": 503,
+          "vllm": 48909,
+          "triton_four_warp": 48910,
+          "triton_grouped": 48909
+        },
+        {
+          "row": 286,
+          "column": 578,
+          "vllm": 48684,
+          "triton_four_warp": 48685,
+          "triton_grouped": 48684
+        },
+        {
+          "row": 286,
+          "column": 649,
+          "vllm": 48913,
+          "triton_four_warp": 48914,
+          "triton_grouped": 48913
+        },
+        {
+          "row": 286,
+          "column": 1072,
+          "vllm": 48999,
+          "triton_four_warp": 49000,
+          "triton_grouped": 48999
+        },
+        {
+          "row": 286,
+          "column": 1473,
+          "vllm": 48761,
+          "triton_four_warp": 48762,
+          "triton_grouped": 48761
+        },
+        {
+          "row": 286,
+          "column": 1645,
+          "vllm": 16195,
+          "triton_four_warp": 16196,
+          "triton_grouped": 16195
+        },
+        {
+          "row": 286,
+          "column": 1976,
+          "vllm": 48952,
+          "triton_four_warp": 48953,
+          "triton_grouped": 48952
+        },
+        {
+          "row": 286,
+          "column": 2249,
+          "vllm": 15856,
+          "triton_four_warp": 15858,
+          "triton_grouped": 15856
+        },
+        {
+          "row": 286,
+          "column": 2442,
+          "vllm": 49176,
+          "triton_four_warp": 49177,
+          "triton_grouped": 49176
+        },
+        {
+          "row": 286,
+          "column": 2543,
+          "vllm": 49094,
+          "triton_four_warp": 49096,
+          "triton_grouped": 49094
+        },
+        {
+          "row": 286,
+          "column": 2854,
+          "vllm": 16066,
+          "triton_four_warp": 16067,
+          "triton_grouped": 16066
+        },
+        {
+          "row": 286,
+          "column": 3117,
+          "vllm": 16134,
+          "triton_four_warp": 16135,
+          "triton_grouped": 16134
+        },
+        {
+          "row": 286,
+          "column": 3566,
+          "vllm": 48996,
+          "triton_four_warp": 48998,
+          "triton_grouped": 48996
+        },
+        {
+          "row": 406,
+          "column": 114,
+          "vllm": 15826,
+          "triton_four_warp": 15825,
+          "triton_grouped": 15826
+        },
+        {
+          "row": 406,
+          "column": 121,
+          "vllm": 16131,
+          "triton_four_warp": 16130,
+          "triton_grouped": 16131
+        },
+        {
+          "row": 406,
+          "column": 343,
+          "vllm": 15909,
+          "triton_four_warp": 15908,
+          "triton_grouped": 15909
+        },
+        {
+          "row": 406,
+          "column": 512,
+          "vllm": 48824,
+          "triton_four_warp": 48823,
+          "triton_grouped": 48824
+        },
+        {
+          "row": 406,
+          "column": 572,
+          "vllm": 16016,
+          "triton_four_warp": 16015,
+          "triton_grouped": 16016
+        },
+        {
+          "row": 406,
+          "column": 818,
+          "vllm": 48940,
+          "triton_four_warp": 48938,
+          "triton_grouped": 48940
+        },
+        {
+          "row": 406,
+          "column": 1105,
+          "vllm": 15825,
+          "triton_four_warp": 15824,
+          "triton_grouped": 15825
+        },
+        {
+          "row": 406,
+          "column": 1287,
+          "vllm": 48591,
+          "triton_four_warp": 48590,
+          "triton_grouped": 48591
+        },
+        {
+          "row": 406,
+          "column": 1295,
+          "vllm": 16229,
+          "triton_four_warp": 16228,
+          "triton_grouped": 16229
+        },
+        {
+          "row": 406,
+          "column": 1449,
+          "vllm": 16253,
+          "triton_four_warp": 16251,
+          "triton_grouped": 16253
+        },
+        {
+          "row": 406,
+          "column": 1741,
+          "vllm": 48621,
+          "triton_four_warp": 48619,
+          "triton_grouped": 48621
+        },
+        {
+          "row": 406,
+          "column": 1893,
+          "vllm": 16067,
+          "triton_four_warp": 16065,
+          "triton_grouped": 16067
+        },
+        {
+          "row": 406,
+          "column": 2162,
+          "vllm": 16348,
+          "triton_four_warp": 16346,
+          "triton_grouped": 16348
+        },
+        {
+          "row": 406,
+          "column": 2370,
+          "vllm": 48745,
+          "triton_four_warp": 48744,
+          "triton_grouped": 48745
+        },
+        {
+          "row": 406,
+          "column": 2471,
+          "vllm": 48823,
+          "triton_four_warp": 48822,
+          "triton_grouped": 48823
+        },
+        {
+          "row": 406,
+          "column": 2477,
+          "vllm": 48988,
+          "triton_four_warp": 48986,
+          "triton_grouped": 48988
+        },
+        {
+          "row": 406,
+          "column": 2492,
+          "vllm": 16155,
+          "triton_four_warp": 16154,
+          "triton_grouped": 16155
+        },
+        {
+          "row": 406,
+          "column": 2603,
+          "vllm": 48967,
+          "triton_four_warp": 48965,
+          "triton_grouped": 48967
+        },
+        {
+          "row": 406,
+          "column": 2704,
+          "vllm": 49091,
+          "triton_four_warp": 49089,
+          "triton_grouped": 49091
+        },
+        {
+          "row": 406,
+          "column": 2881,
+          "vllm": 15804,
+          "triton_four_warp": 15803,
+          "triton_grouped": 15804
+        },
+        {
+          "row": 406,
+          "column": 2932,
+          "vllm": 48939,
+          "triton_four_warp": 48937,
+          "triton_grouped": 48939
+        },
+        {
+          "row": 406,
+          "column": 3307,
+          "vllm": 15682,
+          "triton_four_warp": 15680,
+          "triton_grouped": 15682
+        },
+        {
+          "row": 406,
+          "column": 3349,
+          "vllm": 48667,
+          "triton_four_warp": 48666,
+          "triton_grouped": 48667
+        },
+        {
+          "row": 406,
+          "column": 3387,
+          "vllm": 49070,
+          "triton_four_warp": 49068,
+          "triton_grouped": 49070
+        },
+        {
+          "row": 406,
+          "column": 3428,
+          "vllm": 48817,
+          "triton_four_warp": 48816,
+          "triton_grouped": 48817
+        },
+        {
+          "row": 406,
+          "column": 3483,
+          "vllm": 16196,
+          "triton_four_warp": 16194,
+          "triton_grouped": 16196
+        },
+        {
+          "row": 406,
+          "column": 3528,
+          "vllm": 48995,
+          "triton_four_warp": 48993,
+          "triton_grouped": 48995
+        },
+        {
+          "row": 406,
+          "column": 3655,
+          "vllm": 48748,
+          "triton_four_warp": 48746,
+          "triton_grouped": 48748
+        },
+        {
+          "row": 406,
+          "column": 3835,
+          "vllm": 16045,
+          "triton_four_warp": 16043,
+          "triton_grouped": 16045
+        },
+        {
+          "row": 406,
+          "column": 4087,
+          "vllm": 48754,
+          "triton_four_warp": 48752,
+          "triton_grouped": 48754
+        }
+      ]
+    },
+    {
+      "fixture": "zero_rows",
+      "original_rejected": 0,
+      "still_different": 0,
+      "coordinates": []
+    },
+    {
+      "fixture": "cancellation",
+      "original_rejected": 2,
+      "still_different": 0,
+      "coordinates": [
+        {
+          "row": 360,
+          "column": 1917,
+          "vllm": 16389,
+          "triton_four_warp": 16390,
+          "triton_grouped": 16389
+        },
+        {
+          "row": 360,
+          "column": 2357,
+          "vllm": 15900,
+          "triton_four_warp": 15901,
+          "triton_grouped": 15900
+        }
+      ]
+    },
+    {
+      "fixture": "tiny",
+      "original_rejected": 0,
+      "still_different": 0,
+      "coordinates": []
+    },
+    {
+      "fixture": "bf16_ties",
+      "original_rejected": 0,
+      "still_different": 0,
+      "coordinates": []
+    },
+    {
+      "fixture": "bf16_denominator_tie",
+      "original_rejected": 0,
+      "still_different": 0,
+      "coordinates": []
+    },
+    {
+      "fixture": "weight_rounding",
+      "original_rejected": 0,
+      "still_different": 0,
+      "coordinates": []
+    },
+    {
+      "fixture": "signed_zero",
+      "original_rejected": 0,
+      "still_different": 0,
+      "coordinates": []
+    }
+  ],
+  "replay_checks": [],
+  "timing": null
+}
