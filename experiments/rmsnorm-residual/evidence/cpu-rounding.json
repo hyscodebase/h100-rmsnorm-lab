@@ -1,0 +1,35 @@
+{
+  "captured_utc": "2026-11-26T07:30:46.945388+00:00",
+  "device": "CPU",
+  "python": "3.9.6",
+  "torch": "2.8.0",
+  "source_revision": "fe7b0e3cb9f2890ad53b5652f98b3a36e67dbc9e",
+  "fixture": "bf16_ties",
+  "seed": 101,
+  "rows": 2,
+  "width": 4096,
+  "rtol": 0.005,
+  "atol": 1e-06,
+  "incorrect_variant_passes_elementwise_tolerance": true,
+  "incorrect_variant_passes_full_correctness": false,
+  "probe_columns": [
+    {
+      "column": 0,
+      "oracle_fp64": 0.9922177615870683,
+      "rounded_reference": 0.9921875,
+      "unrounded_variant": 0.99609375,
+      "oracle_bf16_bits": 16254,
+      "rounded_bits": 16254,
+      "unrounded_bits": 16255
+    },
+    {
+      "column": 3,
+      "oracle_fp64": 1.7635120371957658,
+      "rounded_reference": 1.765625,
+      "unrounded_variant": 1.7578125,
+      "oracle_bf16_bits": 16354,
+      "rounded_bits": 16354,
+      "unrounded_bits": 16353
+    }
+  ]
+}

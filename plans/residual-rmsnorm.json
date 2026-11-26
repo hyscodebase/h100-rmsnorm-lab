@@ -1,0 +1,10 @@
+{
+  "kind": "residual_rmsnorm",
+  "id": "residual-rmsnorm",
+  "hypothesis": "A single four-warp Triton program per row can lower the latency of two-output BF16 residual addition and RMSNorm at 1024 by 4096 relative to the fastest correct compiled PyTorch reference.",
+  "rows": [1024, 1, 16, 128],
+  "width": 4096,
+  "seeds": [101, 102, 103],
+  "ops": 32,
+  "rounds": 21
+}

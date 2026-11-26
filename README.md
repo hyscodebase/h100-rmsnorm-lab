@@ -44,6 +44,10 @@ For a single shape, add `--rows 1 --widths 4096`. To regenerate the figure, inst
 - All implementations use the same seeded synthetic inputs and return a new output. Validation, JIT compilation and graph capture finish before timing. Each round shuffles backend order. CUDA events bracket the replay, and the raw JSON records the median, quartiles and per-round averages. [Benchmark harness](benchmark.py)
 - Inputs reuse the same addresses without an explicit cache flush. GPU clocks were unmanaged. These measurements cover this operator and graph-replay workload. Model serving latency, cold-cache performance and FlashInfer performance remain open questions.
 
+## Fused residual addition and RMSNorm
+
+The next experiment fused two operations at width 4,096. At 1,024 rows, three H100 seeds measured 10.068–10.113 µs for Triton and 115.666–115.844 µs for eager PyTorch. A regression discovered in review showed that intermediate BF16 rounding matters. All four compiled comparators missed that strict numerical contract in every checkpoint. [Kernel report](experiments/rmsnorm-residual/REPORT.md) · [Code review](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/8)
+
 ## Sustained H100 compute
 
 In 20 runs of a BF16 prefill projection, the H100 completed 1.50 million matrix products over 902.18 measured seconds. The 16,384-row shape reached a median of 682.19 TFLOP/s. Gaps in device sampling limited confirmation of sustained activity to eight runs. [Full results, throughput and resource charts](experiments/prefill-gemm/REPORT.md) · [Workload and protocol](experiments/prefill-gemm/README.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/3)

@@ -10,7 +10,9 @@
 | 프로그램당 1·2·4행 처리 | 완료 | 정확도 60건을 통과했다. 1024×8192에서는 새 설정이 두 기준을 모두 5% 앞서지 못해 기존 1행 구현을 유지했다. [실험 보고서](results/row-tiles/REPORT.md) |
 | 은닉 차원에 따른 2행 타일의 손익 | 완료 | 1024×4104에서만 2행·4워프가 두 시드에서 두 기준을 5% 이상 앞섰다. 이 입력에 해당 설정을 권장한다. [결과와 원시 기록](results/width-sweep/REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/2) |
 | 프리필 BF16 행렬곱의 지속 처리량 | 완료 | 20구간에서 총 902.18초를 측정했다. 16,384행의 처리량 중앙값은 682.19 TFLOP/s였다. 사용률 표본이 충분한 구간은 8개였고, 다섯 시드 중 네 개에서 지속 부하를 확인한 입력 크기는 없었다. [결과와 자원 사용 그래프](experiments/prefill-gemm/REPORT.md) |
-| 프리필 중 GPU 사용률의 관측 공백 | 다음 실험 사전등록 | 8,192행에서 기존 nvidia-smi와 직접 NVML 조회의 누락률, 처리량, 같은 시점 표본의 일치도를 비교한다. 6개 시드와 3개 계측 방식의 순서를 교차 배치한다. 실행기 구현 및 검증 후 수집한다. [설계와 채택 기준](experiments/prefill-gemm/NEXT.md) |
+| 프리필 중 GPU 사용률의 관측 공백 | 완료 | 동일한 H100과 프리필 입력에서 직접 NVML 계측이 6/6 시드, CLI 계측이 3/6 시드에서 유효 표본과 최대 공백 기준을 통과했다. [최종 보고서](https://github.com/hyscodebase/h100-rmsnorm-lab/blob/codex/h100-observer-coverage/experiments/observer/REPORT.md) |
+| 잔차 덧셈과 RMSNorm 융합 | 완료 | 12/12회에서 Triton은 두 출력의 정확도 검사를 통과했다. 목표 세 시드에서 10.068–10.113 µs였고, 컴파일 비교군 48건은 분모 반올림 검사에서 탈락했다. [실험 보고서](experiments/rmsnorm-residual/REPORT.md) |
+| 컴파일 중간값의 정밀도 설정 | 완료 | 새 시드와 독립 프로세스로 설정이 실제 켜지고 꺼졌음을 확인했다. 두 경우 모두 같은 분모 검사 불일치가 재현됐다. 시드 105에서 BF16 저장 경계를 명시한 2단계 컴파일 기준과 비트 반올림을 명시한 단일 그래프의 정확도를 먼저 대조한다. [다음 실험 계획](experiments/rmsnorm-residual/materialized/PLAN.md) [원시 기록](experiments/rmsnorm-residual/precision/checkpoint.json) |
 | RMSNorm 4104 인접 너비 재검증 | 후속 후보 | 4103·4104·4105와 4112에서 새로운 시드를 사용해 권장 설정이 유효한 범위를 검증한다. |
 
 ## 다음 가설을 고르는 규칙
