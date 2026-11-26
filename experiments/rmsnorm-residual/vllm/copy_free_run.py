@@ -62,7 +62,15 @@ BOUNDARY = Workload(
     ))),
     candidate=BOUNDARY_CANDIDATE, warps=8,
 )
-WORKLOADS = {workload.rows: workload for workload in (DEFAULT, TRANSFER, BOUNDARY)}
+ROWS_512_ANCHOR = run.HERE / "copy-free-256-results/s157.json"
+ROWS_512 = Workload(
+    512, 161, (162, 163, 164), ROWS_512_ANCHOR,
+    (*BOUNDARY.sources, *(str(path.relative_to(run.ROOT)) for path in (
+        ROWS_512_ANCHOR, run.HERE / "COPY_FREE_ROWS_512.md",
+    ))),
+    candidate=BOUNDARY.candidate, warps=BOUNDARY.warps,
+)
+WORKLOADS = {workload.rows: workload for workload in (DEFAULT, TRANSFER, BOUNDARY, ROWS_512)}
 
 
 def graph_contract(rows=ROWS, *, backends=BACKENDS):
@@ -85,14 +93,16 @@ def binary_identity(codegen, *, candidate=CANDIDATE):
 
 
 def verify_anchor_identity(codegen, anchor, workload):
-    if workload.warps == 8:
+    if workload == BOUNDARY:
         actual, previous = (data[SPLIT]["residual_add"] for data in (codegen, anchor))
         if any(actual[key] != previous[key] for key in IDENTITY_FIELDS):
             raise ValueError("The residual-add binary changed at the dispatch boundary.")
         return
-    if any(codegen[CANDIDATE][key] != anchor[CANDIDATE][key] for key in IDENTITY_FIELDS):
-        raise ValueError("The fused kernel differs from the preceding comparison.")
-    if workload.rows != ROWS and binary_identity(codegen) != binary_identity(anchor):
+    if workload == DEFAULT:
+        if any(codegen[CANDIDATE][key] != anchor[CANDIDATE][key] for key in IDENTITY_FIELDS):
+            raise ValueError("The fused kernel differs from the preceding comparison.")
+        return
+    if binary_identity(codegen, candidate=workload.candidate) != binary_identity(anchor, candidate=workload.candidate):
         raise ValueError("The split or fused kernel changed at the new row count.")
 
 
