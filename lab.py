@@ -19,6 +19,7 @@ from itertools import product
 from pathlib import Path
 
 import gemm_plan
+import observer_plan
 
 ROOT = Path(__file__).resolve().parent
 SOURCES = ("kernels.py", "check.py", "benchmark.py")
@@ -81,7 +82,10 @@ def validate_plan(plan):
     for key in ("id", "hypothesis"):
         require(isinstance(plan.get(key), str) and plan[key].strip(), f"{key} must be nonempty text.")
     kind = plan.get("kind", "rmsnorm")
-    require(kind in ("rmsnorm", "prefill_gemm"), f"Unknown experiment kind: {kind}")
+    require(kind in ("rmsnorm", "prefill_gemm", observer_plan.KIND), f"Unknown experiment kind: {kind}")
+    if kind == observer_plan.KIND:
+        observer_plan.validate_plan(plan)
+        return
     for key in (("seeds",) if kind == "prefill_gemm" else ("seeds", "rows", "widths", "row_tiles")):
         values = plan.get(key)
         require(isinstance(values, list) and values and all(type(v) is int for v in values),
@@ -101,12 +105,17 @@ def validate_plan(plan):
 
 def manifest(plan):
     sources = (gemm_plan.SOURCE,) if plan.get("kind") == "prefill_gemm" else SOURCES
+    if plan.get("kind") == observer_plan.KIND:
+        sources = observer_plan.SOURCES
     hashes = {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in sources}
     payload = json.dumps([plan, hashes], sort_keys=True, allow_nan=False).encode()
     return {"version": 1, "experiment_hash": hashlib.sha256(payload).hexdigest(), "sources": hashes}
 
 
 def tasks(plan):
+    if plan.get("kind") == observer_plan.KIND:
+        yield from observer_plan.tasks(plan)
+        return
     if plan.get("kind") == "prefill_gemm":
         yield from gemm_plan.tasks(plan)
         return
@@ -146,6 +155,8 @@ def initialize(state, plan_file):
 
 def validate_result(result, shape, plan):
     require(isinstance(result, dict), "Expected a JSON object from the runner.")
+    if plan.get("kind") == observer_plan.KIND:
+        return observer_plan.validate_result(result, shape)
     if shape is None:
         checks = result.get("checks")
         require(result.get("passed") is True and result.get("reference") == "fp32"
@@ -217,6 +228,9 @@ def progress(state, plan, experiment_hash):
 
 
 def command(runner, shape, plan):
+    if plan.get("kind") == observer_plan.KIND:
+        cmd = [str(runner), "observer"] if runner else [sys.executable, str(ROOT / observer_plan.SOURCE)]
+        return cmd + observer_plan.arguments(shape)
     if plan.get("kind") == "prefill_gemm":
         cmd = [str(runner), "gemm"] if runner else [sys.executable, str(ROOT / gemm_plan.SOURCE)]
         return cmd + gemm_plan.arguments(shape, plan)
@@ -245,15 +259,15 @@ def resolve_runner(explicit):
     return None
 
 
-def local_gemm_revision(root, expected_hash):
+def local_gemm_revision(root, expected_hash, source=gemm_plan.SOURCE, ref="HEAD"):
     if not shutil.which("git"):
         return "unversioned"
     git = ["git", "--no-replace-objects", "-C", str(root)]
-    head = subprocess.run([*git, "rev-parse", "--verify", "HEAD^{commit}"], capture_output=True, text=True)
+    head = subprocess.run([*git, "rev-parse", "--verify", f"{ref}^{{commit}}"], capture_output=True, text=True)
     if head.returncode:
         return "unversioned"
     revision = head.stdout.strip()
-    blob = subprocess.run([*git, "cat-file", "blob", f"{revision}:{gemm_plan.SOURCE}"], capture_output=True)
+    blob = subprocess.run([*git, "cat-file", "blob", f"{revision}:{source}"], capture_output=True)
     if blob.returncode:
         return "unversioned"
     if hashlib.sha256(blob.stdout).hexdigest() != expected_hash:
@@ -302,6 +316,18 @@ def execute(state, runner, max_steps):
             if (state / "paused").exists():
                 print("Paused. Resume to start the next task.")
                 return
+            observer = plan.get("kind") == observer_plan.KIND
+            if observer:
+                budget = observer_plan.launch_limit(state, task_id, plan)
+                sources = read_json(state / "manifest.json")["sources"]
+                reference_file = state / "observer-revision.json"
+                reference = read_json(reference_file) if reference_file.exists() else "HEAD"
+                revisions = {local_gemm_revision(ROOT, digest, source, reference) for source, digest in sources.items()}
+                require(len(revisions) == 1, "Observer sources must be frozen together before launch.")
+                frozen = revisions.pop()
+                require(frozen != "unversioned" and not frozen.endswith("-modified"), "Commit observer sources before launch.")
+                if not reference_file.exists():
+                    save_json(reference_file, frozen)
             print(f"Running {task_id} ...", flush=True)
             with record_attempt(state, task_id, experiment_hash, shape, plan):
                 env = None
@@ -313,11 +339,15 @@ def execute(state, runner, max_steps):
                         print("Local benchmark source has no matching HEAD revision. "
                               "This checkpoint cannot be exported as a verified Git run.", file=sys.stderr)
                 # Keep a surviving local runner locked even if its coordinator is killed.
-                output = subprocess.run(
-                    command(runner, shape, plan), cwd=ROOT, stdout=subprocess.PIPE,
-                    text=True, check=True, pass_fds=(lock.fileno(),), env=env,
-                )
-                result = json.loads(output.stdout)
+                cmd = command(runner, shape, plan)
+                if observer:
+                    env = {**os.environ, "BENCH_REVISION": frozen}
+                    result = observer_plan.bounded_run(cmd, ROOT, env, lock.fileno(), budget)
+                    require(result.get("code_revision") == frozen, "Remote observer ran a different source revision.")
+                else:
+                    output = subprocess.run(cmd, cwd=ROOT, stdout=subprocess.PIPE, text=True, check=True,
+                                            pass_fds=(lock.fileno(),), env=env)
+                    result = json.loads(output.stdout)
                 backend = validate_result(result, shape, plan)
                 if backend:
                     require(environment in (None, backend), "GPU environment changed. Initialize a new state directory.")
@@ -343,7 +373,7 @@ def main():
             sub.add_argument("--plan", type=Path, required=True)
         if name in ("step", "run"):
             sub.add_argument("--runner", type=Path,
-                             help="Executable accepting check, bench or gemm. Defaults to local Git setting rmsnorm.runner, then local Python.")
+                             help="Executable accepting check, bench, gemm or observer. Defaults to local Git setting rmsnorm.runner, then local Python.")
         if name == "run":
             sub.add_argument("--max-steps", type=int, help="Stop after this many newly completed tasks.")
     args = parser.parse_args()
@@ -385,5 +415,5 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except (OSError, ValueError, KeyError, TypeError, subprocess.CalledProcessError) as error:
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
         sys.exit(f"Experiment error: {error}")
