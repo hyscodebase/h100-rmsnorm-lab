@@ -120,6 +120,19 @@ def normalization_metadata(compiled, warps):
     return code
 
 
+def addition_metadata(kernel, tile):
+    code = base.single.grouped.launch_metadata(kernel)
+    code.pop("logical_group_width")
+    code.update(tile_elements=tile, binary_sha256=hashlib.sha256(kernel.asm["cubin"]).hexdigest())
+    return code
+
+
+def vectorized_add(code, warps):
+    opcodes = code["ptx_opcodes"]
+    return (code["num_warps"] == warps and any(op.startswith("ld.global.v") for op in opcodes)
+            and any(op.startswith("st.global.v") for op in opcodes))
+
+
 def compile_backends(torch, methods, workload):
     from two_kernel import ADD_BLOCK, ADD_WARPS
 
@@ -128,14 +141,9 @@ def compile_backends(torch, methods, workload):
     x_out, residual_out = torch.empty_like(x), torch.empty_like(residual)
     fused = methods[workload.candidate](x, residual, weight, x_out, residual_out)
     add, norm = methods[SPLIT](x, residual, weight, x_out, residual_out)
-    add_code = base.single.grouped.launch_metadata(add)
-    opcodes = tuple(add_code["ptx_opcodes"])
-    if (add_code["num_warps"] != ADD_WARPS
-            or not any(op.startswith("ld.global.v") for op in opcodes)
-            or not any(op.startswith("st.global.v") for op in opcodes)):
+    add_code = addition_metadata(add, ADD_BLOCK)
+    if not vectorized_add(add_code, ADD_WARPS):
         raise ValueError("The residual-add baseline must have vectorized global loads and stores.")
-    add_code.pop("logical_group_width")
-    add_code.update(tile_elements=ADD_BLOCK, binary_sha256=hashlib.sha256(add.asm["cubin"]).hexdigest())
     return {
         workload.candidate: normalization_metadata(fused, workload.warps),
         SPLIT: {"residual_add": add_code, "normalization": normalization_metadata(norm, workload.warps)},
@@ -179,7 +187,7 @@ def verify_input_graphs(torch, seed, device, workload, methods, vllm):
     graphs.update({name: [direct.capture_candidate(torch, fn, work, weight) for work in works]
                    for name, fn in methods.items()})
     reference, checks = base.verify_graphs(torch, runner, graphs, works, weight, original_weight,
-                                           backends=workload.backends, check_inputs=True)
+                                           backends=tuple(graphs), check_inputs=True)
     numerical = {"fixtures": fixtures, "graph_checks": checks, "buffers": buffers,
                  "source_fingerprints": fingerprints, "alias_guards": guards,
                  "inputs_unchanged": base.input_fingerprints(works, weight) == fingerprints}

@@ -19,8 +19,12 @@ SOURCES = (*PREFLIGHT_SOURCES, str(Path(__file__).resolve().relative_to(run.ROOT
 def verify_methods(torch, methods, outputs, inputs, case):
     if len(outputs) == 2:
         return verify_case(torch, outputs, inputs, case)
-    comparisons = {name: verify_case(torch, (outputs[0], output), inputs, case)
-                   for name, output in zip(tuple(methods)[1:], outputs[1:])}
+    comparisons = {}
+    for name, output in zip(tuple(methods)[1:], outputs[1:], strict=True):
+        try:
+            comparisons[name] = verify_case(torch, (outputs[0], output), inputs, case)
+        except AssertionError as exc:
+            comparisons[name] = {"fixture": case, "passed": False, "reason": str(exc)}
     return {"fixture": case, "comparisons": comparisons,
             "passed": all(result["passed"] for result in comparisons.values())}
 

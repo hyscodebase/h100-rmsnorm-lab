@@ -180,10 +180,11 @@ def numeric_gate(record, backends=BACKENDS):
             and record["inputs_unchanged"])
 
 
-def balanced_order(seed, backends=BACKENDS):
+def balanced_order(seed, backends=BACKENDS, *, rounds=None):
     order = list(backends)
     random.Random(seed).shuffle(order)
-    return [order[i:] + order[:i] for i in range(len(order))]
+    rotations = [order[i:] + order[:i] for i in range(len(order))]
+    return rotations if rounds is None else [rotations[i % len(rotations)] for i in range(rounds)]
 
 
 def collect_window(runner, graphs, minimum_seconds, origin, *, rows=ROWS):
@@ -213,11 +214,12 @@ def pace(blocks, backends=BACKENDS):
     return rates, gains
 
 
-def measure(torch, seed, runner, graphs, works, reference, cuda_uuid, *, backends=BACKENDS, period_s=PERIOD_S, rows=ROWS):
+def measure(torch, seed, runner, graphs, works, reference, cuda_uuid, *, backends=BACKENDS, period_s=PERIOD_S,
+            rows=ROWS, rounds=None):
     origin_utc = run.original.utc_now()
     origin = time.perf_counter()
     observer = Observer(cuda_uuid, origin)
-    order, blocks = balanced_order(seed, backends), []
+    order, blocks = balanced_order(seed, backends, rounds=rounds), []
     try:
         for round_index, group in enumerate(order):
             for position, backend in enumerate(group):

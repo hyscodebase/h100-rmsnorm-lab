@@ -5,7 +5,7 @@ import triton.language as tl
 from grouped_kernel import _group_square_sum, _normalize
 from shuffle_kernel import _ordered_block_sum
 from sixteen_warp_kernel import validate_output_buffers
-from two_kernel import launch_residual_add
+from two_kernel import ADD_BLOCK, launch_residual_add
 
 
 @triton.jit
@@ -66,11 +66,11 @@ def launch_normalization(residual_out, weight, x_out):
     )
 
 
-def split_out_of_place(x, residual, weight, x_out, residual_out):
+def split_out_of_place(x, residual, weight, x_out, residual_out, *, tile=ADD_BLOCK):
     import torch
 
     validate_output_buffers(x, residual, weight, x_out, residual_out)
     with torch.cuda.device(x.device):
-        add = launch_residual_add(x, residual, residual_out)
+        add = launch_residual_add(x, residual, residual_out, tile=tile)
         norm = launch_normalization(residual_out, weight, x_out)
     return add, norm
