@@ -1,0 +1,205 @@
+{
+  "power_assumptions_w": [
+    700,
+    1000
+  ],
+  "seeds": {
+    "206": {
+      "saved_periods": 4,
+      "eligible_pair_indices": [
+        0,
+        1
+      ],
+      "numerically_exact": true,
+      "comparison": {
+        "gross_energy_joules_per_billion_rows": {
+          "triton_8warps_out_of_place": 5707.793781766668,
+          "triton_4physical_warps_out_of_place": 5640.453804517165
+        },
+        "gross_energy_saving": 0.011797899472930862,
+        "median_rows_per_second": {
+          "triton_8warps_out_of_place": 91526145.74705398,
+          "triton_4physical_warps_out_of_place": 91485105.78943169
+        },
+        "throughput_change": -0.00044839599971480126,
+        "padding_power_sensitivity": {
+          "700": {
+            "energy_joules_per_billion_rows": {
+              "triton_8warps_out_of_place": [
+                5707.545143642346,
+                5707.793781766668
+              ],
+              "triton_4physical_warps_out_of_place": [
+                5594.052002480021,
+                5640.453804517165
+              ]
+            },
+            "saving_lower": 0.011754850366784142,
+            "saving_upper": 0.01992745071659585
+          },
+          "1000": {
+            "energy_joules_per_billion_rows": {
+              "triton_8warps_out_of_place": [
+                5707.438584446209,
+                5707.793781766668
+              ],
+              "triton_4physical_warps_out_of_place": [
+                5574.165515892673,
+                5640.453804517165
+              ]
+            },
+            "saving_lower": 0.011736399601668834,
+            "saving_upper": 0.023411544106737847
+          }
+        },
+        "passes_energy": false,
+        "passes_throughput": true
+      }
+    },
+    "207": {
+      "saved_periods": 0,
+      "eligible_pair_indices": [],
+      "numerically_exact": null,
+      "comparison": null
+    },
+    "208": {
+      "saved_periods": 0,
+      "eligible_pair_indices": [],
+      "numerically_exact": null,
+      "comparison": null
+    }
+  },
+  "resources": {
+    "measured_periods": 4,
+    "fixed_work_seconds": 750.9863978666253,
+    "warmup_seconds": 12.100178456865251,
+    "normalized_rows": 68719476736,
+    "field_status_counts": {
+      "qualified": 4
+    },
+    "auxiliary_scope": "Serialized NVML snapshots before warm-up and after the closing energy query",
+    "auxiliary": {
+      "auxiliary_before": {
+        "snapshots": 4,
+        "metrics": {
+          "gpu_busy_pct": {
+            "count": 4,
+            "min": 0,
+            "median": 1.0,
+            "max": 2
+          },
+          "memory_busy_pct": {
+            "count": 4,
+            "min": 0,
+            "median": 0.0,
+            "max": 0
+          },
+          "vram_used_mib": {
+            "count": 4,
+            "min": 8431.25,
+            "median": 8431.25,
+            "max": 8431.25
+          },
+          "vram_total_mib": {
+            "count": 4,
+            "min": 81559.0,
+            "median": 81559.0,
+            "max": 81559.0
+          },
+          "power_w": {
+            "count": 4,
+            "min": 116.902,
+            "median": 119.219,
+            "max": 123.478
+          },
+          "power_limit_w": {
+            "count": 4,
+            "min": 700.0,
+            "median": 700.0,
+            "max": 700.0
+          },
+          "temperature_c": {
+            "count": 4,
+            "min": 28.0,
+            "median": 29.0,
+            "max": 31.0
+          },
+          "sm_clock_mhz": {
+            "count": 4,
+            "min": 1980.0,
+            "median": 1980.0,
+            "max": 1980.0
+          },
+          "memory_clock_mhz": {
+            "count": 4,
+            "min": 2619.0,
+            "median": 2619.0,
+            "max": 2619.0
+          }
+        }
+      },
+      "auxiliary_after": {
+        "snapshots": 4,
+        "metrics": {
+          "gpu_busy_pct": {
+            "count": 4,
+            "min": 0,
+            "median": 100.0,
+            "max": 100
+          },
+          "memory_busy_pct": {
+            "count": 4,
+            "min": 0,
+            "median": 100.0,
+            "max": 100
+          },
+          "vram_used_mib": {
+            "count": 4,
+            "min": 8431.25,
+            "median": 8431.25,
+            "max": 8431.25
+          },
+          "vram_total_mib": {
+            "count": 4,
+            "min": 81559.0,
+            "median": 81559.0,
+            "max": 81559.0
+          },
+          "power_w": {
+            "count": 4,
+            "min": 125.241,
+            "median": 521.3845,
+            "max": 525.629
+          },
+          "power_limit_w": {
+            "count": 4,
+            "min": 700.0,
+            "median": 700.0,
+            "max": 700.0
+          },
+          "temperature_c": {
+            "count": 4,
+            "min": 39.0,
+            "median": 45.5,
+            "max": 46.0
+          },
+          "sm_clock_mhz": {
+            "count": 4,
+            "min": 1980.0,
+            "median": 1980.0,
+            "max": 1980.0
+          },
+          "memory_clock_mhz": {
+            "count": 4,
+            "min": 2619.0,
+            "median": 2619.0,
+            "max": 2619.0
+          }
+        }
+      }
+    }
+  },
+  "qualification_passed": true,
+  "campaign_complete": false,
+  "adopted": null
+}

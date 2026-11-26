@@ -1,5 +1,6 @@
 """Verify resumable H100 periods and bound energy savings under stated power assumptions."""
 import argparse
+from collections import Counter
 from functools import partial
 import hashlib
 import json
@@ -135,8 +136,31 @@ def comparison(pairs):
             "passes_throughput": rates[CANDIDATE] >= protocol.energy.THROUGHPUT_RATIO * rates[BASELINE]}
 
 
+def resource_summary(records):
+    windows = [record["window"] for _, record in sorted(records.items()) if record["window"] is not None]
+    result = {
+        "measured_periods": len(windows),
+        "fixed_work_seconds": sum(window["wall_seconds"] for window in windows),
+        "warmup_seconds": sum(window["warmup"]["wall_seconds"] for window in windows),
+        "normalized_rows": sum(window["normalized_rows"] for window in windows),
+        "field_status_counts": dict(sorted(Counter(window["sample_bounds"]["status"] for window in windows).items())),
+        "auxiliary_scope": protocol.boundaries.AUXILIARY_SCOPE,
+        "auxiliary": {},
+    }
+    for endpoint in ("auxiliary_before", "auxiliary_after"):
+        snapshots = [window[endpoint]["values"] for window in windows]
+        metrics = {}
+        for field in protocol.boundaries.FIELDS:
+            observed = [values[field] for values in snapshots if values[field] is not None]
+            metrics[field] = {"count": len(observed), "min": min(observed, default=None),
+                              "median": statistics.median(observed) if observed else None,
+                              "max": max(observed, default=None)}
+        result["auxiliary"][endpoint] = {"snapshots": len(snapshots), "metrics": metrics}
+    return result
+
+
 def summarize(records):
-    summary = {"power_assumptions_w": list(POWER_ASSUMPTIONS_W), "seeds": {}}
+    summary = {"power_assumptions_w": list(POWER_ASSUMPTIONS_W), "seeds": {}, "resources": resource_summary(records)}
     qualification = records.get(f"s{protocol.NUMERIC_SEED}")
     summary["qualification_passed"] = qualification["gate_passed"] if qualification is not None else None
     for seed in protocol.TIMING_SEEDS:
@@ -151,8 +175,10 @@ def summarize(records):
             "comparison": effect,
         }
     effects = [record["comparison"] for record in summary["seeds"].values()]
-    summary["adopted"] = all(effect is not None and effect["passes_energy"] and effect["passes_throughput"]
-                             for effect in effects)
+    completed = protocol.next_work(records) is None
+    summary["campaign_complete"] = completed
+    summary["adopted"] = (all(effect is not None and effect["passes_energy"] and effect["passes_throughput"]
+                              for effect in effects) if completed else None)
     return summary
 
 
