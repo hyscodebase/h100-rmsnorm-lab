@@ -1,0 +1,326 @@
+{
+  "code_revision": "084e88cc6824ee61c9abd7823e90b44ec6f8201a",
+  "source_sha256": {
+    "experiments/rmsnorm-residual/vllm/PLAN.md": "8bf7df499b2931cecb93c423bc829a5813577df8710857155492023b1d5c6480",
+    "experiments/rmsnorm-residual/vllm/run.py": "24e88100728d67e14494106a888a26ffdf5b49d6f5da7b48bd76f1aa7f551ed5",
+    "experiments/rmsnorm-residual/vllm/kernel.py": "b9d6f67e0c5e6e9cfc9da78def0ccec046d3b609bf1c7862ac407a3becffb8cd",
+    "experiments/rmsnorm-residual/vllm/wheel.py": "9b8956435559569d88d0a5b9f9e32db55d33f9b4f494638a1c8d010c7e73ae52",
+    "experiments/rmsnorm-residual/benchmark.py": "a2be59cd09dcbf15ed279df860e8220944a7bddeedc2e7f1c74cf655c5da6f05",
+    "experiments/rmsnorm-residual/check.py": "06fc94defcc7b4223a1675db0f5eadff52215236681922c9890a1b5112d5a7df",
+    "experiments/rmsnorm-residual/vllm/PRECISION_PLAN.md": "9044cc966bf098e23513234cfdcdc0c7ea2b07ef576576b5f34f8df97bed2e97",
+    "experiments/rmsnorm-residual/vllm/float32_gate.py": "a7f9de4c5cb8b859c1addc911ff694f20203171f49dc583fbe553d9c6518eaf9",
+    "experiments/rmsnorm-residual/vllm/bounded_preflight.py": "cc23b30e47936066c58503d972cf1c1fc0fb48e9dfb7e18d70c6a2db01eb934d",
+    "experiments/rmsnorm-residual/vllm/bounded_timing.py": "4924f1bd760de267b5dfea6277b5d6f5228c6633992764366cd8982870cea318"
+  },
+  "asset": {
+    "version": "0.10.0",
+    "wheel": "vllm-0.10.0-cp38-abi3-manylinux1_x86_64.whl",
+    "wheel_sha256": "8ca37559d82b43b5e8c8248d2e4a1ecb51d6d4e5d517491d656df6491ed93dab",
+    "extension": "_C.abi3.so",
+    "extension_sha256": "0bdeda3d6ef7f1df23bcbd128f27c003dc2750475632d8d1d5658e5af15a1e74",
+    "extension_size_bytes": 339450440
+  },
+  "preflight_revision": "64f316477b412d88e400e60cb40f771729d40aa2",
+  "environment": {
+    "gpu": "NVIDIA H100 80GB HBM3",
+    "compute_capability": [
+      9,
+      0
+    ],
+    "total_memory_bytes": 84929216512,
+    "sm_count": 132,
+    "driver": "550.144.03",
+    "cuda": "12.8",
+    "torch": "2.7.1+cu128",
+    "triton": "3.3.1",
+    "python": "3.12.16"
+  },
+  "seed": 115,
+  "rows": 1024,
+  "width": 4096,
+  "gate_passed": false,
+  "fixtures": [
+    {
+      "fixture": "random",
+      "elements": 4194304,
+      "strict_outside_tolerance": 15,
+      "bounded_rejected": 15,
+      "pairs_differ_bitwise": 17,
+      "accepted_coords": [],
+      "rejected_coords": [
+        [
+          12,
+          120
+        ],
+        [
+          12,
+          272
+        ],
+        [
+          12,
+          672
+        ],
+        [
+          12,
+          763
+        ],
+        [
+          12,
+          904
+        ],
+        [
+          12,
+          1305
+        ],
+        [
+          12,
+          1780
+        ],
+        [
+          12,
+          2144
+        ],
+        [
+          12,
+          2336
+        ],
+        [
+          12,
+          2386
+        ],
+        [
+          12,
+          2921
+        ],
+        [
+          12,
+          3266
+        ],
+        [
+          12,
+          3388
+        ],
+        [
+          12,
+          3511
+        ],
+        [
+          12,
+          3850
+        ]
+      ],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": false
+    },
+    {
+      "fixture": "zero_rows",
+      "elements": 4194304,
+      "strict_outside_tolerance": 21,
+      "bounded_rejected": 21,
+      "pairs_differ_bitwise": 22,
+      "accepted_coords": [],
+      "rejected_coords": [
+        [
+          165,
+          437
+        ],
+        [
+          165,
+          498
+        ],
+        [
+          165,
+          532
+        ],
+        [
+          165,
+          723
+        ],
+        [
+          165,
+          819
+        ],
+        [
+          165,
+          910
+        ],
+        [
+          165,
+          1409
+        ],
+        [
+          165,
+          1457
+        ],
+        [
+          165,
+          1521
+        ],
+        [
+          165,
+          2123
+        ],
+        [
+          165,
+          2126
+        ],
+        [
+          165,
+          2224
+        ],
+        [
+          165,
+          2429
+        ],
+        [
+          165,
+          2610
+        ],
+        [
+          165,
+          2634
+        ],
+        [
+          165,
+          2733
+        ]
+      ],
+      "max_abs_error": [
+        0.03125,
+        0.03125
+      ],
+      "passed": false
+    },
+    {
+      "fixture": "cancellation",
+      "elements": 4194304,
+      "strict_outside_tolerance": 6,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [
+        [
+          171,
+          785
+        ],
+        [
+          171,
+          2093
+        ],
+        [
+          254,
+          375
+        ],
+        [
+          254,
+          2263
+        ],
+        [
+          254,
+          2455
+        ],
+        [
+          254,
+          3753
+        ]
+      ],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.0615234375,
+        0.0615234375
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "tiny",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.00048828125,
+        0.00048828125
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "bf16_ties",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.00390625,
+        0.00390625
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "bf16_denominator_tie",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.0,
+        0.0
+      ],
+      "passed": true
+    },
+    {
+      "fixture": "weight_rounding",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.00390625,
+        0.00390625
+      ],
+      "passed": true,
+      "weight_probe": [
+        1.46875,
+        1.46875
+      ]
+    },
+    {
+      "fixture": "signed_zero",
+      "elements": 4194304,
+      "strict_outside_tolerance": 0,
+      "bounded_rejected": 0,
+      "pairs_differ_bitwise": 0,
+      "accepted_coords": [],
+      "rejected_coords": [],
+      "max_abs_error": [
+        0.0,
+        0.0
+      ],
+      "passed": true,
+      "normalized_zero_bits": [
+        [
+          32768,
+          0
+        ],
+        [
+          32768,
+          0
+        ]
+      ]
+    }
+  ],
+  "replay_checks": [],
+  "timing": null,
+  "started_utc": "2026-11-26T08:31:26.176467+00:00",
+  "finished_utc": "2026-11-26T08:31:27.436253+00:00",
+  "wall_seconds": 1.2597892549820244
+}

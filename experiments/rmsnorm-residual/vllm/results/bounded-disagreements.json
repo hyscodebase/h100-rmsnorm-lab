@@ -1,0 +1,187 @@
+{
+  "seed": 114,
+  "original_code_revision": "084e88cc6824ee61c9abd7823e90b44ec6f8201a",
+  "code_revision": "70ddfee22247c4d6d813b4106fa272e990b25fdf",
+  "source_sha256": "2fceaf22d050417c9ee98ebb54e233f2787be2a387698ec7cd17f1adb715d160",
+  "asset_sha256": "0bdeda3d6ef7f1df23bcbd128f27c003dc2750475632d8d1d5658e5af15a1e74",
+  "results": [
+    {
+      "fixture": "random",
+      "accepted_boundary_agreements": 33,
+      "rejected": 45,
+      "rejected_despite_each_matching_an_endpoint": 45,
+      "witnesses": [
+        {
+          "row": 286,
+          "column": 35,
+          "endpoint_values": [
+            -1.5,
+            -1.4921875
+          ],
+          "outputs": [
+            -1.4921875,
+            -1.5
+          ]
+        },
+        {
+          "row": 286,
+          "column": 269,
+          "endpoint_values": [
+            -0.8359375,
+            -0.83203125
+          ],
+          "outputs": [
+            -0.83203125,
+            -0.8359375
+          ]
+        },
+        {
+          "row": 286,
+          "column": 503,
+          "endpoint_values": [
+            -0.5546875,
+            -0.55078125
+          ],
+          "outputs": [
+            -0.55078125,
+            -0.5546875
+          ]
+        },
+        {
+          "row": 286,
+          "column": 578,
+          "endpoint_values": [
+            -0.1689453125,
+            -0.16796875
+          ],
+          "outputs": [
+            -0.16796875,
+            -0.1689453125
+          ]
+        },
+        {
+          "row": 286,
+          "column": 649,
+          "endpoint_values": [
+            -0.5703125,
+            -0.56640625
+          ],
+          "outputs": [
+            -0.56640625,
+            -0.5703125
+          ]
+        },
+        {
+          "row": 286,
+          "column": 1072,
+          "endpoint_values": [
+            -0.90625,
+            -0.90234375
+          ],
+          "outputs": [
+            -0.90234375,
+            -0.90625
+          ]
+        },
+        {
+          "row": 286,
+          "column": 1473,
+          "endpoint_values": [
+            -0.2431640625,
+            -0.244140625
+          ],
+          "outputs": [
+            -0.2431640625,
+            -0.244140625
+          ]
+        },
+        {
+          "row": 286,
+          "column": 1645,
+          "endpoint_values": [
+            0.76171875,
+            0.765625
+          ],
+          "outputs": [
+            0.76171875,
+            0.765625
+          ]
+        }
+      ]
+    },
+    {
+      "fixture": "zero_rows",
+      "accepted_boundary_agreements": 44,
+      "rejected": 0,
+      "rejected_despite_each_matching_an_endpoint": 0,
+      "witnesses": []
+    },
+    {
+      "fixture": "cancellation",
+      "accepted_boundary_agreements": 0,
+      "rejected": 2,
+      "rejected_despite_each_matching_an_endpoint": 2,
+      "witnesses": [
+        {
+          "row": 360,
+          "column": 1917,
+          "endpoint_values": [
+            2.09375,
+            2.078125
+          ],
+          "outputs": [
+            2.078125,
+            2.09375
+          ]
+        },
+        {
+          "row": 360,
+          "column": 2357,
+          "endpoint_values": [
+            0.15234375,
+            0.1533203125
+          ],
+          "outputs": [
+            0.15234375,
+            0.1533203125
+          ]
+        }
+      ]
+    },
+    {
+      "fixture": "tiny",
+      "accepted_boundary_agreements": 0,
+      "rejected": 0,
+      "rejected_despite_each_matching_an_endpoint": 0,
+      "witnesses": []
+    },
+    {
+      "fixture": "bf16_ties",
+      "accepted_boundary_agreements": 0,
+      "rejected": 0,
+      "rejected_despite_each_matching_an_endpoint": 0,
+      "witnesses": []
+    },
+    {
+      "fixture": "bf16_denominator_tie",
+      "accepted_boundary_agreements": 0,
+      "rejected": 0,
+      "rejected_despite_each_matching_an_endpoint": 0,
+      "witnesses": []
+    },
+    {
+      "fixture": "weight_rounding",
+      "accepted_boundary_agreements": 0,
+      "rejected": 0,
+      "rejected_despite_each_matching_an_endpoint": 0,
+      "witnesses": []
+    },
+    {
+      "fixture": "signed_zero",
+      "accepted_boundary_agreements": 0,
+      "rejected": 0,
+      "rejected_despite_each_matching_an_endpoint": 0,
+      "witnesses": []
+    }
+  ]
+}
