@@ -49,11 +49,11 @@ def timing_medians(record, backends=BACKENDS):
         if stats != run.original.latency(stats["graph_elapsed_ms"]):
             raise ValueError("The reported quartiles differ from the CUDA events.")
         medians.append(stats["median_us"])
-    reference, candidate = medians
+    reference, candidate = medians[0], medians[-1]
     if (timing["triton_over_vllm"] != candidate / reference
             or timing["passes_5pct"] != (candidate <= reference * .95)):
         raise ValueError("The reported comparison decision differs.")
-    return reference, candidate
+    return tuple(medians)
 
 
 def verify_attempts(folder, records):
