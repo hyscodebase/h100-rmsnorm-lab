@@ -189,26 +189,31 @@ def balanced_order(seed, backends=BACKENDS, *, rounds=None):
     return rotations if rounds is None else [rotations[i % len(rotations)] for i in range(rounds)]
 
 
-def collect_window(runner, graphs, minimum_seconds, origin, *, rows=ROWS, fixed_bursts=None):
+def collect_window(runner, graphs, minimum_seconds, origin, *, rows=ROWS, fixed_bursts=None, retain_clock=False):
     if fixed_bursts is not None and fixed_bursts <= 0:
         raise ValueError("A fixed-work window needs at least one burst.")
     started_utc = run.original.utc_now()
-    started = time.perf_counter() - origin
+    started_ns = time.perf_counter_ns()
+    started = started_ns / 1_000_000_000 - origin
     bursts = []
     while fixed_bursts is None or len(bursts) < fixed_bursts:
         start = time.perf_counter() - origin
         milliseconds = runner.burst(graphs, BURST_REPLAYS)
-        end = time.perf_counter() - origin
+        end_ns = time.perf_counter_ns()
+        end = end_ns / 1_000_000_000 - origin
         bursts.append({"start_s": start, "end_s": end, "cuda_ms": milliseconds})
         if fixed_bursts is None and end - started >= minimum_seconds:
             break
     finished = bursts[-1]["end_s"]
     completed = STREAMS * BURST_REPLAYS * len(bursts)
-    return {"start_s": started, "end_s": finished, "wall_seconds": finished - started,
-            "started_utc": started_utc, "finished_utc": run.original.utc_now(), "bursts": bursts,
-            "attempted_graphs": completed, "completed_graphs": completed,
-            "normalized_rows": completed * run.OPS * rows,
-            "cuda_ms": sum(burst["cuda_ms"] for burst in bursts)}
+    window = {"start_s": started, "end_s": finished, "wall_seconds": finished - started,
+              "started_utc": started_utc, "finished_utc": run.original.utc_now(), "bursts": bursts,
+              "attempted_graphs": completed, "completed_graphs": completed,
+              "normalized_rows": completed * run.OPS * rows,
+              "cuda_ms": sum(burst["cuda_ms"] for burst in bursts)}
+    if retain_clock:
+        window.update(monotonic_origin_s=origin, start_monotonic_ns=started_ns, end_monotonic_ns=end_ns)
+    return window
 
 
 def pace(blocks, backends=BACKENDS):

@@ -138,7 +138,8 @@ def comparison(timing):
 
 
 def checkpoint(seed, asset_dir, qualification, revision, *, numeric_seed=NUMERIC_SEED, timing_seeds=TIMING_SEEDS,
-               source_paths=SOURCES, measure_work=measure):
+               source_paths=SOURCES, measure_work=measure, probe_work=probe_counter,
+               qualifies_counter=counter_passed, counter_function=COUNTER_FUNCTION):
     import torch
     import triton
     from eight_warp_outputs import fused_out_of_place as baseline
@@ -154,7 +155,8 @@ def checkpoint(seed, asset_dir, qualification, revision, *, numeric_seed=NUMERIC
     timed = seed in timing_seeds
     if timed and (not qualification or qualification["seed"] != numeric_seed or not qualification["gate_passed"]
                   or any(qualification[key] != value for key, value in provenance.items())
-                  or not counter_passed(qualification["counter_probe"])
+                  or qualification["counter_function"] != counter_function
+                  or not qualifies_counter(qualification["counter_probe"])
                   or not copy_free.numeric_gate(qualification["numerical"], four.VERIFICATION_BACKENDS)):
         raise ValueError(f"A passing seed-{numeric_seed} numerical and energy checkpoint from this revision is required.")
     device = torch.device("cuda:0")
@@ -177,13 +179,13 @@ def checkpoint(seed, asset_dir, qualification, revision, *, numeric_seed=NUMERIC
             counter_error = type(error).__name__
         else:
             try:
-                probe = probe_counter(sensor, verified.runner, verified.graphs[BASELINE])
-                if exact and counter_passed(probe) and timed:
+                probe = probe_work(sensor, verified.runner, verified.graphs[BASELINE])
+                if exact and qualifies_counter(probe) and timed:
                     timing = measure_work(torch, seed, verified, sensor, cuda_uuid)
             finally:
                 sensor.close()
     return {**provenance, "seed": seed, "codegen": codegen, "numerical": numerical, "numerically_exact": exact,
-            "gate_passed": exact and counter_passed(probe), "counter_function": COUNTER_FUNCTION,
+            "gate_passed": exact and qualifies_counter(probe), "counter_function": counter_function,
             "counter_error": counter_error, "counter_probe": probe, "timing": timing, "effect": comparison(timing),
             "graph_contract": copy_free.graph_contract(ROWS, backends=four.VERIFICATION_BACKENDS),
             "pytorch_peak_allocated_bytes": torch.cuda.max_memory_allocated(0),

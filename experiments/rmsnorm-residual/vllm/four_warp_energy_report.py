@@ -80,11 +80,12 @@ def verify_timing(seed, timing):
 
 
 def verify_record(record, seed, anchor, sources, revision, *, timing_seeds=protocol.TIMING_SEEDS,
-                  verify_timing_fn=verify_timing):
+                  verify_timing_fn=verify_timing, verify_probe_fn=verify_probe,
+                  qualifies_counter=protocol.counter_passed, expected_counter_function=protocol.COUNTER_FUNCTION):
     if ((record["seed"], record["rows"], record["width"]) != (seed, protocol.ROWS, protocol.WIDTH)
             or record["source_sha256"] != sources or record["code_revision"] != revision
             or record["environment"] != anchor["environment"] or record["asset"] != anchor["asset"]
-            or record["counter_function"] != protocol.COUNTER_FUNCTION):
+            or record["counter_function"] != expected_counter_function):
         raise ValueError("The shape, source, energy counter or H100 differs.")
     four = protocol.four
     four.verify_codegen(record["codegen"], anchor)
@@ -97,9 +98,9 @@ def verify_record(record, seed, anchor, sources, revision, *, timing_seeds=proto
     if any(set(guards) != GUARDS for guards in numerical["alias_guards"].values()):
         raise ValueError("A registered output alias guard is missing.")
     probe = record["counter_probe"]
-    verify_probe(probe, record["counter_error"])
+    verify_probe_fn(probe, record["counter_error"])
     exact = copy_free.numeric_gate(numerical, four.VERIFICATION_BACKENDS)
-    eligible = exact and protocol.counter_passed(probe)
+    eligible = exact and qualifies_counter(probe)
     timing = record["timing"]
     if (record["numerically_exact"] != exact or record["gate_passed"] != eligible
             or (timing is not None) != (eligible and seed in timing_seeds)):

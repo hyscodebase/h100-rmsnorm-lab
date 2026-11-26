@@ -33,7 +33,8 @@ def verify_snapshot(sample):
             raise ValueError("An auxiliary measurement is invalid.")
 
 
-def verify_timing(seed, timing):
+def verify_timing(seed, timing, *, verify_energy_window=previous.verify_energy_window,
+                  qualifies_pair=protocol.pair_eligible):
     energy = protocol.energy
     order = energy.base.balanced_order(seed, protocol.BACKENDS)
     pairs = timing["pairs"]
@@ -49,7 +50,7 @@ def verify_timing(seed, timing):
             warmup = block["warmup"]
             before, after = block["auxiliary_before"], block["auxiliary_after"]
             verify_window(warmup, energy.WARMUP_S, rows=protocol.ROWS)
-            previous.verify_energy_window(block, energy.MEASURED_BURSTS)
+            verify_energy_window(block, energy.MEASURED_BURSTS)
             verify_snapshot(before)
             verify_snapshot(after)
             if (not previous_query_end <= before["query_start_s"] <= before["query_end_s"] <= warmup["start_s"]
@@ -58,7 +59,7 @@ def verify_timing(seed, timing):
                 raise ValueError("An auxiliary query or warm-up overlaps a measured counter interval.")
             previous_query_end = after["query_end_s"]
             verify_graph_records(block["post_graph_checks"], rows=protocol.ROWS)
-        if pair["eligible"] != protocol.pair_eligible(blocks):
+        if pair["eligible"] != qualifies_pair(blocks):
             raise ValueError("The recorded pair eligibility differs from the counter boundaries.")
     intended = [0, 1]
     rejected = next((index for index, pair in enumerate(pairs[:2]) if not pair["eligible"]), None)
@@ -78,23 +79,23 @@ def verify_record(record, seed, anchor, sources, revision):
                                   verify_timing_fn=verify_timing)
 
 
-def read_results(folder=RESULTS):
+def read_results(folder=RESULTS, *, campaign=protocol, verify=verify_record):
     records = {int(path.stem[1:]): json.loads(path.read_bytes()) for path in folder.glob("s[0-9]*.json")}
-    first = records[protocol.NUMERIC_SEED]
-    expected = protocol.SEEDS if first["gate_passed"] else (protocol.NUMERIC_SEED,)
+    first = records[campaign.NUMERIC_SEED]
+    expected = campaign.SEEDS if first["gate_passed"] else (campaign.NUMERIC_SEED,)
     if records.keys() != set(expected):
         raise ValueError("The archive differs from the registered seed sequence.")
     sources, revision = first["source_sha256"], first["code_revision"]
-    if sources.keys() != set(protocol.SOURCES):
+    if sources.keys() != set(campaign.SOURCES):
         raise ValueError("The frozen source manifest differs.")
     verify_revision(run.ROOT, revision, tuple(sorted(sources.items())))
-    anchor_bytes = protocol.ANCHOR.read_bytes()
-    if hashlib.sha256(anchor_bytes).hexdigest() != sources[str(protocol.ANCHOR.relative_to(run.ROOT))]:
+    anchor_bytes = campaign.ANCHOR.read_bytes()
+    if hashlib.sha256(anchor_bytes).hexdigest() != sources[str(campaign.ANCHOR.relative_to(run.ROOT))]:
         raise ValueError("The earlier verified kernel anchor differs.")
     anchor = json.loads(anchor_bytes)
     seen = set()
     for seed, record in sorted(records.items()):
-        digests = verify_record(record, seed, anchor, sources, revision)
+        digests = verify(record, seed, anchor, sources, revision)
         if seen & digests:
             raise ValueError("Independent seeds share input digests.")
         seen.update(digests)
@@ -104,8 +105,8 @@ def read_results(folder=RESULTS):
     return records
 
 
-def adopted(records):
-    effects = [records.get(seed, {}).get("effect") for seed in protocol.TIMING_SEEDS]
+def adopted(records, timing_seeds=protocol.TIMING_SEEDS):
+    effects = [records.get(seed, {}).get("effect") for seed in timing_seeds]
     return all(effect and effect["passes_energy"] and effect["passes_throughput"] for effect in effects)
 
 
