@@ -80,6 +80,8 @@ At 12,288 downstream columns, the same residual kernels matched all four outputs
 
 At the intermediate 6,144-column width, fusion led by 0.911–1.034%. One of three exact independent seeds cleared 1%. [Three-width comparison and raw results](experiments/rmsnorm-residual/vllm/PROJECTION_TAIL_6144_REPORT.md)
 
+Mapping eight logical warp groups onto four physical warps preserved both BF16 outputs at 512 × 4,096. Throughput was 0.032–0.090% lower and observed power medians were 10.07–11.56 W lower across three independent seeds. [Kernel, compiler evidence and H100 results](experiments/rmsnorm-residual/vllm/FOUR_PHYSICAL_WARPS_512_REPORT.md)
+
 ## Sustained H100 compute
 
 In 20 runs of a BF16 prefill projection, the H100 completed 1.50 million matrix products over 902.18 measured seconds. The 16,384-row shape reached a median of 682.19 TFLOP/s. Gaps in device sampling limited confirmation of sustained activity to eight runs. [Full results, throughput and resource charts](experiments/prefill-gemm/REPORT.md) · [Workload and protocol](experiments/prefill-gemm/README.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/3)

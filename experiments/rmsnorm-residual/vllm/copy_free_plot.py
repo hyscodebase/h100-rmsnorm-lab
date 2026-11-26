@@ -39,7 +39,7 @@ def draw(data, output, *, workload=protocol.DEFAULT,
     rate.set_xlabel("Throughput (million rows/s)", labelpad=11, color=ink)
     power.set_xlabel("Median observed power (W)", labelpad=11, color=ink)
     for axis in (rate, power):
-        axis.set_ylim(2.58, -.58)
+        axis.set_ylim(len(backend_labels) - .42, -.58)
         axis.xaxis.grid(color="#DFE7E9", linewidth=.8)
         axis.tick_params(axis="both", length=0, pad=7, colors=ink)
         axis.spines[["left", "right", "top"]].set_visible(False)
@@ -47,7 +47,7 @@ def draw(data, output, *, workload=protocol.DEFAULT,
     if handles:
         fig.legend(handles, labels, loc="upper left", bbox_to_anchor=(.044, .793), ncol=len(labels),
                    frameon=False, fontsize=9.8)
-    fig.text(.051, .058, "Whiskers span three timed periods. NVML power samples describe the full device.",
+    fig.text(.051, .058, "Whiskers span the timed periods. NVML power samples describe the full device.",
              fontsize=9.35, color=muted)
     fig.savefig(output, dpi=190, facecolor="white")
     plt.close(fig)
