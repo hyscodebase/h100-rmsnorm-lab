@@ -1,0 +1,9 @@
+# Repeat the equal-work comparison with short energy counter boundaries
+
+Four physical warps used 0.844–2.183% less energy per row across the original gross NVML windows. Two of three exact seeds passed 1.5%. Half the work periods had more than 50 ms of total padding around the timed replays, including a 2.274-second outlier. Recheck the same kernels with tighter counter boundaries. [Original measurements](FOUR_WARP_ENERGY_512_REPORT.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/52)
+
+Use the frozen 512 × 4,096 BF16 kernels, the same input and output contract, eight CUDA streams and 32 disjoint pairs per stream. Give each work window at least three seconds of warm-up followed by 512 measured bursts (2,147,483,648 completed rows). Serialize the counter endpoint reads and schedule auxiliary device queries outside the measured intervals. Use seed 197 to verify both outputs, the pinned binaries, source digests and a monotonic counter from the assigned device.
+
+Use independent seeds 198–200 one at a time. Each seed must have an eligible pair in each of two opposite backend orders. Each period in the pair must have no more than 50 ms of padding, defined as the time from first query start to work start plus the time from work end to final query end. Reserve at most one additional pair per seed to repeat the first rejected pair in the same order. Save original and repeated pairs and preserve any incomplete case.
+
+Recompute median energy per row and throughput from the accepted pairs. Check both outputs and source digests around measurement. Require at least 1.5% less energy per row and at most 0.5% lower throughput in each exact independent seed. Archive query timestamps, raw endpoints, CUDA and wall timing, work counts, scoped auxiliary telemetry, attempt records and a cache-only recovery.

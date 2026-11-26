@@ -35,7 +35,8 @@
 | 두 번째 BF16 프로젝션의 너비를 늘렸을 때 융합 이득 | 완료 | 12,288열에서 세 독립 시드의 융합 이득이 0.362~0.536%로 1% 기준에 못 미쳤다. 네 출력의 비트가 모두 일치했다. [실측·자원 기록](experiments/rmsnorm-residual/vllm/PROJECTION_TAIL_12288_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/45) |
 | 두 번째 BF16 프로젝션이 6,144열일 때 융합 이득 | 완료 | 체인 처리량이 0.911~1.034% 높았다. 네 출력은 모든 시드에서 일치했고 한 시드만 1%를 넘었다. [실측·자원 기록](experiments/rmsnorm-residual/vllm/PROJECTION_TAIL_6144_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/47) |
 | 기존 합산 순서를 유지한 4개 물리 워프 | 완료 | 두 BF16 출력이 일치했다. 세 독립 시드에서 처리량은 0.032~0.090% 낮았고, 관측 전력 중앙값은 10.07~11.56W 낮았다. [실측·컴파일·자원 기록](experiments/rmsnorm-residual/vllm/FOUR_PHYSICAL_WARPS_512_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/49) |
-| 같은 수의 행을 처리할 때 4워프와 8워프의 에너지 비교 | 다음 가설 | 시드 193에서 누적 에너지 카운터와 정확도를 확인한다. 시드 194~196에서 행당 에너지가 1.5% 이상 줄고 처리량 감소가 0.5% 이내인지 측정한다. [실험 계획](experiments/rmsnorm-residual/vllm/COPY_FREE_FOUR_WARP_ENERGY_512.md) · [측정 이슈](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/50) |
+| 같은 수의 행을 처리할 때 4워프와 8워프의 에너지 비교 | 완료 | 누적 카운터 구간의 행당 에너지는 0.844~2.183% 줄었다. 두 시드에서만 1.5%를 넘었고 조회 경계 여유가 최대 2.274초였다. [측정·민감도 분석](experiments/rmsnorm-residual/vllm/FOUR_WARP_ENERGY_512_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/51) |
+| 에너지 카운터 경계를 50ms 이내로 제한 | 다음 가설 | 시드 197에서 카운터와 정확도를 확인한다. 독립 시드 198~200에서 같은 작업량을 짧은 조회 경계로 비교하고 행당 에너지와 처리량 기준을 재검증한다. [실험 계획](experiments/rmsnorm-residual/vllm/COPY_FREE_ENERGY_COUNTER_BOUNDARIES_512.md) · [측정 이슈](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/52) |
 | RMSNorm 4104 인접 너비 재검증 | 후속 후보 | 4103·4104·4105와 4112에서 새로운 시드를 사용해 권장 설정이 유효한 범위를 검증한다. |
 
 ## 다음 가설을 고르는 규칙
