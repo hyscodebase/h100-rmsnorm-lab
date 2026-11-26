@@ -1,0 +1,17 @@
+{
+  "attempt_id": "79926d7d706b45409535a551bc6ee815",
+  "task_id": "s52-C",
+  "experiment_hash": "09b3d5dbcbada428aa68099fb05a277cda7eedd3f6d257a11fddad797801ae26",
+  "started_utc": "2026-11-26T07:23:30.470694+00:00",
+  "reproduce_argv": [
+    "python3",
+    "experiments/observer/benchmark.py",
+    "--seed",
+    "52",
+    "--arm",
+    "C"
+  ],
+  "outcome": "checkpoint_saved",
+  "controller_elapsed_s": 59.61480624997057,
+  "finished_utc": "2026-11-26T07:24:30.085469+00:00"
+}
