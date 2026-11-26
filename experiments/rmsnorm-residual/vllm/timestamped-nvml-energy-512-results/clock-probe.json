@@ -1,0 +1,24 @@
+{
+  "method": "Remote wall time returned between the two local wall timestamps",
+  "collected_utc": "2026-11-26T14:16:05.554670+00:00",
+  "probes": [
+    {
+      "local_sent_unix_ns": 1795702565447355000,
+      "remote_unix_ns": 1795702567775918639,
+      "local_received_unix_ns": 1795702565482305000,
+      "local_elapsed_ns": 34946000
+    },
+    {
+      "local_sent_unix_ns": 1795702565482326000,
+      "remote_unix_ns": 1795702567813498269,
+      "local_received_unix_ns": 1795702565521233000,
+      "local_elapsed_ns": 38908334
+    },
+    {
+      "local_sent_unix_ns": 1795702565521252000,
+      "remote_unix_ns": 1795702567849006299,
+      "local_received_unix_ns": 1795702565554625000,
+      "local_elapsed_ns": 33374000
+    }
+  ]
+}
