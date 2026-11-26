@@ -171,11 +171,14 @@ class LabCLI(unittest.TestCase):
         self.cli("step", expect_success=False)
         self.assertEqual(self.completed(), set())
 
-    def prepare_gemm(self):
+    def prepare_gemm(self, local_source=None):
         self.state = self.directory / "gemm-state"
         script = Path("experiments/prefill-gemm/benchmark.py")
         (self.directory / script.parent).mkdir(parents=True)
-        shutil.copy2(ROOT / script, self.directory / script)
+        if local_source is None:
+            shutil.copy2(ROOT / script, self.directory / script)
+        else:
+            (self.directory / script).write_text(local_source)
         shapes = [{"m": m, "k": 3, "n": 4} for m in (2, 4)]
         self.write_json("gemm.json", {
             "kind": "prefill_gemm", "id": "test-gemm", "hypothesis": "Compare two projections",
@@ -207,6 +210,36 @@ class LabCLI(unittest.TestCase):
                                           for key, value in metrics.items()}},
             })
         self.cli("init", "--plan", str(self.directory / "gemm.json"))
+
+    @unittest.skipUnless(shutil.which("git"), "requires Git")
+    def test_local_gemm_step_records_verified_source_revision(self):
+        import hashlib
+        from lab import local_gemm_revision
+
+        self.prepare_gemm(local_source=(
+            "import json, os\nfrom pathlib import Path\n"
+            "result = json.loads(Path('s42-m2-k3-n4.json').read_text())\n"
+            "result['code_revision'] = os.environ['BENCH_REVISION']\n"
+            "print(json.dumps(result))\n"
+        ))
+        source = Path("experiments/prefill-gemm/benchmark.py")
+        git = ["git", "-C", str(self.directory), "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+               "-c", "core.hooksPath=/dev/null", "-c", "commit.gpgsign=false"]
+        subprocess.run([*git, "init", "-q"], check=True)
+        original = (self.directory / source).read_bytes()
+        digest = hashlib.sha256(original).hexdigest()
+        self.assertEqual(local_gemm_revision(self.directory, digest), "unversioned")
+        subprocess.run([*git, "add", "--", str(source)], check=True)
+        subprocess.run([*git, "commit", "-qm", "Fixture"], check=True)
+        head = subprocess.check_output([*git, "rev-parse", "HEAD"], text=True).strip()
+        # Exercise the default local entry point with an unrelated value in the caller's environment.
+        subprocess.run([sys.executable, str(self.directory / "lab.py"), "step", "--state-dir", str(self.state)],
+                       cwd=self.directory, check=True, capture_output=True, env={**os.environ, "BENCH_REVISION": "wrong"})
+        saved = json.loads((self.state / "tasks/s42-m2-k3-n4.json").read_text())
+        self.assertEqual(saved["result"]["code_revision"], head)
+        modified = original + b"# local changes\n"
+        (self.directory / source).write_bytes(modified)
+        self.assertEqual(local_gemm_revision(self.directory, hashlib.sha256(modified).hexdigest()), f"{head}-modified")
 
     def test_gemm_manifest_and_resume_multiple_shapes(self):
         self.prepare_gemm()

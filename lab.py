@@ -245,6 +245,22 @@ def resolve_runner(explicit):
     return None
 
 
+def local_gemm_revision(root, expected_hash):
+    if not shutil.which("git"):
+        return "unversioned"
+    git = ["git", "--no-replace-objects", "-C", str(root)]
+    head = subprocess.run([*git, "rev-parse", "--verify", "HEAD^{commit}"], capture_output=True, text=True)
+    if head.returncode:
+        return "unversioned"
+    revision = head.stdout.strip()
+    blob = subprocess.run([*git, "cat-file", "blob", f"{revision}:{gemm_plan.SOURCE}"], capture_output=True)
+    if blob.returncode:
+        return "unversioned"
+    if hashlib.sha256(blob.stdout).hexdigest() != expected_hash:
+        return f"{revision}-modified"
+    return revision
+
+
 @contextmanager
 def record_attempt(state, task_id, experiment_hash, shape, plan):
     directory = state / "attempts"
@@ -288,10 +304,18 @@ def execute(state, runner, max_steps):
                 return
             print(f"Running {task_id} ...", flush=True)
             with record_attempt(state, task_id, experiment_hash, shape, plan):
+                env = None
+                if runner is None and plan.get("kind") == "prefill_gemm":
+                    expected_hash = read_json(state / "manifest.json")["sources"][gemm_plan.SOURCE]
+                    revision = local_gemm_revision(ROOT, expected_hash)
+                    env = {**os.environ, "BENCH_REVISION": revision}
+                    if revision == "unversioned" or revision.endswith("-modified"):
+                        print("Local benchmark source has no matching HEAD revision. "
+                              "This checkpoint cannot be exported as a verified Git run.", file=sys.stderr)
                 # Keep a surviving local runner locked even if its coordinator is killed.
                 output = subprocess.run(
                     command(runner, shape, plan), cwd=ROOT, stdout=subprocess.PIPE,
-                    text=True, check=True, pass_fds=(lock.fileno(),),
+                    text=True, check=True, pass_fds=(lock.fileno(),), env=env,
                 )
                 result = json.loads(output.stdout)
                 backend = validate_result(result, shape, plan)
