@@ -1,0 +1,942 @@
+{
+  "rows": 1024,
+  "width": 4096,
+  "seed": 104,
+  "code_revision": "eb3ecfaba886f719ce299626fbcc8fb3044d21f1",
+  "flag": "TORCHINDUCTOR_EMULATE_PRECISION_CASTS",
+  "started_utc": "2026-11-26T07:55:41.474121+00:00",
+  "finished_utc": "2026-11-26T07:56:06.330912+00:00",
+  "coordinates": [
+    [
+      0,
+      0
+    ],
+    [
+      0,
+      3
+    ],
+    [
+      1023,
+      4092
+    ],
+    [
+      1023,
+      4095
+    ]
+  ],
+  "decision": "on_failed",
+  "off": {
+    "requested": false,
+    "effective": false,
+    "environment": {
+      "torch": "2.7.1+cu128",
+      "torch_git_revision": "e2d141dbde55c2a4370fac5165b0561b6af4798b",
+      "cuda": "12.8",
+      "triton": "3.3.1",
+      "python": "3.12.16",
+      "driver": "550.144.03",
+      "gpu": "NVIDIA H100 80GB HBM3",
+      "compute_capability": [
+        9,
+        0
+      ],
+      "total_memory_bytes": 84929216512,
+      "sm_count": 132
+    },
+    "source_sha256": {
+      "precision/PLAN.md": "501cf37ffdee1c2cc40a4e79484457f55c8930ab98b435472d550f7b556fca11",
+      "precision/probe.py": "436097ac35bd2007c1eccc9047090662e7c8757dbaa3ace62c7ce3f294dcf58e",
+      "check.py": "06fc94defcc7b4223a1675db0f5eadff52215236681922c9890a1b5112d5a7df",
+      "kernel.py": "158240beb4c7523973dae2511a8a044ab5b012bf508e284f5e039ecf60f9afd0",
+      "torch/_inductor/config.py": "1aa8085df14d6396b6c714d74b5ba45a2422316b56d55c11181f313024a7359b"
+    },
+    "cases": {
+      "random": {
+        "input_sha256": "3c3e2c3e92858d87ffafec492af942c3ff50b11d41c7f74d27cb168e6dda8798",
+        "oracle": {
+          "updated": {
+            "values": [
+              0.7265625,
+              0.9296875,
+              0.345703125,
+              0.0078125
+            ],
+            "bits_hex": [
+              "0x3f3a",
+              "0x3f6e",
+              "0x3eb1",
+              "0x3c00"
+            ]
+          },
+          "normalized": {
+            "values": [
+              -0.5078125,
+              -1.2265625,
+              -0.1669921875,
+              -0.00732421875
+            ],
+            "bits_hex": [
+              "0xbf02",
+              "0xbf9d",
+              "0xbe2b",
+              "0xbbf0"
+            ]
+          },
+          "normalized_fp64": [
+            -0.509475310419115,
+            -1.2265170420919014,
+            -0.16723032843618874,
+            -0.007337426113035935
+          ]
+        },
+        "backends": {
+          "eager": {
+            "updated": {
+              "values": [
+                0.7265625,
+                0.9296875,
+                0.345703125,
+                0.0078125
+              ],
+              "bits_hex": [
+                "0x3f3a",
+                "0x3f6e",
+                "0x3eb1",
+                "0x3c00"
+              ]
+            },
+            "normalized": {
+              "values": [
+                -0.5078125,
+                -1.2265625,
+                -0.1669921875,
+                -0.00732421875
+              ],
+              "bits_hex": [
+                "0xbf02",
+                "0xbf9d",
+                "0xbe2b",
+                "0xbbf0"
+              ]
+            },
+            "updated_sum": -2061.0401000976562,
+            "normalized_sum": -223.55582184437662,
+            "passed": true,
+            "reason": null
+          },
+          "fused": {
+            "updated": {
+              "values": [
+                0.7265625,
+                0.9296875,
+                0.345703125,
+                0.0078125
+              ],
+              "bits_hex": [
+                "0x3f3a",
+                "0x3f6e",
+                "0x3eb1",
+                "0x3c00"
+              ]
+            },
+            "normalized": {
+              "values": [
+                -0.5078125,
+                -1.2265625,
+                -0.1669921875,
+                -0.00732421875
+              ],
+              "bits_hex": [
+                "0xbf02",
+                "0xbf9d",
+                "0xbe2b",
+                "0xbbf0"
+              ]
+            },
+            "updated_sum": -2061.0401000976562,
+            "normalized_sum": -223.54843659047037,
+            "passed": true,
+            "reason": null
+          },
+          "compiled": {
+            "updated": {
+              "values": [
+                0.7265625,
+                0.9296875,
+                0.345703125,
+                0.0078125
+              ],
+              "bits_hex": [
+                "0x3f3a",
+                "0x3f6e",
+                "0x3eb1",
+                "0x3c00"
+              ]
+            },
+            "normalized": {
+              "values": [
+                -0.5078125,
+                -1.2265625,
+                -0.1669921875,
+                -0.00732421875
+              ],
+              "bits_hex": [
+                "0xbf02",
+                "0xbf9d",
+                "0xbe2b",
+                "0xbbf0"
+              ]
+            },
+            "updated_sum": -2061.0401000976562,
+            "normalized_sum": -224.06651689950377,
+            "passed": true,
+            "reason": null
+          }
+        }
+      },
+      "bf16_ties": {
+        "input_sha256": "3cde5c95c51f7d95dbc9cc9c62cdc4d6d94f0c8c69c7300c9425ebf8ba2c3041",
+        "oracle": {
+          "updated": {
+            "values": [
+              1.0,
+              1.015625,
+              1.0,
+              1.015625
+            ],
+            "bits_hex": [
+              "0x3f80",
+              "0x3f82",
+              "0x3f80",
+              "0x3f82"
+            ]
+          },
+          "normalized": {
+            "values": [
+              0.9921875,
+              1.765625,
+              0.9921875,
+              1.765625
+            ],
+            "bits_hex": [
+              "0x3f7e",
+              "0x3fe2",
+              "0x3f7e",
+              "0x3fe2"
+            ]
+          },
+          "normalized_fp64": [
+            0.9922177615870683,
+            1.7635120371957658,
+            0.9922177615870683,
+            1.7635120371957658
+          ]
+        },
+        "backends": {
+          "eager": {
+            "updated": {
+              "values": [
+                1.0,
+                1.015625,
+                1.0,
+                1.015625
+              ],
+              "bits_hex": [
+                "0x3f80",
+                "0x3f82",
+                "0x3f80",
+                "0x3f82"
+              ]
+            },
+            "normalized": {
+              "values": [
+                0.9921875,
+                1.765625,
+                0.9921875,
+                1.765625
+              ],
+              "bits_hex": [
+                "0x3f7e",
+                "0x3fe2",
+                "0x3f7e",
+                "0x3fe2"
+              ]
+            },
+            "updated_sum": 4227072.0,
+            "normalized_sum": 5775360.0,
+            "passed": true,
+            "reason": null
+          },
+          "fused": {
+            "updated": {
+              "values": [
+                1.0,
+                1.015625,
+                1.0,
+                1.015625
+              ],
+              "bits_hex": [
+                "0x3f80",
+                "0x3f82",
+                "0x3f80",
+                "0x3f82"
+              ]
+            },
+            "normalized": {
+              "values": [
+                0.9921875,
+                1.765625,
+                0.9921875,
+                1.765625
+              ],
+              "bits_hex": [
+                "0x3f7e",
+                "0x3fe2",
+                "0x3f7e",
+                "0x3fe2"
+              ]
+            },
+            "updated_sum": 4227072.0,
+            "normalized_sum": 5775360.0,
+            "passed": true,
+            "reason": null
+          },
+          "compiled": {
+            "updated": {
+              "values": [
+                1.0,
+                1.015625,
+                1.0,
+                1.015625
+              ],
+              "bits_hex": [
+                "0x3f80",
+                "0x3f82",
+                "0x3f80",
+                "0x3f82"
+              ]
+            },
+            "normalized": {
+              "values": [
+                0.9921875,
+                1.765625,
+                0.9921875,
+                1.765625
+              ],
+              "bits_hex": [
+                "0x3f7e",
+                "0x3fe2",
+                "0x3f7e",
+                "0x3fe2"
+              ]
+            },
+            "updated_sum": 4227072.0,
+            "normalized_sum": 5775360.0,
+            "passed": true,
+            "reason": null
+          }
+        }
+      },
+      "bf16_denominator_tie": {
+        "input_sha256": "155235ce38572fb71f290350bee4886074eefa83b7de63fa878e947fec87a070",
+        "oracle": {
+          "updated": {
+            "values": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "bits_hex": [
+              "0x3f80",
+              "0x3f80",
+              "0x3f80",
+              "0x3f80"
+            ]
+          },
+          "normalized": {
+            "values": [
+              1.0,
+              2.0,
+              1.0,
+              2.0
+            ],
+            "bits_hex": [
+              "0x3f80",
+              "0x4000",
+              "0x3f80",
+              "0x4000"
+            ]
+          },
+          "normalized_fp64": [
+            0.999999500000375,
+            1.99999900000075,
+            0.999999500000375,
+            1.99999900000075
+          ]
+        },
+        "backends": {
+          "eager": {
+            "updated": {
+              "values": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "bits_hex": [
+                "0x3f80",
+                "0x3f80",
+                "0x3f80",
+                "0x3f80"
+              ]
+            },
+            "normalized": {
+              "values": [
+                1.0,
+                2.0,
+                1.0,
+                2.0
+              ],
+              "bits_hex": [
+                "0x3f80",
+                "0x4000",
+                "0x3f80",
+                "0x4000"
+              ]
+            },
+            "updated_sum": 4194304.0,
+            "normalized_sum": 6291456.0,
+            "passed": true,
+            "reason": null
+          },
+          "fused": {
+            "updated": {
+              "values": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "bits_hex": [
+                "0x3f80",
+                "0x3f80",
+                "0x3f80",
+                "0x3f80"
+              ]
+            },
+            "normalized": {
+              "values": [
+                1.0,
+                2.0,
+                1.0,
+                2.0
+              ],
+              "bits_hex": [
+                "0x3f80",
+                "0x4000",
+                "0x3f80",
+                "0x4000"
+              ]
+            },
+            "updated_sum": 4194304.0,
+            "normalized_sum": 6291456.0,
+            "passed": true,
+            "reason": null
+          },
+          "compiled": {
+            "updated": {
+              "values": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "bits_hex": [
+                "0x3f80",
+                "0x3f80",
+                "0x3f80",
+                "0x3f80"
+              ]
+            },
+            "normalized": {
+              "values": [
+                0.99609375,
+                1.9921875,
+                0.99609375,
+                1.9921875
+              ],
+              "bits_hex": [
+                "0x3f7f",
+                "0x3fff",
+                "0x3f7f",
+                "0x3fff"
+              ]
+            },
+            "updated_sum": 4194304.0,
+            "normalized_sum": 6266880.0,
+            "passed": false,
+            "reason": "rounding_sensitive_bits"
+          }
+        }
+      }
+    }
+  },
+  "on": {
+    "requested": true,
+    "effective": true,
+    "environment": {
+      "torch": "2.7.1+cu128",
+      "torch_git_revision": "e2d141dbde55c2a4370fac5165b0561b6af4798b",
+      "cuda": "12.8",
+      "triton": "3.3.1",
+      "python": "3.12.16",
+      "driver": "550.144.03",
+      "gpu": "NVIDIA H100 80GB HBM3",
+      "compute_capability": [
+        9,
+        0
+      ],
+      "total_memory_bytes": 84929216512,
+      "sm_count": 132
+    },
+    "source_sha256": {
+      "precision/PLAN.md": "501cf37ffdee1c2cc40a4e79484457f55c8930ab98b435472d550f7b556fca11",
+      "precision/probe.py": "436097ac35bd2007c1eccc9047090662e7c8757dbaa3ace62c7ce3f294dcf58e",
+      "check.py": "06fc94defcc7b4223a1675db0f5eadff52215236681922c9890a1b5112d5a7df",
+      "kernel.py": "158240beb4c7523973dae2511a8a044ab5b012bf508e284f5e039ecf60f9afd0",
+      "torch/_inductor/config.py": "1aa8085df14d6396b6c714d74b5ba45a2422316b56d55c11181f313024a7359b"
+    },
+    "cases": {
+      "random": {
+        "input_sha256": "3c3e2c3e92858d87ffafec492af942c3ff50b11d41c7f74d27cb168e6dda8798",
+        "oracle": {
+          "updated": {
+            "values": [
+              0.7265625,
+              0.9296875,
+              0.345703125,
+              0.0078125
+            ],
+            "bits_hex": [
+              "0x3f3a",
+              "0x3f6e",
+              "0x3eb1",
+              "0x3c00"
+            ]
+          },
+          "normalized": {
+            "values": [
+              -0.5078125,
+              -1.2265625,
+              -0.1669921875,
+              -0.00732421875
+            ],
+            "bits_hex": [
+              "0xbf02",
+              "0xbf9d",
+              "0xbe2b",
+              "0xbbf0"
+            ]
+          },
+          "normalized_fp64": [
+            -0.509475310419115,
+            -1.2265170420919014,
+            -0.16723032843618874,
+            -0.007337426113035935
+          ]
+        },
+        "backends": {
+          "eager": {
+            "updated": {
+              "values": [
+                0.7265625,
+                0.9296875,
+                0.345703125,
+                0.0078125
+              ],
+              "bits_hex": [
+                "0x3f3a",
+                "0x3f6e",
+                "0x3eb1",
+                "0x3c00"
+              ]
+            },
+            "normalized": {
+              "values": [
+                -0.5078125,
+                -1.2265625,
+                -0.1669921875,
+                -0.00732421875
+              ],
+              "bits_hex": [
+                "0xbf02",
+                "0xbf9d",
+                "0xbe2b",
+                "0xbbf0"
+              ]
+            },
+            "updated_sum": -2061.0401000976562,
+            "normalized_sum": -223.55582184437662,
+            "passed": true,
+            "reason": null
+          },
+          "fused": {
+            "updated": {
+              "values": [
+                0.7265625,
+                0.9296875,
+                0.345703125,
+                0.0078125
+              ],
+              "bits_hex": [
+                "0x3f3a",
+                "0x3f6e",
+                "0x3eb1",
+                "0x3c00"
+              ]
+            },
+            "normalized": {
+              "values": [
+                -0.5078125,
+                -1.2265625,
+                -0.1669921875,
+                -0.00732421875
+              ],
+              "bits_hex": [
+                "0xbf02",
+                "0xbf9d",
+                "0xbe2b",
+                "0xbbf0"
+              ]
+            },
+            "updated_sum": -2061.0401000976562,
+            "normalized_sum": -223.54843659047037,
+            "passed": true,
+            "reason": null
+          },
+          "compiled": {
+            "updated": {
+              "values": [
+                0.7265625,
+                0.9296875,
+                0.345703125,
+                0.0078125
+              ],
+              "bits_hex": [
+                "0x3f3a",
+                "0x3f6e",
+                "0x3eb1",
+                "0x3c00"
+              ]
+            },
+            "normalized": {
+              "values": [
+                -0.5078125,
+                -1.2265625,
+                -0.1669921875,
+                -0.00732421875
+              ],
+              "bits_hex": [
+                "0xbf02",
+                "0xbf9d",
+                "0xbe2b",
+                "0xbbf0"
+              ]
+            },
+            "updated_sum": -2061.0401000976562,
+            "normalized_sum": -224.06651689950377,
+            "passed": true,
+            "reason": null
+          }
+        }
+      },
+      "bf16_ties": {
+        "input_sha256": "3cde5c95c51f7d95dbc9cc9c62cdc4d6d94f0c8c69c7300c9425ebf8ba2c3041",
+        "oracle": {
+          "updated": {
+            "values": [
+              1.0,
+              1.015625,
+              1.0,
+              1.015625
+            ],
+            "bits_hex": [
+              "0x3f80",
+              "0x3f82",
+              "0x3f80",
+              "0x3f82"
+            ]
+          },
+          "normalized": {
+            "values": [
+              0.9921875,
+              1.765625,
+              0.9921875,
+              1.765625
+            ],
+            "bits_hex": [
+              "0x3f7e",
+              "0x3fe2",
+              "0x3f7e",
+              "0x3fe2"
+            ]
+          },
+          "normalized_fp64": [
+            0.9922177615870683,
+            1.7635120371957658,
+            0.9922177615870683,
+            1.7635120371957658
+          ]
+        },
+        "backends": {
+          "eager": {
+            "updated": {
+              "values": [
+                1.0,
+                1.015625,
+                1.0,
+                1.015625
+              ],
+              "bits_hex": [
+                "0x3f80",
+                "0x3f82",
+                "0x3f80",
+                "0x3f82"
+              ]
+            },
+            "normalized": {
+              "values": [
+                0.9921875,
+                1.765625,
+                0.9921875,
+                1.765625
+              ],
+              "bits_hex": [
+                "0x3f7e",
+                "0x3fe2",
+                "0x3f7e",
+                "0x3fe2"
+              ]
+            },
+            "updated_sum": 4227072.0,
+            "normalized_sum": 5775360.0,
+            "passed": true,
+            "reason": null
+          },
+          "fused": {
+            "updated": {
+              "values": [
+                1.0,
+                1.015625,
+                1.0,
+                1.015625
+              ],
+              "bits_hex": [
+                "0x3f80",
+                "0x3f82",
+                "0x3f80",
+                "0x3f82"
+              ]
+            },
+            "normalized": {
+              "values": [
+                0.9921875,
+                1.765625,
+                0.9921875,
+                1.765625
+              ],
+              "bits_hex": [
+                "0x3f7e",
+                "0x3fe2",
+                "0x3f7e",
+                "0x3fe2"
+              ]
+            },
+            "updated_sum": 4227072.0,
+            "normalized_sum": 5775360.0,
+            "passed": true,
+            "reason": null
+          },
+          "compiled": {
+            "updated": {
+              "values": [
+                1.0,
+                1.015625,
+                1.0,
+                1.015625
+              ],
+              "bits_hex": [
+                "0x3f80",
+                "0x3f82",
+                "0x3f80",
+                "0x3f82"
+              ]
+            },
+            "normalized": {
+              "values": [
+                0.9921875,
+                1.765625,
+                0.9921875,
+                1.765625
+              ],
+              "bits_hex": [
+                "0x3f7e",
+                "0x3fe2",
+                "0x3f7e",
+                "0x3fe2"
+              ]
+            },
+            "updated_sum": 4227072.0,
+            "normalized_sum": 5775360.0,
+            "passed": true,
+            "reason": null
+          }
+        }
+      },
+      "bf16_denominator_tie": {
+        "input_sha256": "155235ce38572fb71f290350bee4886074eefa83b7de63fa878e947fec87a070",
+        "oracle": {
+          "updated": {
+            "values": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "bits_hex": [
+              "0x3f80",
+              "0x3f80",
+              "0x3f80",
+              "0x3f80"
+            ]
+          },
+          "normalized": {
+            "values": [
+              1.0,
+              2.0,
+              1.0,
+              2.0
+            ],
+            "bits_hex": [
+              "0x3f80",
+              "0x4000",
+              "0x3f80",
+              "0x4000"
+            ]
+          },
+          "normalized_fp64": [
+            0.999999500000375,
+            1.99999900000075,
+            0.999999500000375,
+            1.99999900000075
+          ]
+        },
+        "backends": {
+          "eager": {
+            "updated": {
+              "values": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "bits_hex": [
+                "0x3f80",
+                "0x3f80",
+                "0x3f80",
+                "0x3f80"
+              ]
+            },
+            "normalized": {
+              "values": [
+                1.0,
+                2.0,
+                1.0,
+                2.0
+              ],
+              "bits_hex": [
+                "0x3f80",
+                "0x4000",
+                "0x3f80",
+                "0x4000"
+              ]
+            },
+            "updated_sum": 4194304.0,
+            "normalized_sum": 6291456.0,
+            "passed": true,
+            "reason": null
+          },
+          "fused": {
+            "updated": {
+              "values": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "bits_hex": [
+                "0x3f80",
+                "0x3f80",
+                "0x3f80",
+                "0x3f80"
+              ]
+            },
+            "normalized": {
+              "values": [
+                1.0,
+                2.0,
+                1.0,
+                2.0
+              ],
+              "bits_hex": [
+                "0x3f80",
+                "0x4000",
+                "0x3f80",
+                "0x4000"
+              ]
+            },
+            "updated_sum": 4194304.0,
+            "normalized_sum": 6291456.0,
+            "passed": true,
+            "reason": null
+          },
+          "compiled": {
+            "updated": {
+              "values": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "bits_hex": [
+                "0x3f80",
+                "0x3f80",
+                "0x3f80",
+                "0x3f80"
+              ]
+            },
+            "normalized": {
+              "values": [
+                0.99609375,
+                1.9921875,
+                0.99609375,
+                1.9921875
+              ],
+              "bits_hex": [
+                "0x3f7f",
+                "0x3fff",
+                "0x3f7f",
+                "0x3fff"
+              ]
+            },
+            "updated_sum": 4194304.0,
+            "normalized_sum": 6266880.0,
+            "passed": false,
+            "reason": "rounding_sensitive_bits"
+          }
+        }
+      }
+    }
+  }
+}

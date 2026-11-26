@@ -1,0 +1,11 @@
+{
+  "id": "ea5acc062d734fc19c05a43f3be71f33",
+  "started_utc": "2026-11-26T07:55:40.145971+00:00",
+  "seed": 104,
+  "rows": 1024,
+  "width": 4096,
+  "source_revision": "eb3ecfaba886f719ce299626fbcc8fb3044d21f1",
+  "outcome": "checkpoint_saved",
+  "finished_utc": "2026-11-26T07:56:06.318619+00:00",
+  "elapsed_s": 26.17223087500315
+}

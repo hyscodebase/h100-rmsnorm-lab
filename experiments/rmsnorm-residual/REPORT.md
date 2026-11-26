@@ -46,4 +46,4 @@ The campaign used NVIDIA H100 80GB HBM3, driver 550.144.03, CUDA 12.8, PyTorch 2
 python3 experiments/rmsnorm-residual/summarize.py experiments/rmsnorm-residual/results
 ```
 
-A separate numerical diagnostic tests whether enabling Inductor’s intermediate precision-cast emulation changes results on the frozen tie inputs. It uses a fresh seed and measures no latency. [Precision diagnostic plan](precision/PLAN.md) · [Probe implementation](precision/probe.py)
+In a separate H100 checkpoint at fresh seed 104, two isolated Python processes confirmed the precision-cast configuration was effectively OFF and ON. The default compiled expression passed the random control and first tie probe under both settings. At the denominator-sensitive probe it returned normalized values 0.99609375 and 1.9921875 in both processes. Eager and the Triton candidate returned the required 1.0 and 2.0. The observed mismatch persisted with the setting enabled. This experiment does not locate the compiler pass responsible. [Raw values, BF16 bits and source hashes](precision/checkpoint.json). [Precision diagnostic plan](precision/PLAN.md) · [Probe implementation](precision/probe.py)
