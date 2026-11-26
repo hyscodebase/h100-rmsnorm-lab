@@ -93,6 +93,36 @@ class EvidenceExport(unittest.TestCase):
         self.assertEqual(row["supplemental_observed_energy_estimate_j"], "")
         self.assertEqual(float(row["supplemental_observed_power_duration_s"]), 0)
 
+    def test_failed_primary_query_breaks_short_power_interval(self):
+        checkpoint = json.loads((self.results / f"{self.task}.json").read_bytes())
+        result = checkpoint["result"]
+        telemetry = result["telemetry"]
+        template = telemetry["samples"][0]
+        telemetry["samples"] = [
+            {**template, "device_power_w": 100, "query_start_s": t, "query_end_s": t + 0.5}
+            for t in (0, 2, 3)
+        ]
+        telemetry["query_errors"] = [{"query_start_s": 1, "error_type": "TimeoutExpired"}]
+        row = evidence.index_row(self.task, result, json.loads((self.results / "manifest.json").read_bytes()),
+                                 json.dumps(checkpoint).encode(), self.start, self.end, {})
+        self.assertEqual(row["primary_observed_power_duration_s"], 1)
+        self.assertEqual(row["primary_observed_energy_estimate_j"], 100)
+
+    def test_invalid_device_values_and_merged_memory_bounds(self):
+        timestamp = {"timestamp_utc": evidence.iso(self.start)}
+        for field in ("used_mib", "total_mib", "sm_clock_mhz", "memory_clock_mhz", "power_w", "power_limit_w"):
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, "Negative"):
+                evidence.merge_sample({}, {**timestamp, field: -1})
+        for first, second in (({"used_mib": 12}, {"total_mib": 11}), ({"total_mib": 11}, {"used_mib": 12})):
+            samples = {}
+            evidence.merge_sample(samples, {**timestamp, **first})
+            with self.assertRaisesRegex(ValueError, "exceeds total memory"):
+                evidence.merge_sample(samples, {**timestamp, **second})
+            self.assertEqual(samples[self.start], first)
+        samples = {}
+        evidence.merge_sample(samples, {**timestamp, "temperature_c": -0.5, "used_mib": 12, "total_mib": 12})
+        self.assertEqual(samples[self.start]["temperature_c"], -0.5)
+
 
 if __name__ == "__main__":
     unittest.main()

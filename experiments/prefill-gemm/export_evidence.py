@@ -40,10 +40,13 @@ def iso(stamp):
 
 
 def merge_values(samples, stamp, clean):
-    existing = samples.setdefault(stamp, {})
+    existing = samples.get(stamp, {})
     if any(field in existing and existing[field] != v for field, v in clean.items()):
         raise ValueError(f"Conflicting measurements at {iso(stamp)}.")
-    existing.update(clean)
+    merged = {**existing, **clean}
+    if "used_mib" in merged and "total_mib" in merged and merged["used_mib"] > merged["total_mib"]:
+        raise ValueError(f"Used device memory exceeds total memory at {iso(stamp)}.")
+    samples[stamp] = merged
 
 
 def merge_sample(samples, item, *, from_csv=False):
@@ -59,6 +62,8 @@ def merge_sample(samples, item, *, from_csv=False):
             raise ValueError(f"Invalid numerical measurement in {field}.")
         if field.endswith("_pct") and not 0 <= value <= 100:
             raise ValueError(f"Invalid percentage in {field}.")
+        if field.endswith(("_mib", "_mhz", "_w")) and value < 0:
+            raise ValueError(f"Negative device measurement in {field}.")
         clean[field] = float(value)
     if clean or any(field in item for field in METRICS):
         # A timestamped failed reading breaks a power interval even if every metric is null.
@@ -196,6 +201,7 @@ def index_row(task, result, manifest, raw, start, end, samples):
         row[f"supplemental_{field}_mean"] = statistics.fmean(values) if values else ""
         row[f"supplemental_{field}_peak"] = max(values) if values else ""
     primary_power = [((s["query_start_s"] + s["query_end_s"]) / 2, s["device_power_w"]) for s in telemetry["samples"]]
+    primary_power.extend((err["query_start_s"], None) for err in telemetry["query_errors"])
     supplemental_power = [((stamp - start).total_seconds(), values.get("power_w")) for stamp, values in samples.items()]
     for prefix, readings in (("primary", primary_power), ("supplemental", supplemental_power)):
         energy, duration = observed_energy(readings, timing["wall_elapsed_s"])
