@@ -63,9 +63,9 @@ class Replay:
             self.control.wait_event(event)
 
 
-def make_work(torch, seed, device):
+def make_work(torch, seed, device, *, rows=ROWS):
     generator = torch.Generator(device=device).manual_seed(seed)
-    shape = (run.OPS, ROWS, WIDTH)
+    shape = (run.OPS, rows, WIDTH)
     works = []
     for _ in range(STREAMS):
         source = tuple(torch.randn(shape, dtype=torch.bfloat16, device=device, generator=generator) for _ in range(2))
@@ -75,7 +75,7 @@ def make_work(torch, seed, device):
     spans = sorted((t.data_ptr(), t.data_ptr() + t.numel() * t.element_size()) for t in tensors)
     no_overlap = all(left[1] <= right[0] for left, right in zip(spans, spans[1:]))
     valid = all(start % 16 == 0 for start, _ in spans) and all(t.is_contiguous() for t in tensors)
-    pair_stride = ROWS * WIDTH
+    pair_stride = rows * WIDTH
     independent_pairs = all(t.shape == shape and t.stride(0) == pair_stride for t in tensors[:-1])
     stream_count = len({work.stream.cuda_stream for work in works})
     if not (no_overlap and valid and independent_pairs and stream_count == STREAMS):
@@ -186,7 +186,7 @@ def balanced_order(seed, backends=BACKENDS):
     return [order[i:] + order[:i] for i in range(len(order))]
 
 
-def collect_window(runner, graphs, minimum_seconds, origin):
+def collect_window(runner, graphs, minimum_seconds, origin, *, rows=ROWS):
     started_utc = run.original.utc_now()
     started = time.perf_counter() - origin
     bursts = []
@@ -200,7 +200,7 @@ def collect_window(runner, graphs, minimum_seconds, origin):
     return {"start_s": started, "end_s": finished, "wall_seconds": finished - started,
             "started_utc": started_utc, "finished_utc": run.original.utc_now(), "bursts": bursts,
             "attempted_graphs": completed, "completed_graphs": completed,
-            "normalized_rows": completed * run.OPS * ROWS,
+            "normalized_rows": completed * run.OPS * rows,
             "cuda_ms": sum(burst["cuda_ms"] for burst in bursts)}
 
 
@@ -213,7 +213,7 @@ def pace(blocks, backends=BACKENDS):
     return rates, gains
 
 
-def measure(torch, seed, runner, graphs, works, reference, cuda_uuid, *, backends=BACKENDS, period_s=PERIOD_S):
+def measure(torch, seed, runner, graphs, works, reference, cuda_uuid, *, backends=BACKENDS, period_s=PERIOD_S, rows=ROWS):
     origin_utc = run.original.utc_now()
     origin = time.perf_counter()
     observer = Observer(cuda_uuid, origin)
@@ -221,8 +221,8 @@ def measure(torch, seed, runner, graphs, works, reference, cuda_uuid, *, backend
     try:
         for round_index, group in enumerate(order):
             for position, backend in enumerate(group):
-                warm = collect_window(runner, graphs[backend], WARMUP_S, origin)
-                measured = collect_window(runner, graphs[backend], period_s, origin)
+                warm = collect_window(runner, graphs[backend], WARMUP_S, origin, rows=rows)
+                measured = collect_window(runner, graphs[backend], period_s, origin, rows=rows)
                 measured.update(id=len(blocks), round=round_index, position=position, backend=backend, warmup=warm,
                                 post_graph_checks=compare(torch, works, reference))
                 blocks.append(measured)

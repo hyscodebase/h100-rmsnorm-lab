@@ -9,13 +9,13 @@ import sixteen_warp_run as protocol
 from transfer_report import CASES, CAPTURES, counts, timestamp, timing_medians, verify_cases, verify_revision
 
 
-def verify_attempts(folder, data, *, remote_clock_bounds_s=(0.0, 0.0)):
+def verify_attempts(folder, data, *, remote_clock_bounds_s=(0.0, 0.0), rows=protocol.ROWS):
     earliest_offset, latest_offset = remote_clock_bounds_s
     completed = set()
     for path in sorted((folder / "attempts").glob("*.json")):
         attempt = json.loads(path.read_bytes())
         row, seed, token = attempt["rows"], attempt["seed"], attempt["attempt_id"]
-        if row != protocol.ROWS or seed not in data or path.stem != f"r{row}-s{seed}-{token}":
+        if row != rows or seed not in data or path.stem != f"r{row}-s{seed}-{token}":
             raise ValueError("Unexpected attempt identity.")
         first = timestamp(attempt["started_utc"])
         phase = attempt["outcome"]
@@ -41,13 +41,13 @@ def verify_attempts(folder, data, *, remote_clock_bounds_s=(0.0, 0.0)):
         raise ValueError("Every checkpoint needs a recorded successful submission or recovery.")
 
 
-def verify_pairwise(records, names, backends=protocol.BACKENDS):
+def verify_pairwise(records, names, backends=protocol.BACKENDS, *, rows=protocol.ROWS):
     for case in records:
         if "reason" not in case and set(case["comparisons"]) != set(backends[1:]):
             raise ValueError("A candidate comparison is missing.")
     for backend in backends[1:]:
         fields = [case["comparisons"][backend] if "comparisons" in case else case for case in records]
-        verify_cases(fields, names, protocol.ROWS * run.WIDTH)
+        verify_cases(fields, names, rows * run.WIDTH)
 
 
 def read_results(folder):
