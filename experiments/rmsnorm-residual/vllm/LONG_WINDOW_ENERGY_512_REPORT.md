@@ -1,6 +1,6 @@
 # H100 energy sensitivity over longer fixed-work periods
 
-Seed 206 completed both backend orders with bitwise agreement in both BF16 outputs. The gross energy saving for four warps was **1.180%**. The 1,000 W padding scenario put it between **1.174% and 2.341%**, with the lower endpoint below the registered 1.5% criterion. The opening period of seed 207 is saved. Its eight-warp counterpart is the next work unit. [Machine-readable results](long-window-energy-512-results/summary.json)
+All three independent timing seeds completed both backend orders with bitwise agreement in both BF16 outputs. Four warps reduced gross energy per row by **1.180–1.599%** with throughput **0.045–0.057% lower**. The 1,000 W sensitivity lower bound cleared 1.5% in seed 207 alone. The campaign fell short of the registered energy adoption criterion. [Machine-readable results](long-window-energy-512-results/summary.json)
 
 ## Work and evidence
 
@@ -15,18 +15,24 @@ Seed 205 reproduced both BF16 outputs and passed the eight numerical fixtures. I
 | Seed | Eligible pairs | Gross energy saving | 700 W scenario | 1,000 W scenario | Throughput change |
 | ---: | :---: | ---: | ---: | ---: | ---: |
 | 206 | 2 / 2 | 1.180% | 1.175–1.993% | 1.174–2.341% | −0.045% |
+| 207 | 2 / 2 | 1.599% | 1.595–1.602% | 1.594–1.604% | −0.055% |
+| 208 | 2 / 2 | 1.533% | 1.458–1.538% | 1.426–1.540% | −0.057% |
 
-The closing NVML call in seed 206's final four-warp period took 2.273 seconds. The combined padding bound was 2.274 seconds, with the opening side contributing 0.037 ms. The qualified period kept the full counter delta and the sensitivity calculation accounted for the padding. This interval spans the 1.5% target. The opening period of seed 207 qualified with a 5.030 ms padding bound. [Longest-boundary checkpoint](long-window-energy-512-results/s206-p3.json) · [Seed 207 opening period](long-window-energy-512-results/s207-p0.json)
+All six initial pairs qualified. The closing NVML call in seed 206's final four-warp period took 2.273 seconds. Its 2.274-second padding bound yields an interval that spans the 1.5% target. In seed 208, the longest boundary occurred in the final eight-warp period and was bounded by 209.739 ms. That seed's gross saving was 1.533%. The 1,000 W sensitivity lower bound was 1.426%. All three seeds passed the throughput criterion. [Seed 206 longest boundary](long-window-energy-512-results/s206-p3.json) · [Seed 208 baseline boundary](long-window-energy-512-results/s208-p3.json)
 
 ![Measured sample padding and energy sensitivity intervals](long-window-energy-512.png)
 
 ## H100 resource observations
 
-The five archived periods completed 85,899,345,920 normalized rows over **938.779 seconds** of fixed work, with 15.126 seconds of recorded warm-up. Four of the five post-query activity readings were 100%. The 0% reading followed the longest closing query. The post-query peak power was 525.629 W, the maximum temperature was 46 °C and peak device memory usage was 8,431.25 MiB. The device reported a 700 W enforced power limit. These readings come from snapshots outside the measured periods. [Raw device snapshots](long-window-energy-512-results)
+The 12 archived periods completed 206,158,430,208 normalized rows over **2,252.961 seconds** of fixed work, with 36.302 seconds of recorded warm-up. Across the 12 post-query activity snapshots, the median was 100% and the minimum was 0%. The 0% reading followed the longest closing query. Post-query peak power was 525.629 W, maximum temperature was 46 °C and peak device memory usage was 8,431.25 MiB. The device reported a 700 W enforced power limit. These readings come from snapshots outside the measured periods. [Raw device snapshots](long-window-energy-512-results)
 
 ## Checkpoint and recovery
 
 Every period has its own result, launch order, original and final input hashes, burst timestamps and two auxiliary snapshots. Seed 206's first period was retrieved from the server cache and matched the local result's canonical SHA-256. The next execution selected the outstanding eight-warp period. [Recovery proof](long-window-energy-512-results/checkpoint-recovery.json) · [Raw checkpoints and attempts](long-window-energy-512-results)
+
+## Follow-up
+
+Keep the eight-warp launch and isolate the input-load cache policy. Compare the existing binary with a candidate that applies Triton's `.cg` cache hint to the activation and residual loads. The next qualification tests instruction differences, both BF16 outputs and input fingerprints before the three independent timing seeds. The throughput gate is 5% in every exact seed. [Registered plan](input-load-cache-512-plan.json) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/58)
 
 ## Reproduce
 
@@ -41,6 +47,6 @@ BENCH_REVISION=2ef16f1943b732e5627c066ad1ce4bac9e3903be \
 Verify the saved archive and regenerate the figure from the analysis branch.
 
 ```bash
-python3 experiments/rmsnorm-residual/vllm/long_window_energy_report.py --partial
+python3 experiments/rmsnorm-residual/vllm/long_window_energy_report.py
 python3 experiments/rmsnorm-residual/vllm/long_window_energy_plot.py
 ```

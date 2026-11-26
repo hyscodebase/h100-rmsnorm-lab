@@ -57,81 +57,173 @@
       }
     },
     "207": {
-      "saved_periods": 1,
-      "eligible_pair_indices": [],
+      "saved_periods": 4,
+      "eligible_pair_indices": [
+        0,
+        1
+      ],
       "numerically_exact": true,
-      "comparison": null
+      "comparison": {
+        "gross_energy_joules_per_billion_rows": {
+          "triton_8warps_out_of_place": 5704.147333744913,
+          "triton_4physical_warps_out_of_place": 5612.94358340092
+        },
+        "gross_energy_saving": 0.015989024302448307,
+        "median_rows_per_second": {
+          "triton_8warps_out_of_place": 91531187.69729498,
+          "triton_4physical_warps_out_of_place": 91480611.55788088
+        },
+        "throughput_change": -0.0005525563546860957,
+        "padding_power_sensitivity": {
+          "700": {
+            "energy_joules_per_billion_rows": {
+              "triton_8warps_out_of_place": [
+                5703.94757335016,
+                5704.147333744913
+              ],
+              "triton_4physical_warps_out_of_place": [
+                5612.741883628769,
+                5612.94358340092
+              ]
+            },
+            "saving_lower": 0.015954562831963393,
+            "saving_upper": 0.01602438449922272
+          },
+          "1000": {
+            "energy_joules_per_billion_rows": {
+              "triton_8warps_out_of_place": [
+                5703.861961752409,
+                5704.147333744913
+              ],
+              "triton_4physical_warps_out_of_place": [
+                5612.6554408692755,
+                5612.94358340092
+              ]
+            },
+            "saving_lower": 0.01593979289140368,
+            "saving_upper": 0.0160395388692689
+          }
+        },
+        "passes_energy": true,
+        "passes_throughput": true
+      }
     },
     "208": {
-      "saved_periods": 0,
-      "eligible_pair_indices": [],
-      "numerically_exact": null,
-      "comparison": null
+      "saved_periods": 4,
+      "eligible_pair_indices": [
+        0,
+        1
+      ],
+      "numerically_exact": true,
+      "comparison": {
+        "gross_energy_joules_per_billion_rows": {
+          "triton_8warps_out_of_place": 5710.989469662309,
+          "triton_4physical_warps_out_of_place": 5623.430508421734
+        },
+        "gross_energy_saving": 0.015331662176178429,
+        "median_rows_per_second": {
+          "triton_8warps_out_of_place": 91531072.44620542,
+          "triton_4physical_warps_out_of_place": 91479213.13937405
+        },
+        "throughput_change": -0.0005665759773748613,
+        "padding_power_sensitivity": {
+          "700": {
+            "energy_joules_per_billion_rows": {
+              "triton_8warps_out_of_place": [
+                5706.630683114054,
+                5710.989469662309
+              ],
+              "triton_4physical_warps_out_of_place": [
+                5623.152532373206,
+                5623.430508421734
+              ]
+            },
+            "saving_lower": 0.014579561796159268,
+            "saving_upper": 0.01538033606185174
+          },
+          "1000": {
+            "energy_joules_per_billion_rows": {
+              "triton_8warps_out_of_place": [
+                5704.76263173623,
+                5710.989469662309
+              ],
+              "triton_4physical_warps_out_of_place": [
+                5623.033399780979,
+                5623.430508421734
+              ]
+            },
+            "saving_lower": 0.014256881234994134,
+            "saving_upper": 0.015401196298568953
+          }
+        },
+        "passes_energy": false,
+        "passes_throughput": true
+      }
     }
   },
   "resources": {
-    "measured_periods": 5,
-    "fixed_work_seconds": 938.7791713983752,
-    "warmup_seconds": 15.12620105361566,
-    "normalized_rows": 85899345920,
+    "measured_periods": 12,
+    "fixed_work_seconds": 2252.960950342007,
+    "warmup_seconds": 36.301745634991676,
+    "normalized_rows": 206158430208,
     "field_status_counts": {
-      "qualified": 5
+      "qualified": 12
     },
     "auxiliary_scope": "Serialized NVML snapshots before warm-up and after the closing energy query",
     "auxiliary": {
       "auxiliary_before": {
-        "snapshots": 5,
+        "snapshots": 12,
         "metrics": {
           "gpu_busy_pct": {
-            "count": 5,
+            "count": 12,
             "min": 0,
-            "median": 2,
+            "median": 2.0,
             "max": 2
           },
           "memory_busy_pct": {
-            "count": 5,
+            "count": 12,
             "min": 0,
-            "median": 0,
+            "median": 0.0,
             "max": 0
           },
           "vram_used_mib": {
-            "count": 5,
+            "count": 12,
             "min": 8431.25,
             "median": 8431.25,
             "max": 8431.25
           },
           "vram_total_mib": {
-            "count": 5,
+            "count": 12,
             "min": 81559.0,
             "median": 81559.0,
             "max": 81559.0
           },
           "power_w": {
-            "count": 5,
+            "count": 12,
             "min": 116.902,
-            "median": 120.919,
+            "median": 118.929,
             "max": 123.478
           },
           "power_limit_w": {
-            "count": 5,
+            "count": 12,
             "min": 700.0,
             "median": 700.0,
             "max": 700.0
           },
           "temperature_c": {
-            "count": 5,
+            "count": 12,
             "min": 28.0,
             "median": 29.0,
             "max": 31.0
           },
           "sm_clock_mhz": {
-            "count": 5,
+            "count": 12,
             "min": 1980.0,
             "median": 1980.0,
             "max": 1980.0
           },
           "memory_clock_mhz": {
-            "count": 5,
+            "count": 12,
             "min": 2619.0,
             "median": 2619.0,
             "max": 2619.0
@@ -139,58 +231,58 @@
         }
       },
       "auxiliary_after": {
-        "snapshots": 5,
+        "snapshots": 12,
         "metrics": {
           "gpu_busy_pct": {
-            "count": 5,
+            "count": 12,
             "min": 0,
-            "median": 100,
+            "median": 100.0,
             "max": 100
           },
           "memory_busy_pct": {
-            "count": 5,
+            "count": 12,
             "min": 0,
-            "median": 100,
+            "median": 100.0,
             "max": 100
           },
           "vram_used_mib": {
-            "count": 5,
+            "count": 12,
             "min": 8431.25,
             "median": 8431.25,
             "max": 8431.25
           },
           "vram_total_mib": {
-            "count": 5,
+            "count": 12,
             "min": 81559.0,
             "median": 81559.0,
             "max": 81559.0
           },
           "power_w": {
-            "count": 5,
+            "count": 12,
             "min": 125.241,
-            "median": 519.061,
+            "median": 518.873,
             "max": 525.629
           },
           "power_limit_w": {
-            "count": 5,
+            "count": 12,
             "min": 700.0,
             "median": 700.0,
             "max": 700.0
           },
           "temperature_c": {
-            "count": 5,
+            "count": 12,
             "min": 39.0,
             "median": 45.0,
             "max": 46.0
           },
           "sm_clock_mhz": {
-            "count": 5,
+            "count": 12,
             "min": 1980.0,
             "median": 1980.0,
             "max": 1980.0
           },
           "memory_clock_mhz": {
-            "count": 5,
+            "count": 12,
             "min": 2619.0,
             "median": 2619.0,
             "max": 2619.0
@@ -200,6 +292,6 @@
     }
   },
   "qualification_passed": true,
-  "campaign_complete": false,
-  "adopted": null
+  "campaign_complete": true,
+  "adopted": false
 }
