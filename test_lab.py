@@ -1,6 +1,7 @@
 """CPU-only CLI tests for checkpointing GPU runs. Run with python -m unittest test_lab."""
 
 import json
+import math
 import os
 import shutil
 import signal
@@ -25,6 +26,10 @@ if args[0] == "check":
     unit = "check"
 elif args[0] == "bench":
     unit = "s" + args[args.index("--seed") + 1]
+elif args[0] == "gemm":
+    fields = [args[args.index("--" + key) + 1] for key in ("seed", "m", "k", "n")]
+    assert float(args[args.index("--seconds") + 1]) == 5
+    unit = "s%s-m%s-k%s-n%s" % tuple(fields)
 else:
     raise SystemExit("unknown action " + args[0])
 with (directory / "calls").open("a") as stream:
@@ -42,7 +47,7 @@ class LabCLI(unittest.TestCase):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         self.directory = Path(temp.name)
-        for name in ("lab.py", "kernels.py", "check.py", "benchmark.py"):
+        for name in ("lab.py", "gemm_plan.py", "kernels.py", "check.py", "benchmark.py"):
             shutil.copy2(ROOT / name, self.directory / name)
         self.runner = self.directory / "fake-runner"
         self.runner.write_text(f"#!{sys.executable}\n" + RUNNER)
@@ -122,6 +127,27 @@ class LabCLI(unittest.TestCase):
         self.assertEqual(self.calls(), ["check", "s42", "s43", "s43"])
         self.assertEqual(self.completed(), {"check.json", "s42-r1-w4096.json", "s43-r1-w4096.json"})
 
+    def test_attempt_history_records_failures_and_retries(self):
+        self.prepare_gemm()
+        task = "s42-m2-k3-n4"
+        fault = self.directory / ("fail-" + task)
+        fault.touch()
+        self.cli("step", expect_success=False)
+        fault.unlink()
+        self.cli("step")
+        directory = self.state / "attempts"
+        attempts = sorted((json.loads(p.read_text()) for p in directory.glob("*.json")),
+                          key=lambda entry: entry["started_utc"])
+        self.assertEqual([a["outcome"] for a in attempts], ["failed", "checkpoint_saved"])
+        self.assertEqual(attempts[0]["exit_code"], 17)
+        self.assertNotEqual(attempts[0]["attempt_id"], attempts[1]["attempt_id"])
+        for attempt in attempts:
+            self.assertEqual(attempt["task_id"], task)
+            self.assertEqual(attempt["reproduce_argv"][:2],
+                             ["python3", "experiments/prefill-gemm/benchmark.py"])
+            self.assertLessEqual(attempt["started_utc"], attempt["finished_utc"])
+            self.assertGreaterEqual(attempt["controller_elapsed_s"], 0)
+
     def test_bad_output_cannot_complete_a_unit(self):
         self.cli("step")
         fixture = self.directory / "s42.json"
@@ -143,6 +169,123 @@ class LabCLI(unittest.TestCase):
         result["checks"][-1] = result["checks"][0]
         self.write_json("check.json", result)
         self.cli("step", expect_success=False)
+        self.assertEqual(self.completed(), set())
+
+    def prepare_gemm(self, local_source=None):
+        self.state = self.directory / "gemm-state"
+        script = Path("experiments/prefill-gemm/benchmark.py")
+        (self.directory / script.parent).mkdir(parents=True)
+        if local_source is None:
+            shutil.copy2(ROOT / script, self.directory / script)
+        else:
+            (self.directory / script).write_text(local_source)
+        shapes = [{"m": m, "k": 3, "n": 4} for m in (2, 4)]
+        self.write_json("gemm.json", {
+            "kind": "prefill_gemm", "id": "test-gemm", "hypothesis": "Compare two projections",
+            "seeds": [42], "seconds": 5, "shapes": shapes,
+        })
+        for shape in shapes:
+            m, k, n = shape.values()
+            flops = 2 * m * k * n
+            metrics = {"gpu_busy_pct": 90, "memory_busy_pct": 20, "device_memory_used_mib": 23,
+                       "device_power_w": None, "sm_clock_mhz": 1800}
+            self.write_json(f"s42-m{m}-k{k}-n{n}.json", {
+                "environment": {"gpu": "Test GPU", "compute_capability": [9, 0], "driver": "550",
+                                "cuda_runtime": "12.8", "torch": "2.7.1", "python": "3.12",
+                                "total_memory_bytes": 80000000000, "sm_count": 132},
+                "workload": {**shape, "dtype": "bfloat16", "seed": 42, "bf16_reduced_precision_reduction": False,
+                             "operation": "torch.mm(A[M,K], B[K,N], out=C[M,N])",
+                             "reuse": "same contiguous A, B and preallocated C throughout",
+                             "operand_bytes": 2 * (m * k + k * n + m * n)},
+                "correctness": {"passed": True, "reference": "FP32 dense products over full K, TF32 disabled",
+                                "sampled_rows": list(range(m)), "sampled_columns": list(range(n)), "entries": m * n,
+                                "rtol": 0.005, "atol": 2e-5 * math.sqrt(k), "max_absolute_error": 0.01},
+                "timing": {"requested_seconds": 5, "warmup_s": 2, "warmup_iterations": 8,
+                           "wall_elapsed_s": 5.25, "batch_iterations": 4, "iterations": 8,
+                           "cuda_event_total_s": 4, "batches": [{"iterations": 4, "event_elapsed_s": 2}] * 2,
+                           "flops_per_iteration": flops, "cuda_event_tflops": 8 * flops / 4 / 1e12,
+                           "wall_tflops": 8 * flops / 5.25 / 1e12},
+                "telemetry": {"samples": [{"query_start_s": 0.1, "query_end_s": 0.15, **metrics}],
+                              "summary": {key: {"count": int(value is not None), "peak_observed": value, "mean": value}
+                                          for key, value in metrics.items()}},
+            })
+        self.cli("init", "--plan", str(self.directory / "gemm.json"))
+
+    @unittest.skipUnless(shutil.which("git"), "requires Git")
+    def test_local_gemm_step_records_verified_source_revision(self):
+        import hashlib
+        from lab import local_gemm_revision
+
+        self.prepare_gemm(local_source=(
+            "import json, os\nfrom pathlib import Path\n"
+            "result = json.loads(Path('s42-m2-k3-n4.json').read_text())\n"
+            "result['code_revision'] = os.environ['BENCH_REVISION']\n"
+            "print(json.dumps(result))\n"
+        ))
+        source = Path("experiments/prefill-gemm/benchmark.py")
+        git = ["git", "-C", str(self.directory), "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+               "-c", "core.hooksPath=/dev/null", "-c", "commit.gpgsign=false"]
+        subprocess.run([*git, "init", "-q"], check=True)
+        original = (self.directory / source).read_bytes()
+        digest = hashlib.sha256(original).hexdigest()
+        self.assertEqual(local_gemm_revision(self.directory, digest), "unversioned")
+        subprocess.run([*git, "add", "--", str(source)], check=True)
+        subprocess.run([*git, "commit", "-qm", "Fixture"], check=True)
+        head = subprocess.check_output([*git, "rev-parse", "HEAD"], text=True).strip()
+        # Exercise the default local entry point with an unrelated value in the caller's environment.
+        subprocess.run([sys.executable, str(self.directory / "lab.py"), "step", "--state-dir", str(self.state)],
+                       cwd=self.directory, check=True, capture_output=True, env={**os.environ, "BENCH_REVISION": "wrong"})
+        saved = json.loads((self.state / "tasks/s42-m2-k3-n4.json").read_text())
+        self.assertEqual(saved["result"]["code_revision"], head)
+        modified = original + b"# local changes\n"
+        (self.directory / source).write_bytes(modified)
+        self.assertEqual(local_gemm_revision(self.directory, hashlib.sha256(modified).hexdigest()), f"{head}-modified")
+
+    def test_gemm_manifest_and_resume_multiple_shapes(self):
+        self.prepare_gemm()
+        self.assertIn("0/2 tasks completed", self.cli("status").stdout)
+        manifest = json.loads((self.state / "manifest.json").read_text())
+        self.assertEqual(set(manifest["sources"]), {"experiments/prefill-gemm/benchmark.py"})
+        first, second = "s42-m2-k3-n4", "s42-m4-k3-n4"
+        failure = self.directory / ("fail-" + second)
+        failure.touch()
+        self.cli("run", expect_success=False)
+        self.assertEqual(self.completed(), {first + ".json"})
+        failure.unlink()
+        self.cli("run")
+        self.cli("run")
+        self.assertEqual(self.calls(), [first, second, second])
+        self.assertIn("complete.", self.cli("status").stdout)
+
+    def test_gemm_rejects_inconsistent_evidence(self):
+        self.prepare_gemm()
+        fixture = self.directory / "s42-m2-k3-n4.json"
+        good = fixture.read_text()
+        for section, key, value in (("correctness", "passed", False), ("workload", "k", 4),
+                                    ("telemetry", "samples", []), ("timing", "wall_tflops", 8),
+                                    ("timing", "batches", []), ("timing", "wall_elapsed_s", 4)):
+            with self.subTest(key=key):
+                bad = json.loads(good)
+                bad[section][key] = value
+                fixture.write_text(json.dumps(bad))
+                self.cli("step", expect_success=False)
+                self.assertEqual(self.completed(), set())
+        fixture.write_text(good)
+        self.cli("step")
+        self.assertEqual(self.completed(), {fixture.name})
+
+    def test_gemm_rejects_consistent_cuda_times_exceeding_wall_window(self):
+        self.prepare_gemm()
+        fixture = self.directory / "s42-m2-k3-n4.json"
+        result = json.loads(fixture.read_text())
+        timing = result["timing"]
+        for batch in timing["batches"]:
+            batch["event_elapsed_s"] *= 100
+        timing["cuda_event_total_s"] *= 100
+        timing["cuda_event_tflops"] /= 100
+        fixture.write_text(json.dumps(result))
+        failure = self.cli("step", expect_success=False)
+        self.assertIn("exceeds the sequential wall window", failure.stderr)
         self.assertEqual(self.completed(), set())
 
     def test_interrupted_process_group_can_resume_pending_benchmark(self):

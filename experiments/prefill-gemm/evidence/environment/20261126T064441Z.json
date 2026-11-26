@@ -1,0 +1,44 @@
+{
+  "captured_utc": "2026-11-26T06:44:41.709783+00:00",
+  "scope": "Point-in-time snapshot. Historical measurements carry their own per-run environment.",
+  "os": {
+    "system": "Linux",
+    "distribution_id": "ubuntu",
+    "distribution_version": "22.04",
+    "kernel_release": "5.15.0-1072-nvidia",
+    "architecture": "x86_64",
+    "cpu_count_in_affinity_mask": 224
+  },
+  "python": "3.12.16",
+  "packages": {
+    "torch": "2.7.1+cu128",
+    "triton": "3.3.1",
+    "nvidia-cublas-cu12": "12.8.3.14",
+    "nvidia-cudnn-cu12": "9.7.1.26",
+    "nvidia-cuda-runtime-cu12": "12.8.57"
+  },
+  "torch_cuda_build": "12.8",
+  "cuda_runtime_version": "12.8",
+  "cublas_runtime_version": "12.8.3",
+  "cudnn_runtime_version_code": 90701,
+  "gpu": {
+    "name": "NVIDIA H100 80GB HBM3",
+    "compute_capability": [
+      9,
+      0
+    ],
+    "sm_count": 132,
+    "total_memory_bytes": 84929216512,
+    "driver_version": "550.144.03",
+    "max_sm_clock_mhz": 1980.0,
+    "max_memory_clock_mhz": 2619.0,
+    "power_limit_w": 700.0,
+    "enforced_power_limit_w": 700.0,
+    "default_power_limit_w": 700.0,
+    "min_power_limit_w": 200.0,
+    "max_power_limit_w": 700.0,
+    "ecc_mode": "Enabled",
+    "mig_mode": "Disabled",
+    "compute_mode": "Default"
+  }
+}

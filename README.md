@@ -44,6 +44,10 @@ For a single shape, add `--rows 1 --widths 4096`. To regenerate the figure, inst
 - All implementations use the same seeded synthetic inputs and return a new output. Validation, JIT compilation and graph capture finish before timing. Each round shuffles backend order. CUDA events bracket the replay, and the raw JSON records the median, quartiles and per-round averages. [Benchmark harness](benchmark.py)
 - Inputs reuse the same addresses without an explicit cache flush. GPU clocks were unmanaged. These measurements cover this operator and graph-replay workload. Model serving latency, cold-cache performance and FlashInfer performance remain open questions.
 
+## Sustained H100 compute
+
+In 20 runs of a BF16 prefill projection, the H100 completed 1.50 million matrix products over 902.18 measured seconds. The 16,384-row shape reached a median of 682.19 TFLOP/s. Gaps in device sampling limited confirmation of sustained activity to eight runs. [Full results, throughput and resource charts](experiments/prefill-gemm/REPORT.md) · [Workload and protocol](experiments/prefill-gemm/README.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/3)
+
 ## Row tiling and the continuing experiment
 
 Grouping two or four token rows per program passed all 60 numerical checks. At the 1024×8192 target, the fastest grouped variant took 8.63 and 8.59 µs across two runs. The best one-row variant took 8.46 and 8.39 µs. The default remains one row. [Row-tiling report](results/row-tiles/REPORT.md)

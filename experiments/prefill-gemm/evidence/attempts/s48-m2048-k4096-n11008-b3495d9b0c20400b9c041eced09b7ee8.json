@@ -1,0 +1,23 @@
+{
+  "attempt_id": "b3495d9b0c20400b9c041eced09b7ee8",
+  "task_id": "s48-m2048-k4096-n11008",
+  "experiment_hash": "6bbf32225add1e59a571c530b34beb5165ed36484a0595dfd0858c80fdfea3c7",
+  "started_utc": "2026-11-26T07:01:40.834253+00:00",
+  "reproduce_argv": [
+    "python3",
+    "experiments/prefill-gemm/benchmark.py",
+    "--m",
+    "2048",
+    "--k",
+    "4096",
+    "--n",
+    "11008",
+    "--seconds",
+    "45",
+    "--seed",
+    "48"
+  ],
+  "outcome": "checkpoint_saved",
+  "controller_elapsed_s": 53.3965136250481,
+  "finished_utc": "2026-11-26T07:02:34.230833+00:00"
+}
