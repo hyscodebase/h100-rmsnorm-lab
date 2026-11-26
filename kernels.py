@@ -19,11 +19,28 @@ def _rmsnorm_kernel(X, W, Y, WIDTH: tl.constexpr, EPS: tl.constexpr, BLOCK: tl.c
     tl.store(Y + offset, x * inv_rms * weight, mask=mask)
 
 
-def rmsnorm(x, weight, eps=1e-6, num_warps=4):
+@triton.jit
+def _rmsnorm_rows_kernel(
+    X, W, Y, rows, WIDTH: tl.constexpr, EPS: tl.constexpr,
+    BLOCK_ROWS: tl.constexpr, BLOCK_COLS: tl.constexpr,
+):
+    first_row = tl.program_id(0).to(tl.int64) * BLOCK_ROWS
+    row = first_row + tl.arange(0, BLOCK_ROWS)
+    col = tl.arange(0, BLOCK_COLS)
+    offset = row[:, None] * WIDTH + col[None, :]
+    valid = (row[:, None] < rows) & (col[None, :] < WIDTH)
+    x = tl.load(X + offset, mask=valid, other=0.0).to(tl.float32)
+    weight = tl.load(W + col, mask=col < WIDTH, other=0.0).to(tl.float32)
+    inv_rms = tl.rsqrt(tl.sum(x * x, axis=1) / WIDTH + EPS)
+    tl.store(Y + offset, x * inv_rms[:, None] * weight[None, :], mask=valid)
+
+
+def rmsnorm(x, weight, eps=1e-6, num_warps=4, rows_per_program=1):
     """Normalize each row of x and apply a length-width BF16 weight vector.
 
     Supports positive row counts and widths up to 16384. Returns a new BF16
     tensor on the input device. The reduction and scaling run in FP32.
+    Each program handles one, two or four rows with a shared weight vector.
     """
     if x.ndim != 2 or x.shape[0] == 0 or not 1 <= x.shape[1] <= 16384:
         raise ValueError("expected x with positive rows and width in [1, 16384]")
@@ -41,11 +58,21 @@ def rmsnorm(x, weight, eps=1e-6, num_warps=4):
         raise ValueError("eps must be finite and positive")
     if num_warps not in (4, 8):
         raise ValueError("num_warps must be 4 or 8")
+    if rows_per_program not in (1, 2, 4):
+        raise ValueError("rows_per_program must be 1, 2 or 4")
 
     rows, width = x.shape
     with torch.cuda.device(x.device):
         output = torch.empty_like(x)
-        _rmsnorm_kernel[(rows,)](
-            x, weight, output, width, eps, triton.next_power_of_2(width), num_warps=num_warps
-        )
+        block_cols = triton.next_power_of_2(width)
+        if rows_per_program == 1:
+            _rmsnorm_kernel[(rows,)](
+                x, weight, output, width, eps, block_cols, num_warps=num_warps
+            )
+        else:
+            grid = (triton.cdiv(rows, rows_per_program),)
+            _rmsnorm_rows_kernel[grid](
+                x, weight, output, rows, width, eps, rows_per_program, block_cols,
+                num_warps=num_warps,
+            )
     return output

@@ -9,6 +9,7 @@ import shutil
 import statistics
 import subprocess
 from datetime import datetime, timezone
+from functools import partial
 from pathlib import Path
 
 import torch
@@ -84,11 +85,13 @@ def run(args):
             x = torch.randn((rows, width), device=device, dtype=torch.bfloat16, generator=generator)
             w = torch.randn(width, device=device, dtype=torch.bfloat16, generator=generator)
             reference = x.float() * torch.rsqrt(x.float().square().mean(-1, keepdim=True) + EPS) * w.float()
-            calls = {
-                "torch_eager": lambda: eager_rmsnorm(x, w),
-                "triton_4w": lambda: rmsnorm(x, w, num_warps=4),
-                "triton_8w": lambda: rmsnorm(x, w, num_warps=8),
-            }
+            calls = {"torch_eager": lambda: eager_rmsnorm(x, w)}
+            for tile in args.row_tiles:
+                suffix = "" if tile == 1 else f"_{tile}r"
+                for warps in (4, 8):
+                    calls[f"triton_{warps}w{suffix}"] = partial(
+                        rmsnorm, x, w, num_warps=warps, rows_per_program=tile
+                    )
             if args.compiled:
                 # Specialize each shape, matching the static Triton launch.
                 torch.compiler.reset()
@@ -121,6 +124,7 @@ def run(args):
             "timing": "CUDA events around one graph replay, microseconds per operation",
             "cache": "same input addresses; no explicit L2 flush",
             "ops_per_graph": args.ops, "rounds": args.rounds, "seed": args.seed,
+            "row_tiles": args.row_tiles,
             "dtype": "bfloat16", "eps": EPS, "backends_shuffled_each_round": True,
             "reference": "FP32 RMSNorm, rtol=0.016, atol=1e-5",
         },
@@ -132,12 +136,18 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--rows", nargs="+", type=int, default=[1, 16, 128, 1024])
     parser.add_argument("--widths", nargs="+", type=int, default=[4096, 8192])
+    parser.add_argument(
+        "--row-tiles", nargs="+", type=int, choices=(1, 2, 4), default=[1],
+        help="Triton rows per program to compare. Include 1 for the baseline (default: 1).",
+    )
     parser.add_argument("--rounds", type=int, default=21)
     parser.add_argument("--ops", type=int, default=32)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--compiled", action="store_true", help="Include shape-specialized TorchInductor")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
+    if 1 not in args.row_tiles or len(set(args.row_tiles)) != len(args.row_tiles):
+        parser.error("--row-tiles must include 1 and list each tile only once")
     if min(args.rows) < 1 or min(args.widths) < 1 or max(args.widths) > 16384:
         parser.error("rows must be positive and widths must be between 1 and 16384")
     if args.ops < 1 or args.rounds < 2:

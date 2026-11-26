@@ -1,6 +1,7 @@
 """Run numerical checks on CUDA and write the results as JSON to stdout."""
 
 import json
+from itertools import product
 
 import torch
 
@@ -20,6 +21,8 @@ CASES = [
     (1, 4095, "constant"),
     (32, 1025, "tiny"),
     (8, 2048, "large"),
+    (7, 3073, "random"),
+    (1024, 8192, "random"),
 ]
 
 
@@ -41,8 +44,10 @@ def main():
         weight = torch.randn(width, generator=generator, device="cuda").to(torch.bfloat16)
         xf = x.float()
         reference = xf * torch.rsqrt(xf.square().mean(dim=1, keepdim=True) + EPS) * weight.float()
-        for warps in (4, 8):
-            actual = rmsnorm(x, weight, eps=EPS, num_warps=warps)
+        for rows_per_program, warps in product((1, 2, 4), (4, 8)):
+            actual = rmsnorm(
+                x, weight, eps=EPS, num_warps=warps, rows_per_program=rows_per_program
+            )
             torch.cuda.synchronize()
             error = (actual.float() - reference).abs()
             close = torch.isclose(actual.float(), reference, rtol=RTOL, atol=ATOL)
@@ -51,6 +56,7 @@ def main():
                     "rows": rows,
                     "width": width,
                     "input": case,
+                    "rows_per_program": rows_per_program,
                     "num_warps": warps,
                     "passed": bool(close.all().item()),
                     "max_abs_error": error.max().item(),
