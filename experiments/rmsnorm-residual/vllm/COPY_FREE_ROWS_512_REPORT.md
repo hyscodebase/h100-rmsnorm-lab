@@ -50,3 +50,5 @@ BENCH_REVISION=faf7848ffad77540b7da8f5d75695718f94d3422 \
   python3 experiments/rmsnorm-residual/vllm/copy_free_run.py \
     --rows 512 --seed 161 --asset-dir .lab/vllm-release
 ```
+
+The next experiment keeps 512 rows and directly measures DRAM reads and writes and L2 read sectors for both graphs. The SHA-verified Nsight Compute CLI is installed in the H100 experiment cache and lists the requested counters. [Memory traffic plan](COPY_FREE_MEMORY_512.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/36)
