@@ -1,0 +1,17 @@
+{
+  "attempt_id": "876fe17360054496a151511a74338043",
+  "task_id": "s102-r1-w4096",
+  "experiment_hash": "c7192563adbd9a3397f100060ae58ae21e14b08aee91f5074f0cc66ac5a2a1f0",
+  "started_utc": "2026-11-26T07:48:45.415774+00:00",
+  "reproduce_argv": [
+    "python3",
+    "experiments/rmsnorm-residual/benchmark.py",
+    "--rows",
+    "1",
+    "--seed",
+    "102"
+  ],
+  "outcome": "checkpoint_saved",
+  "controller_elapsed_s": 16.092460790998302,
+  "finished_utc": "2026-11-26T07:49:01.508930+00:00"
+}
