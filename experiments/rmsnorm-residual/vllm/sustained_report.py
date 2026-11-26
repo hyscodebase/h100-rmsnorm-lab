@@ -50,12 +50,16 @@ def verify_numerical(numerical, backends=protocol.BACKENDS, *, rows=protocol.ROW
     return digests
 
 
-def verify_window(window, minimum, *, rows=protocol.ROWS):
+def verify_window(window, minimum, *, rows=protocol.ROWS, fixed_bursts=None):
     start, end, bursts = window["start_s"], window["end_s"], window["bursts"]
     if (not bursts or end != bursts[-1]["end_s"] or not 0 <= start < end
-            or window["wall_seconds"] != end - start or end - start < minimum
-            or (len(bursts) > 1 and bursts[-2]["end_s"] - start >= minimum)
+            or window["wall_seconds"] != end - start
             or timestamp(window["started_utc"]) > timestamp(window["finished_utc"])):
+        raise ValueError("The recorded window boundary or elapsed time differs.")
+    if fixed_bursts is not None and len(bursts) != fixed_bursts:
+        raise ValueError("The fixed-work window has a different burst count.")
+    if fixed_bursts is None and (end - start < minimum
+                                 or (len(bursts) > 1 and bursts[-2]["end_s"] - start >= minimum)):
         raise ValueError("The window differs from the first completed burst at the target duration.")
     previous = start
     for burst in bursts:
@@ -94,7 +98,8 @@ def verify_telemetry(data, blocks, groups=protocol.BACKENDS, *, group_by="backen
 
 
 def verify_measurement(seed, timing, *, backends=protocol.BACKENDS, period_s=protocol.PERIOD_S, rows=protocol.ROWS,
-                       rounds=None, fields=PAIR_FIELDS, field_widths=None):
+                       rounds=None, fields=PAIR_FIELDS, field_widths=None, warmup_s=protocol.WARMUP_S,
+                       fixed_bursts=None):
     order = protocol.balanced_order(seed, backends, rounds=rounds)
     blocks = timing["blocks"]
     sequence = [(round_no, i, backend) for round_no, group in enumerate(order) for i, backend in enumerate(group)]
@@ -104,8 +109,8 @@ def verify_measurement(seed, timing, *, backends=protocol.BACKENDS, period_s=pro
     previous = 0
     for number, block in enumerate(blocks):
         warmup = block["warmup"]
-        verify_window(warmup, protocol.WARMUP_S, rows=rows)
-        verify_window(block, period_s, rows=rows)
+        verify_window(warmup, warmup_s, rows=rows)
+        verify_window(block, period_s, rows=rows, fixed_bursts=fixed_bursts)
         if block["id"] != number or not previous <= warmup["start_s"] < warmup["end_s"] <= block["start_s"]:
             raise ValueError("Warm-up and measurement windows overlap.")
         verify_graph_records(block["post_graph_checks"], rows=rows, fields=fields, field_widths=field_widths)
@@ -158,10 +163,10 @@ def read_results(folder):
     return data
 
 
-def verify_recovery(data, recovered, revision):
+def verify_recovery(data, recovered, revision, *, require_timing=True):
     cached = data[recovered["seed"]]
     canonical = json.dumps(cached, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
-    if (not cached["timing"] or recovered["rows"] != cached["rows"] or recovered["code_revision"] != revision
+    if ((require_timing and not cached["timing"]) or recovered["rows"] != cached["rows"] or recovered["code_revision"] != revision
             or recovered["result_origin"] != "cached" or not recovered["matches_local_result"]
             or recovered["canonical_json_bytes"] != len(canonical)
             or recovered["canonical_json_sha256"] != hashlib.sha256(canonical).hexdigest()):

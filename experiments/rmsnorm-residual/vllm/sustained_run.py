@@ -189,15 +189,19 @@ def balanced_order(seed, backends=BACKENDS, *, rounds=None):
     return rotations if rounds is None else [rotations[i % len(rotations)] for i in range(rounds)]
 
 
-def collect_window(runner, graphs, minimum_seconds, origin, *, rows=ROWS):
+def collect_window(runner, graphs, minimum_seconds, origin, *, rows=ROWS, fixed_bursts=None):
+    if fixed_bursts is not None and fixed_bursts <= 0:
+        raise ValueError("A fixed-work window needs at least one burst.")
     started_utc = run.original.utc_now()
     started = time.perf_counter() - origin
     bursts = []
-    while not bursts or bursts[-1]["end_s"] - started < minimum_seconds:
+    while fixed_bursts is None or len(bursts) < fixed_bursts:
         start = time.perf_counter() - origin
         milliseconds = runner.burst(graphs, BURST_REPLAYS)
         end = time.perf_counter() - origin
         bursts.append({"start_s": start, "end_s": end, "cuda_ms": milliseconds})
+        if fixed_bursts is None and end - started >= minimum_seconds:
+            break
     finished = bursts[-1]["end_s"]
     completed = STREAMS * BURST_REPLAYS * len(bursts)
     return {"start_s": started, "end_s": finished, "wall_seconds": finished - started,
