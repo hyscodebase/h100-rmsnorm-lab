@@ -12,14 +12,14 @@ import sustained_run as protocol
 from sustained_sensors import FIELDS, PERIOD_S as SENSOR_PERIOD, associate, summarize_load
 from transfer_report import CASES, timestamp, verify_revision
 
-PAIR_FIELDS = ("activation_bit_differences_by_pair", "residual_bit_differences_by_pair")
+PAIR_FIELDS = protocol.PAIR_FIELDS
 
 
-def verify_graph_records(records, *, rows=protocol.ROWS):
+def verify_graph_records(records, *, rows=protocol.ROWS, fields=PAIR_FIELDS):
     if [item["stream"] for item in records] != list(range(protocol.STREAMS)):
         raise ValueError("Missing independent stream records.")
     for item in records:
-        for field in PAIR_FIELDS:
+        for field in fields:
             counts = item[field]
             if len(counts) != run.OPS or not all(type(n) is int and 0 <= n <= rows * protocol.WIDTH for n in counts):
                 raise ValueError("Invalid per-pair bit difference counts.")
@@ -92,7 +92,7 @@ def verify_telemetry(data, blocks, groups=protocol.BACKENDS, *, group_by="backen
 
 
 def verify_measurement(seed, timing, *, backends=protocol.BACKENDS, period_s=protocol.PERIOD_S, rows=protocol.ROWS,
-                       rounds=None):
+                       rounds=None, fields=PAIR_FIELDS):
     order = protocol.balanced_order(seed, backends, rounds=rounds)
     blocks = timing["blocks"]
     sequence = [(round_no, i, backend) for round_no, group in enumerate(order) for i, backend in enumerate(group)]
@@ -106,9 +106,11 @@ def verify_measurement(seed, timing, *, backends=protocol.BACKENDS, period_s=pro
         verify_window(block, period_s, rows=rows)
         if block["id"] != number or not previous <= warmup["start_s"] < warmup["end_s"] <= block["start_s"]:
             raise ValueError("Warm-up and measurement windows overlap.")
-        verify_graph_records(block["post_graph_checks"], rows=rows)
+        verify_graph_records(block["post_graph_checks"], rows=rows, fields=fields)
         previous = block["end_s"]
-    if timing["outputs_match_after_timing"] != all(protocol.outputs_match(b["post_graph_checks"]) for b in blocks):
+    if timing["outputs_match_after_timing"] != all(
+        protocol.outputs_match(b["post_graph_checks"], fields=fields) for b in blocks
+    ):
         raise ValueError("Post-window output status differs.")
     verify_telemetry(timing["telemetry"], blocks, backends)
     if protocol.pace(blocks, backends) != (timing["median_rows_per_second"], timing["comparisons"]):

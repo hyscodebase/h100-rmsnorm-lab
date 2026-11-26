@@ -74,6 +74,8 @@ At 512 rows, the adjacent split schedule led the all-adds-first schedule by 3.18
 
 At 512 rows, a separate tuning seed selected an 8,192-element addition tile. It led the original split path by 0.438–0.453% over three independent seeds, below the 5% threshold. Fusion led the tuned split by 19.206–19.230% with both BF16 outputs matching exactly. [Tile selection, independent results and H100 observations](experiments/rmsnorm-residual/vllm/SPLIT_ADD_TILES_512_REPORT.md)
 
+Between two BF16 projections at 512 × 4,096, fusion led the tuned split by 1.256–1.359% in all three independent seeds. Both projection results and both residual/RMSNorm outputs matched bitwise. [Full-chain results, chart and resource observations](experiments/rmsnorm-residual/vllm/PROJECTION_CHAIN_512_REPORT.md)
+
 ## Sustained H100 compute
 
 In 20 runs of a BF16 prefill projection, the H100 completed 1.50 million matrix products over 902.18 measured seconds. The 16,384-row shape reached a median of 682.19 TFLOP/s. Gaps in device sampling limited confirmation of sustained activity to eight runs. [Full results, throughput and resource charts](experiments/prefill-gemm/REPORT.md) · [Workload and protocol](experiments/prefill-gemm/README.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/3)

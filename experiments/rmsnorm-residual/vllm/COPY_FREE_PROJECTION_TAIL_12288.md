@@ -1,0 +1,9 @@
+# Widen the downstream BF16 projection
+
+At 512 × 4,096, fusion increased throughput by 1.256–1.359% between two square BF16 projections. The same residual kernels showed 19.206–19.230% more throughput in isolation. A downstream 4,096 × 12,288 weight doubles the pair's total GEMM FLOP count while holding the shape and binaries of the residual stage fixed. Test whether the chain still clears the registered 1% threshold. [Square projection chain](PROJECTION_CHAIN_512_REPORT.md) · [Tracking issue](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/44)
+
+Retain a 512 × 4,096 first projection output and a 4,096 × 4,096 first weight. Use the same 8,192-element split addition, eight-warp RMSNorm and fused kernel, shared immutable input and weights, BF16 rounding and PyTorch GEMM settings. Allocate identical buffers in both paths for the 512 × 12,288 downstream output. Keep eight CUDA streams and 32 independent pairs per stream.
+
+On seed 181, compare the four output tensors with the released vLLM chain bitwise, including all 12,288 columns of the downstream output. Verify all three captured residual binaries, original input and weight hashes, and disjoint writable buffers. Measure seeds 182–184 independently after qualification. Use two balanced periods per path per seed, at least one second of warm-up and six seconds of measurement per period, and 32 graph replays per stream per burst.
+
+Recompute both backend medians from raw graph counts and elapsed time. Classify the effect as clearing 1% in every seed, falling below 1% in every seed, or varying across the threshold. Report the throughput and the observed change from the square chain. Archive the raw timing bursts, graph and row counts, effective GEMM throughput, exactness and compiler evidence, device observations and cached recovery.
