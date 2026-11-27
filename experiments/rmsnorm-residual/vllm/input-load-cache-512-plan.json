@@ -30,7 +30,13 @@
       "registers_per_thread",
       "spills",
       "binary_sha256"
-    ]
+    ],
+    "codegen_gate": {
+      "baseline_binary_must_match": "long-window-energy-512-results/s205.json",
+      "candidate_num_warps": 8,
+      "candidate_input_loads": "four ld.global.cg instructions for activation and residual",
+      "candidate_weight_loads": "two ordinary ld.global instructions"
+    }
   },
   "timing": {
     "seeds": [
@@ -43,7 +49,14 @@
     "minimum_warmup_s": 3,
     "streams": 8,
     "pairs_per_stream": 32,
-    "orders": "Both backend orders in independent periods with one saved period per submission.",
+    "periods_per_seed": 2,
+    "orders": {
+      "210": ["triton_8warps_out_of_place", "triton_8warps_cg_inputs_out_of_place"],
+      "211": ["triton_8warps_cg_inputs_out_of_place", "triton_8warps_out_of_place"],
+      "212": ["triton_8warps_out_of_place", "triton_8warps_cg_inputs_out_of_place"]
+    },
+    "process_contract": "Each period repeats all eight numerical fixtures and captured graph checks before timing; period two must reproduce the first period's input and weight fingerprints.",
+    "measurement": "512 measured bursts after at least three seconds of warm-up; record wall and CUDA time for every burst and one period per submission.",
     "condition": "Match shape, buffer layout, fingerprints and launch geometry for both backends.",
     "period_normalized_rows": 2147483648,
     "archive_fields": [
