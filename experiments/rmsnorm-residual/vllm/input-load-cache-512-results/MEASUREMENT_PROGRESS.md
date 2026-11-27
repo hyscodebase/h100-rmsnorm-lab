@@ -27,3 +27,5 @@ The complete measurements and auxiliary snapshots are in [s210-p0.json](s210-p0.
 ## Next step
 
 Run seed 212 in the preregistered baseline-then-candidate order. The final report will derive all three gains directly from the saved burst intervals and record whether the `.cg` candidate meets the adoption rule.
+
+Seed 212 period 0 has completed on the baseline: 91,535,863 normalized rows/s over 23.468 seconds. The 23 associated NVML samples had 100% median GPU and memory busy, 8,431.25 MiB median VRAM use, and 518.27 W median power. Outputs remained exact. The `.cg` period is next; see [s212-p0.json](s212-p0.json).
