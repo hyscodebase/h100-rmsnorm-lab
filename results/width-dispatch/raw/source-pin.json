@@ -1,18 +1,21 @@
 {
   "issue": 66,
-  "source_revision": "85bf889ffca8863f59e80f84e82ef9fcdc297cee",
+  "source_revision": "c1afffb27ef8428888a73ea456a21dfe3bb771b0",
   "source_sha256": {
     "kernels.py": "431854a059ff8fa514053b7cdf47c1e32491ffdbf00dfcf37f0589f9811b36e8",
-    "experiments/width-dispatch/run.py": "ee1f1f5479fe2ee508a6cd9d98bfa871c99c5af8b5cef35b60879b902cd81a73",
-    "experiments/width-dispatch/telemetry.py": "d341f365ad894f42d08d491c40970aade24520a17ac1961d402ececf80e5900b",
-    "experiments/width-dispatch/PLAN.md": "6247dc7cb7880440685d6b6a9f5579ac216384732c9dbba117c13a9229471dee",
+    "experiments/width-dispatch/run.py": "54124cbe7a34103e03cb2506f07074cef1a2d86201da413166ae0ea35ec15a17",
+    "experiments/width-dispatch/telemetry.py": "9b1311fe75db3e7630e749728efe01aad4a5a7adf5fc2cb7b14535d3b8ba2a22",
+    "experiments/width-dispatch/PLAN.md": "27bea1e64b3f9239becb75a7c0be3c9902aee70cd8979cbfe3323b7b4597ce56",
     "plans/width-dispatch.json": "b900fbb665ff90232fc95e280850f4512a8edf48c9660de677d4f515b1f76ece",
     "lab.py": "b3b54b0943d1264b89273350ab2d19ee0aa0ff5ac93714687c92cc7f3cb0149c",
-    "experiments/width-dispatch/step.py": "b1d6ea6590e4ea26558dde1471910452b641bc46edc6082ae07b78fe1dfd5abf",
-    "experiments/width-dispatch/ssh_runner.sh": "207b657887b23b8616bc71f9a6d03f7ad1274835cd4f3908a16358b400fb8e3b",
-    "experiments/width-dispatch/summarize.py": "2cece4ec1630ff51e176c5eb1e5dae611cb32cd582a33c7d3cc3dfac2d8c9952"
+    "experiments/width-dispatch/step.py": "0a7d1b645ebe3004bd073c4ee859e81e7c3789af4377f2ab9292f513ad05d48a",
+    "experiments/width-dispatch/ssh_runner.sh": "db67ecd04fd46b3eb8be4aba3e41ae00e1d41458d577e00b4d8cc854d63111e0",
+    "experiments/width-dispatch/summarize.py": "3d21fcae01775c3816b65285a6e8a4bf2204fa5e0a5e3e9d3fa3a3580bf89bd7"
   },
   "research_assistant_model": "Codex GPT-6; GPT-6 Luna selected for independent protocol review, runtime unverified",
   "frozen_plan_only": false,
-  "h100_execution_authorized": true
+  "h100_execution_authorized": true,
+  "h100_execution_scope": "pilot",
+  "authorization_basis": "User requested aggressive H100 use; one pilot is authorized while the revised protocol is reviewed.",
+  "generated_utc": "2026-11-27T09:36:17.991725+00:00"
 }
