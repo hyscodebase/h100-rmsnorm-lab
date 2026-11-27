@@ -95,6 +95,8 @@ def run_one(lock):
     if is_paused():
         raise SystemExit("Paused at checkpoint boundary; no H100 work submitted.")
     revision, source_digests, pin = verify_source_pin()
+    if pin.get("h100_execution_authorized") is not True:
+        raise SystemExit("Source pin is plan-only; H100 execution is not authorized.")
     CHECKPOINTS.mkdir(parents=True, exist_ok=True)
     ATTEMPTS.mkdir(parents=True, exist_ok=True)
     unit = next(((seed, width) for seed, width in work_units()

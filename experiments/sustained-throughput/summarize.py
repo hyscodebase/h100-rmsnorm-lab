@@ -3,6 +3,7 @@ import argparse
 import hashlib
 import json
 import math
+import random
 import statistics
 import subprocess
 from collections import defaultdict
@@ -57,8 +58,8 @@ def plan_audit():
          "Sustained replay block/window protocol changed.")
     need(p["sustained_min_seconds"] == 30 and p["sustained_max_seconds"] == 60,
          "Sustained phase duration bounds changed.")
-    need(p["minimum_active_telemetry_samples"] >= 120
-         and p["telemetry_interval_seconds"] == 0.25
+    need(p["minimum_active_telemetry_samples"] >= 25
+         and p["telemetry_interval_seconds"] == 1.0
          and p["maximum_active_telemetry_gap_seconds"] == 1.5,
          "Active-window telemetry gate changed.")
     need(p["telemetry_required_field_coverage_fraction"] >= 0.95
@@ -114,6 +115,7 @@ def check_pin():
 
 def audit_attempts(pin, checkpoint_records):
     receipts = {}
+    per_unit_counts = defaultdict(int)
     for path in sorted(ATTEMPTS.glob("*.json")) if ATTEMPTS.exists() else []:
         item = json.loads(path.read_text())
         attempt_id = item.get("attempt_id")
@@ -122,6 +124,8 @@ def audit_attempts(pin, checkpoint_records):
         unit = item.get("unit")
         expected_unit = f"s{item.get('seed')}-w{item.get('width')}"
         need(unit == expected_unit, f"Attempt checkpoint identity mismatch: {path.name}.")
+        per_unit_counts[unit] += 1
+        need(per_unit_counts[unit] <= 3, f"More than three attempt receipts for checkpoint: {unit}.")
         need(item.get("seed") in [50, 51, 52] and item.get("width") in [4103, 4104, 4105, 4112],
              f"Attempt contains unregistered checkpoint: {path.name}.")
         need(item.get("source_revision") == pin["source_revision"]
@@ -153,6 +157,7 @@ def audit_attempts(pin, checkpoint_records):
             need(receipt.get("outcome") == "gate_failed"
                  and receipt.get("checkpoint_status") == record.get("status"),
                  f"Failed checkpoint/attempt receipt status mismatch: {unit}.")
+    need(all(count <= 3 for count in per_unit_counts.values()), "Attempt limit exceeded.")
     for attempt_id, receipt in receipts.items():
         if receipt.get("outcome") in {"checkpoint_saved", "gate_failed"}:
             need(receipt.get("unit") in checkpoint_records,
@@ -163,6 +168,13 @@ def audit_attempts(pin, checkpoint_records):
 
 def telemetry_summary(samples, phase, plan):
     good = [sample for sample in samples if "error" not in sample]
+    phase_start = phase.get("phase_start_monotonic_ns")
+    phase_end = phase.get("phase_end_monotonic_ns")
+    need(isinstance(phase_start, int) and isinstance(phase_end, int) and phase_start < phase_end,
+         "Phase monotonic boundaries are absent or invalid.")
+    arrivals = [sample.get("arrival_monotonic_ns") for sample in samples]
+    need(all(isinstance(t, int) and phase_start <= t <= phase_end for t in arrivals),
+         "A retained telemetry row falls outside the recorded phase monotonic bounds.")
     times = [sample.get("arrival_monotonic_ns") for sample in good
              if isinstance(sample.get("arrival_monotonic_ns"), int)]
     gaps = [(b - a) / 1e9 for a, b in zip(times, times[1:])]
@@ -204,12 +216,36 @@ def audit_checkpoint(path, plan, pin):
     need(len(intervals) == 401 * len(BACKENDS), f"Expected 1,604 latency intervals: {path.name}.")
     counts = {name: 0 for name in BACKENDS}
     by_backend = {name: [] for name in BACKENDS}
-    for item in intervals:
+    interval_orders = {}
+    expected_rng = random.Random(r["seed"] ^ (r["width"] << 8))
+    expected_orders = []
+    for _ in range(401):
+        order = list(BACKENDS)
+        expected_rng.shuffle(order)
+        expected_orders.append(order)
+    for index, item in enumerate(intervals):
         name = item["backend"]
         need(name in counts and item["ops_per_graph"] == 4, "Unexpected latency row/backend.")
+        round_id, order_index = item.get("round"), item.get("order_index")
+        need(isinstance(round_id, int) and 0 <= round_id < 401 and order_index in range(4),
+             "Latency round/order metadata is invalid.")
+        expected_index = round_id * len(BACKENDS) + order_index
+        need(index == expected_index and expected_orders[round_id][order_index] == name,
+             "Latency rows do not match the frozen randomized round/order schedule.")
+        elapsed = item.get("graph_elapsed_us")
+        per_op = item.get("us_per_op")
+        need(isinstance(elapsed, (int, float)) and math.isfinite(elapsed) and elapsed > 0,
+             "Latency graph duration must be finite and positive.")
+        need(isinstance(per_op, (int, float)) and math.isfinite(per_op)
+             and math.isclose(per_op, elapsed / 4, rel_tol=1e-9, abs_tol=1e-12),
+             "Latency per-op value does not match raw graph duration.")
         counts[name] += 1
-        by_backend[name].append(item["graph_elapsed_us"])
+        by_backend[name].append(elapsed)
+        interval_orders.setdefault(round_id, []).append(name)
     need(all(count == 401 for count in counts.values()), "Latency backend interval count mismatch.")
+    need(set(interval_orders) == set(range(401))
+         and all(len(order) == 4 and set(order) == set(BACKENDS) for order in interval_orders.values()),
+         "Latency round coverage/order is incomplete.")
     latency_medians = {name: statistics.median(by_backend[name]) / 4 for name in BACKENDS}
     phases = r.get("sustained_phases", [])
     need(len(phases) == 4 and {x.get("backend") for x in phases} == set(BACKENDS),

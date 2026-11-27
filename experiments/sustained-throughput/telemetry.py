@@ -34,9 +34,10 @@ class InWindowSampler:
 
     def start(self):
         milliseconds = round(self.interval_seconds * 1000)
+        cadence = (f"--loop={milliseconds // 1000}" if milliseconds >= 1000 and milliseconds % 1000 == 0
+                   else f"--loop-ms={milliseconds}")
         command = ["nvidia-smi", "--query-gpu=" + FIELDS,
-                   "--format=csv,noheader,nounits", "--id=0",
-                   f"--loop-ms={milliseconds}"]
+                   "--format=csv,noheader,nounits", "--id=0", cadence]
         self.process = subprocess.Popen(command, text=True, stdout=subprocess.PIPE,
                                         stderr=subprocess.DEVNULL, bufsize=1)
         if self.process.poll() is not None:

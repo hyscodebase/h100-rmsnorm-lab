@@ -405,8 +405,10 @@ def run_checkpoint(seed, width):
                 if phase_samples else 0.0 for field in telemetry_required}
             phase = {"backend": name, "phase_start_utc": phase_start_utc,
                      "phase_end_utc": phase_end_utc,
+                     "phase_start_monotonic_ns": phase_start_ns,
+                     "phase_end_monotonic_ns": phase_end_ns,
                      "phase_host_wall_seconds": (phase_end_ns - phase_start_ns) / 1e9,
-                     "telemetry_process": "single nvidia-smi --loop-ms process, phase bounded",
+                     "telemetry_process": "single nvidia-smi --loop=1 process, phase bounded",
                      "telemetry_samples": phase_samples,
                      "telemetry_query_interval_seconds": PLAN["telemetry_interval_seconds"],
                      "telemetry_sample_count": len(phase_samples),
