@@ -39,7 +39,9 @@ COMPILED_SOURCES = (
     run.HERE / "grouped_kernel.py", run.HERE / "shuffle_kernel.py",
     run.HERE / "small_rows_kernel.py", run.HERE / "small_rows_run.py",
     run.HERE / "run.py", run.HERE / "wheel.py",
-    run.ROOT / "lab.py", run.ROOT / "residual_plan.py",
+    run.HERE / "two_kernel.py",
+    run.ROOT / "lab.py", run.ROOT / "gemm_plan.py",
+    run.ROOT / "materialized_plan.py", run.ROOT / "residual_plan.py",
 )
 SOURCES = tuple(sorted(set(
     (*base.SOURCES, *(str(path.relative_to(run.ROOT)) for path in COMPILED_SOURCES))
