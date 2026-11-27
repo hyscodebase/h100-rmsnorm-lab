@@ -1,0 +1,15 @@
+{
+  "source_freeze_revision": "0a7efc0137227452b8a3ebee5b25b7530e64fc4d",
+  "source_sha256": {
+    "kernels.py": "b265c4d3164ff65c1d6ecf09d611b793ecb2cfb3e10d3ac7080e8c5279018df5",
+    "experiments/throughput-neighborhood/run.py": "e9bfef145fec2aa64595ed8bf6b2f5c3a25bb3dd96a4d2610e8e78d37143722f",
+    "experiments/throughput-neighborhood/PLAN.md": "7fe07f05d2d53b62f9eb8b89bb310ad6355cbfc0e71a5f66475da69f84034260",
+    "plans/throughput-neighborhood.json": "31e652e13bf6c3dcdf76df262e2445804734dbb1f50d3c7a919ac63e3be47bdc",
+    "experiments/throughput-neighborhood/step.py": "b13b63348e1168e4a37a0993903eeda4cc8ffd271c2b00169eae274df7c6bc1a",
+    "experiments/throughput-neighborhood/ssh_runner.sh": "d1d0d548d50b164c803a628a1dfd81a50a8a80a464cfc2eb0e26ec4125aa165a",
+    "experiments/throughput-neighborhood/summarize.py": "6f432711fa5af87951fe49541e3e634c357217d35bbeaf24cac33a35ecf0b57b"
+  },
+  "telemetry_tool_sha256": "c8f4c98ee7a6645a28f934535cbf9a8c4b3f8dbb9e409c137da4878143d35159",
+  "research_assistant_model": "GPT-6 Luna (delegated runtime)",
+  "frozen_utc": "2026-11-27T04:18:40.052744+00:00"
+}

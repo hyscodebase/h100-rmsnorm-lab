@@ -1,0 +1,28 @@
+{
+  "unit": "s49-w4104",
+  "seed": 49,
+  "width": 4104,
+  "source_freeze_revision": "0a7efc0137227452b8a3ebee5b25b7530e64fc4d",
+  "attempt_id": "ba2c568b08f44576b5269cf1a40ea81e",
+  "source_sha256": {
+    "kernels.py": "b265c4d3164ff65c1d6ecf09d611b793ecb2cfb3e10d3ac7080e8c5279018df5",
+    "experiments/throughput-neighborhood/run.py": "e9bfef145fec2aa64595ed8bf6b2f5c3a25bb3dd96a4d2610e8e78d37143722f",
+    "experiments/throughput-neighborhood/PLAN.md": "7fe07f05d2d53b62f9eb8b89bb310ad6355cbfc0e71a5f66475da69f84034260",
+    "plans/throughput-neighborhood.json": "31e652e13bf6c3dcdf76df262e2445804734dbb1f50d3c7a919ac63e3be47bdc",
+    "experiments/throughput-neighborhood/step.py": "b13b63348e1168e4a37a0993903eeda4cc8ffd271c2b00169eae274df7c6bc1a",
+    "experiments/throughput-neighborhood/ssh_runner.sh": "d1d0d548d50b164c803a628a1dfd81a50a8a80a464cfc2eb0e26ec4125aa165a",
+    "experiments/throughput-neighborhood/summarize.py": "6f432711fa5af87951fe49541e3e634c357217d35bbeaf24cac33a35ecf0b57b"
+  },
+  "started_utc": "2026-11-27T04:28:47.618106+00:00",
+  "outcome": "checkpoint_saved",
+  "telemetry": [
+    {
+      "path": "results/throughput-neighborhood/raw/telemetry/s49-w4104-ba2c568b08f44576b5269cf1a40ea81e-00.jsonl",
+      "sha256": "7d734956e3ec53181fda2928e6059ab3a8ecea5e8992f80d96a5b6560ff5b123",
+      "samples": 10
+    }
+  ],
+  "telemetry_samples": 10,
+  "finished_utc": "2026-11-27T04:29:03.747264+00:00",
+  "elapsed_s": 16.12889095908031
+}
