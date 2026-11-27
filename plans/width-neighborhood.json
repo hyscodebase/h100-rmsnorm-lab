@@ -1,0 +1,17 @@
+{
+  "id": "width-neighborhood-4104",
+  "issue": 60,
+  "rows": 1024,
+  "widths": [4103, 4104, 4105, 4112],
+  "seeds": [44, 45, 46],
+  "candidate": "triton_4w_2r",
+  "references": ["fastest_of_triton_4w", "triton_8w", "torch_compile"],
+  "rounds": 21,
+  "ops_per_graph": 32,
+  "eps": 0.000001,
+  "numerical_gate": {"rtol": 0.005, "atol": 0.000001},
+  "benchmark_crosscheck": {"rtol": 0.016, "atol": 0.00001},
+  "cache_policy": "same input addresses, no explicit L2 flush",
+  "threshold_percent": 5.0,
+  "decision": "recommend width 4104 only if candidate is at least 5% faster than fastest one-row Triton and torch_compile in all three seeds"
+}

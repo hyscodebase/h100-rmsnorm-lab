@@ -40,7 +40,8 @@
 | NVML 표본 시각으로 에너지 작업 구간 검증 | 완료 | 시작 조회 지연이 있었던 세 구간의 표본 경계가 8ms 이내였다. 두 순서가 모두 유효한 시드에서 행당 에너지는 1.360~1.779% 줄었다. 한 시드만 1.5% 기준을 넘었고, 시드 202는 한 쌍만 채택됐다. [실측과 자원 기록](experiments/rmsnorm-residual/vllm/TIMESTAMPED_NVML_ENERGY_512_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/55) |
 | 고정 작업량을 8배 늘려 에너지 경계 오차 평가 | 완료 | 세 독립 시드에서 두 BF16 출력이 일치했고 여섯 비교쌍이 유효했다. 행당 에너지는 관측값 기준 1.180~1.599% 줄었다. 1,000W 가정의 절감률 하한이 1.5%를 넘긴 시드는 207 하나였다. [보고서와 체크포인트](experiments/rmsnorm-residual/vllm/LONG_WINDOW_ENERGY_512_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/57) |
 | 512행 BF16 융합 커널의 입력 로드에서 L1 우회 | 완료 | 세 독립 시드에서 `.cg` 처리량 이득은 0.000779~0.007549%로 5% 채택 기준에 못 미쳤다. 두 출력은 비트 단위로 일치했고 H100 자원 표본 133건을 보관했다. 8워프 기준선을 유지한다. [최종 보고서와 원시 기록](experiments/rmsnorm-residual/vllm/input-load-cache-512-results/REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/59) |
-| RMSNorm 4104 인접 너비 재검증 | 다음 가설 | 4103·4104·4105와 4112에서 새 시드 44–46으로 2행·4워프 권장 설정이 유효한 범위를 확인한다. [기존 너비 스윕](results/width-sweep/REPORT.md) · [측정 이슈](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/60) |
+| RMSNorm 4104 인접 너비 재검증 | 완료 | 4104는 두 기준보다 5.33~5.56% 빨라 새 세 시드에서 권고를 재확인했다. 4103·4105도 각각 세 시드에서 기준을 넘었지만 기본 권고를 넓히지 않았고, 4112는 1행 대비 4.83·4.83·5.04%여서 세 시드 기준을 통과하지 못했다. 두 수치 게이트가 12개 checkpoint에서 모두 통과했다. [보고서·원시 기록](results/width-neighborhood/REPORT.md) · [PR #61](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/61) |
+| 처리량 크기에서 RMSNorm 행 타일 검증 | 다음 가설 | 32,768행과 폭 4103·4104·4105·4112에서 새 시드 47–49로 2행·4워프의 이득을 확인한다. 401회 graph 반복으로 자원 표본을 늘리고 최악 4.02GiB 그래프 출력 메모리를 사전 계산·가드한다. [등록 이슈 #62](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/62) |
 
 ## 다음 가설을 고르는 규칙
 

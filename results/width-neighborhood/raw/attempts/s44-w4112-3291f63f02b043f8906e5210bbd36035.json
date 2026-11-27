@@ -1,0 +1,17 @@
+{
+  "unit": "s44-w4112",
+  "seed": 44,
+  "width": 4112,
+  "code_revision": "d314d5ee2c0faaca8b26d868ef14cd1dc8a0d177",
+  "source_sha256": {
+    "kernels.py": "b265c4d3164ff65c1d6ecf09d611b793ecb2cfb3e10d3ac7080e8c5279018df5",
+    "experiments/width-neighborhood/run.py": "8227b4296fd998516a3a9f0f7d1a47adf56dd21dce970164b8d582e13d77e500",
+    "experiments/width-neighborhood/PLAN.md": "31c5fbd75cd7ababa681da01d4df4af0df20ba8917f5fb41d5a3877950e41e17",
+    "plans/width-neighborhood.json": "e6b2935b1488193a7c04a14d4381117633847fb36cc05587845c15ea6e0fd216"
+  },
+  "started_utc": "2026-11-27T03:33:57.385200+00:00",
+  "outcome": "checkpoint_saved",
+  "telemetry_samples": 7,
+  "finished_utc": "2026-11-27T03:34:08.717097+00:00",
+  "elapsed_s": 11.331421249895357
+}
