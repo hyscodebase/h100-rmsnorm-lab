@@ -296,10 +296,10 @@ def run_checkpoint(seed, width):
                                   "driver": driver_version(), "cuda_runtime": torch.version.cuda,
                                   "torch": str(torch.__version__), "triton": triton.__version__,
                                   "python": platform.python_version()}
-        free_before, total = torch.cuda.mem_get_info(device)
         record["memory"]["before_allocations"] = memory_snapshot(device)
-        if int(free_before) < PLAN["free_memory_guard_bytes"]:
-            raise GateFailure(f"Free-memory floor failed before allocations: {int(free_before)} bytes.")
+        free_before = record["memory"]["before_allocations"]["free_bytes"]
+        if free_before < PLAN["free_memory_guard_bytes"]:
+            raise GateFailure(f"Free-memory floor failed before allocations: {free_before} bytes.")
 
         current_stage = "persistent_allocation"
         generator = torch.Generator(device=device).manual_seed(seed ^ width)
@@ -309,9 +309,9 @@ def run_checkpoint(seed, width):
         outputs = {name: torch.empty_like(x) for name in BACKENDS}
         torch.cuda.synchronize(device)
         record["memory"]["after_persistent_allocation"] = memory_snapshot(device)
-        free_after, _ = torch.cuda.mem_get_info(device)
-        if int(free_after) < PLAN["free_memory_guard_bytes"]:
-            raise GateFailure(f"Free-memory floor failed after persistent allocations: {int(free_after)} bytes.")
+        free_after = record["memory"]["after_persistent_allocation"]["free_bytes"]
+        if free_after < PLAN["free_memory_guard_bytes"]:
+            raise GateFailure(f"Free-memory floor failed after persistent allocations: {free_after} bytes.")
         record["input_sha256"] = sha256_tensor(x)
         record["weight_sha256"] = sha256_tensor(weight)
         output_ptrs = {name: int(out.data_ptr()) for name, out in outputs.items()}

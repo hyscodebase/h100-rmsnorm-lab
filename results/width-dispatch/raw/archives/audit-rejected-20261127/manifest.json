@@ -1,0 +1,22 @@
+{
+  "status": "audit-rejected-not-analysis-eligible",
+  "created_local_date": "2026-11-27",
+  "reason": "partial evidence audit implementation defect; do not use in final analysis",
+  "files": [
+    {
+      "path": "source-pin.json",
+      "sha256": "9851c4a0d888249143215201a2029759424f053ff6247266c10bc8c2ee31c0c1",
+      "bytes": 1236
+    },
+    {
+      "path": "checkpoints/s53-w4102.json",
+      "sha256": "88ab53503ba2edc2db84da7bd3704c8296a20bdd64b776b612edb38939da9c36",
+      "bytes": 522762
+    },
+    {
+      "path": "attempts/s53-w4102-cbdaaae914c94b4890f01231937572bb.json",
+      "sha256": "46ccdd742b1b2216b098d46bf20691e369bd3f07b353cf75832e8b7d2aedb4b2",
+      "bytes": 1602
+    }
+  ]
+}

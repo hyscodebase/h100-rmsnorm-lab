@@ -183,7 +183,8 @@ def validate_saved_state(revision, source_digests, saved_records):
 
     for unit, attempts in receipts_by_unit.items():
         ordered = sorted(attempts, key=lambda item: item.get("started_utc", ""))
-        if len(ordered) > PLAN["max_attempts_per_checkpoint"]:
+        submitted = [item for item in ordered if item.get("outcome") != "paused_before_submit"]
+        if len(submitted) > PLAN["max_attempts_per_checkpoint"]:
             raise SystemExit(f"Attempt limit exceeded for {unit}.")
         outcomes = [item.get("outcome") for item in ordered]
         if "gate_failed" in outcomes and outcomes[-1] != "gate_failed":
@@ -300,6 +301,7 @@ def run_one(lock):
     saved_records = read_saved_checkpoints()
     reconcile_dangling_attempts(saved_records)
     validate_saved_state(revision, source_digests, saved_records)
+    refresh_partial_audit()
     failed_checkpoints = sorted(unit for unit, item in saved_records.items()
                                 if item.get("status") != "complete")
     if failed_checkpoints:
@@ -321,7 +323,9 @@ def run_one(lock):
             raise SystemExit(f"Cannot inspect prior attempt receipt {path.name}; stop before submission.") from error
     receipts.sort(key=lambda item: item.get("started_utc", ""))
     standard_limit = PLAN["standard_max_attempts_per_checkpoint"]
-    if len(receipts) >= standard_limit:
+    submitted_attempts = [item for item in receipts
+                          if item.get("outcome") != "paused_before_submit"]
+    if len(submitted_attempts) >= standard_limit:
         raise SystemExit(f"{name} reached the three-attempt limit; inspect the saved receipts before manual recovery.")
     attempt_id = uuid.uuid4().hex
     attempt_path = ATTEMPTS / f"{name}-{attempt_id}.json"
@@ -341,7 +345,7 @@ def run_one(lock):
     try:
         output = subprocess.check_output(
             command, cwd=ROOT, env={**os.environ, "BENCH_REVISION": revision},
-            pass_fds=(lock.fileno(),), timeout=PLAN["remote_timeout_seconds"] + 60)
+            pass_fds=(lock.fileno(),), timeout=PLAN["remote_total_timeout_seconds"] + 10)
         record = redact_remote_value(json.loads(output))
         if not isinstance(record, dict):
             raise ValueError("Remote checkpoint output is not a JSON object.")
@@ -373,11 +377,23 @@ def run_one(lock):
         if attempt_path.exists():
             latest = json.loads(attempt_path.read_text())
             if latest.get("outcome") == "started":
-                latest.update(outcome="transport_or_parse_failed", error_type=type(error).__name__,
-                              finished_utc=utc_now(), elapsed_seconds=time.monotonic() - started)
-                if isinstance(error, subprocess.CalledProcessError):
-                    latest["exit_code"] = error.returncode
-                atomic_json(attempt_path, latest)
+                checkpoint_path = CHECKPOINTS / f"{name}.json"
+                published = False
+                if checkpoint_path.is_file():
+                    try:
+                        saved = json.loads(checkpoint_path.read_text())
+                        published = saved.get("attempt_id") == attempt_id
+                    except (OSError, json.JSONDecodeError):
+                        published = False
+                if published:
+                    latest["checkpoint_published_before_interruption"] = True
+                    atomic_json(attempt_path, latest)
+                else:
+                    latest.update(outcome="transport_or_parse_failed", error_type=type(error).__name__,
+                                  finished_utc=utc_now(), elapsed_seconds=time.monotonic() - started)
+                    if isinstance(error, subprocess.CalledProcessError):
+                        latest["exit_code"] = error.returncode
+                    atomic_json(attempt_path, latest)
         raise
 
 

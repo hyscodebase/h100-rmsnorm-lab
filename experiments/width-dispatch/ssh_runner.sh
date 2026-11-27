@@ -8,6 +8,8 @@ revision=$(printenv BENCH_REVISION || true)
 [[ "$revision" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]] || exit 2
 host=$(git config --local --get rmsnorm.host)
 setup=$(git config --local --get rmsnorm.setup)
+remote_total_timeout=$(python3 -c 'import json; print(json.load(open("plans/width-dispatch.json"))["remote_total_timeout_seconds"])')
+[[ "$remote_total_timeout" =~ ^[0-9]+$ ]] || exit 2
 files=(kernels.py experiments/width-dispatch/run.py experiments/width-dispatch/telemetry.py experiments/width-dispatch/PLAN.md plans/width-dispatch.json)
 git diff --quiet "$revision" -- "${files[@]}" || exit 2
 remote=$(cat <<'REMOTE'
@@ -54,6 +56,8 @@ candidate=""
 cat "$record"
 REMOTE
 )
+printf -v wrapped_remote 'timeout -k 5s %ss bash -c %q' "$remote_total_timeout" "$remote"
+remote=$wrapped_remote
 COPYFILE_DISABLE=1 tar --format=ustar -cf - "${files[@]}" |
     ssh -T -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=12 \
         -o ServerAliveInterval=10 -o ServerAliveCountMax=3 "$host" "$remote"

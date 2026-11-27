@@ -105,6 +105,9 @@ def plan_audit():
          and p["manual_transport_retry_unit"] is None
          and p["manual_telemetry_retry_unit"] is None,
          "Three-attempt stop policy changed.")
+    need(p["remote_timeout_seconds"] == 300
+         and p["remote_total_timeout_seconds"] == 350,
+         "Benchmark or complete remote-operation timeout changed.")
     need(p["free_memory_guard_bytes"] == 16 * GIB
          and p["capture_reserved_delta_ceiling_bytes"] == 8 * GIB,
          "Memory guard differs from preregistered threshold.")
@@ -148,7 +151,10 @@ def audit_correctness(record, plan, allow_partial_sustained=False):
     need(len(fixtures) == len(expected_fixture_rows)
          and actual_fixture_rows == expected_fixture_rows,
          "Fixture correctness coverage is incomplete, duplicated or unexpected.")
-    for section in ("fixtures", "timed_input", "post_latency_replay"):
+    need(all(item.get("finite") is True and item.get("strict_passed") is True
+             and item.get("crosscheck_passed") is True for item in fixtures),
+         "Fixture correctness failed or contains non-finite output.")
+    for section in ("timed_input", "post_latency_replay"):
         checks = correctness.get(section, [])
         need(isinstance(checks, list) and len(checks) == len(BACKENDS)
              and {item.get("backend") for item in checks} == set(BACKENDS),
@@ -213,7 +219,8 @@ def audit_attempts(pin, checkpoint_records, plan):
 
     for unit, items in per_unit.items():
         ordered = sorted(items, key=lambda item: item.get("started_utc", ""))
-        need(len(ordered) <= plan["max_attempts_per_checkpoint"],
+        submitted = [item for item in ordered if item.get("outcome") != "paused_before_submit"]
+        need(len(submitted) <= plan["max_attempts_per_checkpoint"],
              f"Attempt limit exceeded for checkpoint: {unit}.")
         outcomes = [item["outcome"] for item in ordered]
         if "gate_failed" in outcomes:
@@ -294,6 +301,17 @@ def telemetry_summary(samples, phase, plan):
                   and len(times) == len(good)
                   and max_gap is not None
                   and max_gap <= plan["maximum_active_telemetry_gap_seconds"])
+    device_mapping_verified = (phase.get("telemetry_device_verified") is True
+                               and bool(phase.get("telemetry_device_mapping")))
+    sampler_error_free = (phase.get("telemetry_start_error") is None
+                          and phase.get("telemetry_reader_error") is None
+                          and all(sample.get("error") is None for sample in samples))
+    derived_gate_passed = bool(sampler_error_free and coverage_pass and query_pass
+                               and device_mapping_verified)
+    need(phase.get("telemetry_gate_passed") is derived_gate_passed,
+         "Saved telemetry gate flag does not match raw samples and sampler state.")
+    need(phase.get("activity_telemetry_eligible") is derived_gate_passed,
+         "Saved activity-telemetry eligibility does not match audited raw evidence.")
     return {"poll_rows": len(samples), "valid_rows": len(good),
             "max_query_gap_seconds": max_gap,
             "max_internal_query_gap_seconds": max(gaps) if gaps else None,
@@ -305,11 +323,9 @@ def telemetry_summary(samples, phase, plan):
             "fields": fields,
             "coverage_gate_passed": bool(coverage_pass),
             "query_gate_passed": bool(query_pass),
-            "device_mapping_verified": phase.get("telemetry_device_verified") is True
-                and bool(phase.get("telemetry_device_mapping")),
-            "eligible": bool(coverage_pass and query_pass and phase.get("telemetry_gate_passed")
-                              and phase.get("telemetry_device_verified") is True
-                              and phase.get("telemetry_device_mapping"))}
+            "device_mapping_verified": device_mapping_verified,
+            "sampler_error_free": sampler_error_free,
+            "eligible": derived_gate_passed}
 
 
 def telemetry_only_failure(record, plan):
