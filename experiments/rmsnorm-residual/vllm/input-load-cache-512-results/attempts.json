@@ -145,5 +145,27 @@
     "seed": 210,
     "started_utc": "2026-11-27T01:26:50.259112+00:00",
     "unit": "s210-p1"
+  },
+  {
+    "attempt_id": "633fe5ce9f6045d7a78dfcf367e2c421",
+    "code_revision": "4721ed8ae8602debcdaacb440d6fee7e6889117d",
+    "elapsed_s": 57.3889964169357,
+    "finished_utc": "2026-11-27T01:31:04.174674+00:00",
+    "mode": "compute",
+    "outcome": "checkpoint_saved",
+    "period": {
+      "backend": "triton_8warps_cg_inputs_out_of_place",
+      "index": 0,
+      "order": [
+        "triton_8warps_cg_inputs_out_of_place",
+        "triton_8warps_out_of_place"
+      ],
+      "order_index": 0,
+      "position": 0
+    },
+    "rows": 512,
+    "seed": 211,
+    "started_utc": "2026-11-27T01:30:06.784809+00:00",
+    "unit": "s211-p0"
   }
 ]
