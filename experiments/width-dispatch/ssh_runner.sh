@@ -15,7 +15,7 @@ git diff --quiet "$revision" -- "${files[@]}" || exit 2
 remote=$(cat <<'REMOTE'
 set -euo pipefail
 umask 077
-remote_started_monotonic_ns=$(python3 -c 'import time; print(time.monotonic_ns())')
+SECONDS=0
 work=$(mktemp -d)
 candidate=""
 tmpdir=$(printenv TMPDIR || true)
@@ -38,7 +38,7 @@ remote+=$'\n''if [ -s "$record" ]; then cat "$record"; exit 0; fi'
 remote+=$'\n''candidate=$(mktemp "$cache_dir/.width-dispatch.XXXXXX")'
 remote+=$'\n''bench_started_utc=$(python3 -c '\''from datetime import datetime, timezone; print(datetime.now(timezone.utc).isoformat())'\'')'
 remote+=$'\n''bench_started_monotonic_ns=$(python3 -c '\''import time; print(time.monotonic_ns())'\'')'
-remote+=$'\n''remote_elapsed_seconds=$(( ($(python3 -c '\''import time; print(time.monotonic_ns())'\'') - remote_started_monotonic_ns) / 1000000000 ))'
+remote+=$'\n''remote_elapsed_seconds=$SECONDS'
 printf -v line 'remote_total_timeout=%q' "$remote_total_timeout"
 remote+=$'\n'"$line"
 remote+=$'\n''remaining_seconds=$((remote_total_timeout - remote_elapsed_seconds))'
