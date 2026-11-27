@@ -1412,5 +1412,5 @@
     "rule": "all registered odd widths must be at least 5.0% faster than fastest one-row Triton and torch_compile in every seed, and no registered even width may qualify",
     "reason": "awaiting all registered checkpoints"
   },
-  "generated_utc": "2026-11-27T14:57:10.998730+00:00"
+  "generated_utc": "2026-11-27T14:59:20.196466+00:00"
 }

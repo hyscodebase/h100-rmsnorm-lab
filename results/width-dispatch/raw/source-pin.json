@@ -16,9 +16,16 @@
   },
   "campaign_id": "1738ad44167841cd9baf700b13199a72",
   "generated_utc": "2026-11-27T14:54:01.310218+00:00",
-  "h100_execution_scope": "pilot",
+  "h100_execution_scope": "full_matrix",
   "h100_execution_authorized": true,
   "frozen_plan_only": false,
   "predecessor_evidence_commit": "88b3930b4f0796a875e872e1cd4a965a3453541c",
-  "authorization_basis": "User authorized H100 checkpoint work during PR review. The pilot resumes seed 53 width 4107 after a pre-allocation driver query failure. Two completed units remain bound to their original source."
+  "authorization_basis": "User authorized the H100 matrix. The recovered pilot passed the partial evidence audit. Review 6090015851 at e86e267 found no blocker to the remaining registered measurements.",
+  "pilot_review": {
+    "pr": 67,
+    "review_id": 6090015851,
+    "head_commit": "e86e267cf7b677f4dd7ead8584913b48e323178c",
+    "pilot_checkpoint": "s53-w4107",
+    "blocking_findings": 0
+  }
 }
