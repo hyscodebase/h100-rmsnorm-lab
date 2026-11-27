@@ -12,18 +12,19 @@
   },
   "source_revision": "2a38f189c879105380182e70e6ca99023ae29713",
   "source_pin": "pass",
-  "saved_checkpoints": 5,
-  "successful_checkpoints": 5,
+  "saved_checkpoints": 6,
+  "successful_checkpoints": 6,
   "expected_checkpoints": 24,
   "final_complete": false,
   "receipt_audit": {
-    "receipt_count": 3,
-    "saved_checkpoint_receipts": 3,
-    "successful_checkpoint_receipts": 3,
+    "receipt_count": 4,
+    "saved_checkpoint_receipts": 4,
+    "successful_checkpoint_receipts": 4,
     "submitted_by_unit": {
       "s53-w4107": 1,
       "s53-w4108": 1,
-      "s53-w4109": 1
+      "s53-w4109": 1,
+      "s53-w4111": 1
     }
   },
   "predecessor": {
@@ -71,7 +72,8 @@
     "s53-w4106": 1,
     "s53-w4107": 2,
     "s53-w4108": 1,
-    "s53-w4109": 1
+    "s53-w4109": 1,
+    "s53-w4111": 1
   },
   "checkpoint_results": [
     {
@@ -2118,6 +2120,415 @@
       },
       "source_revision": "2a38f189c879105380182e70e6ca99023ae29713",
       "raw_path": "results/width-dispatch/raw/checkpoints/s53-w4109.json"
+    },
+    {
+      "checkpoint": "s53-w4111",
+      "seed": 53,
+      "width": 4111,
+      "status": "complete",
+      "attempt_id": "74beedd8648248e997a0d7a5c7fdda0b",
+      "producing_attempt_id": "74beedd8648248e997a0d7a5c7fdda0b",
+      "run_id": "1738ad44167841cd9baf700b13199a72",
+      "environment": {
+        "gpu": "NVIDIA H100 80GB HBM3",
+        "compute_capability": [
+          9,
+          0
+        ],
+        "total_memory_bytes": 84929216512,
+        "sm_count": 132,
+        "driver": "550.144.03",
+        "cuda_runtime": "12.8",
+        "torch": "2.7.1+cu128",
+        "triton": "3.3.1",
+        "python": "3.12.16"
+      },
+      "latency_median_us_per_op": {
+        "triton_4w_1r": 232.43199288845062,
+        "triton_8w_1r": 256.6480040550232,
+        "triton_4w_4r": 207.94400572776794,
+        "torch_compile": 289.3359959125519
+      },
+      "phases": {
+        "triton_4w_1r": {
+          "logical_input_plus_output_GB_per_s": 2333.0122779586436,
+          "event_seconds": 33.03679284667969,
+          "total_graph_blocks": 4470,
+          "total_graph_calls": 143040,
+          "window_replay_counts": [
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 119,
+            "valid_rows": 119,
+            "max_query_gap_seconds": 2.759000064,
+            "max_internal_query_gap_seconds": 2.759000064,
+            "phase_start_query_gap_seconds": 0.04027008,
+            "phase_end_query_gap_seconds": 0.018585088,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 113,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 119,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 119,
+                "coverage_fraction": 1.0,
+                "median": 89.0,
+                "peak": 89.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 119,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 119,
+                "coverage_fraction": 1.0,
+                "median": 574.92,
+                "peak": 576.41,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 119,
+                "coverage_fraction": 1.0,
+                "median": 45.0,
+                "peak": 46.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "triton_8w_1r": {
+          "logical_input_plus_output_GB_per_s": 2113.2882523163516,
+          "event_seconds": 33.04484094238281,
+          "total_graph_blocks": 4050,
+          "total_graph_calls": 129600,
+          "window_replay_counts": [
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 118,
+            "valid_rows": 118,
+            "max_query_gap_seconds": 2.278000128,
+            "max_internal_query_gap_seconds": 2.278000128,
+            "phase_start_query_gap_seconds": 0.057072896,
+            "phase_end_query_gap_seconds": 0.0328,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 107,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 118,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 118,
+                "coverage_fraction": 1.0,
+                "median": 80.0,
+                "peak": 80.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 118,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 118,
+                "coverage_fraction": 1.0,
+                "median": 568.765,
+                "peak": 569.16,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 118,
+                "coverage_fraction": 1.0,
+                "median": 47.0,
+                "peak": 47.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "triton_4w_4r": {
+          "logical_input_plus_output_GB_per_s": 2609.6756945808697,
+          "event_seconds": 33.10233020019531,
+          "total_graph_blocks": 5010,
+          "total_graph_calls": 160320,
+          "window_replay_counts": [
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 111,
+            "valid_rows": 111,
+            "max_query_gap_seconds": 2.577999872,
+            "max_internal_query_gap_seconds": 2.577999872,
+            "phase_start_query_gap_seconds": 0.041728,
+            "phase_end_query_gap_seconds": 0.02463104,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 110,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 111,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 111,
+                "coverage_fraction": 1.0,
+                "median": 99.0,
+                "peak": 99.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 111,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 111,
+                "coverage_fraction": 1.0,
+                "median": 578.66,
+                "peak": 582.17,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 111,
+                "coverage_fraction": 1.0,
+                "median": 47.0,
+                "peak": 47.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "torch_compile": {
+          "logical_input_plus_output_GB_per_s": 1874.1236170689438,
+          "event_seconds": 33.1216259765625,
+          "total_graph_blocks": 3600,
+          "total_graph_calls": 115200,
+          "window_replay_counts": [
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 117,
+            "valid_rows": 117,
+            "max_query_gap_seconds": 2.760999936,
+            "max_internal_query_gap_seconds": 2.760999936,
+            "phase_start_query_gap_seconds": 0.05856896,
+            "phase_end_query_gap_seconds": 0.047097088,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 109,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 71.0,
+                "peak": 71.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 696.35,
+                "peak": 699.41,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 52.0,
+                "peak": 54.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        }
+      },
+      "source_revision": "2a38f189c879105380182e70e6ca99023ae29713",
+      "raw_path": "results/width-dispatch/raw/checkpoints/s53-w4111.json"
     }
   ],
   "checkpoint_comparisons": [
@@ -2200,6 +2611,22 @@
         "torch_compile": 39.41999487358616
       },
       "qualifies": true
+    },
+    {
+      "seed": 53,
+      "width": 4111,
+      "rates_GB_per_s": {
+        "triton_4w_1r": 2333.0122779586436,
+        "triton_8w_1r": 2113.2882523163516,
+        "triton_4w_4r": 2609.6756945808697,
+        "torch_compile": 1874.1236170689438
+      },
+      "fastest_one_row_backend": "triton_4w_1r",
+      "gain_percent": {
+        "fastest_one_row": 11.858635260346894,
+        "torch_compile": 39.24778871642953
+      },
+      "qualifies": true
     }
   ],
   "per_width_across_seeds": {
@@ -2267,6 +2694,19 @@
       "median_gain_percent_vs_torch_compile": 39.41999487358616,
       "qualifying_seeds": 1,
       "all_registered_seeds_qualify": false
+    },
+    "4111": {
+      "seed_count": 1,
+      "median_rate_GB_per_s": {
+        "triton_4w_1r": 2333.0122779586436,
+        "triton_8w_1r": 2113.2882523163516,
+        "triton_4w_4r": 2609.6756945808697,
+        "torch_compile": 1874.1236170689438
+      },
+      "median_gain_percent_vs_fastest_one_row": 11.858635260346894,
+      "median_gain_percent_vs_torch_compile": 39.24778871642953,
+      "qualifying_seeds": 1,
+      "all_registered_seeds_qualify": false
     }
   },
   "execution_environment": {
@@ -2292,5 +2732,5 @@
     "rule": "all registered odd widths must be at least 5.0% faster than fastest one-row Triton and torch_compile in every seed, and no registered even width may qualify",
     "reason": "awaiting all registered checkpoints"
   },
-  "generated_utc": "2026-11-27T15:06:39.126373+00:00"
+  "generated_utc": "2026-11-27T15:09:24.263622+00:00"
 }
