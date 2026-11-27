@@ -13,5 +13,5 @@
   },
   "research_assistant_model": "GPT-6 Luna",
   "frozen_plan_only": true,
-  "h100_execution_authorized": false
+  "h100_execution_authorized": true
 }
