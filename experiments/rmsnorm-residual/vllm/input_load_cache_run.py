@@ -153,7 +153,7 @@ def compile_kernel(torch, implementation):
     residual, weight = torch.zeros_like(x), torch.ones_like(x[0])
     x_out, residual_out = torch.empty_like(x), torch.empty_like(x)
     compiled = implementation(x, residual, weight, x_out, residual_out)
-    code = grouped.launch_metadata(compiled, ttgir=compiled.src.src)
+    code = grouped.launch_metadata(compiled)
     code.update(
         binary_sha256=hashlib.sha256(compiled.asm["cubin"]).hexdigest(),
         spills=compiled.n_spills,
