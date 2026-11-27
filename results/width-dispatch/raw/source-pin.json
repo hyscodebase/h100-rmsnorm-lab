@@ -15,7 +15,14 @@
   "research_assistant_model": "Codex GPT-6; GPT-6 Luna requested for independent protocol review, runtime unverified",
   "frozen_plan_only": false,
   "h100_execution_authorized": true,
-  "h100_execution_scope": "pilot",
-  "authorization_basis": "User requested aggressive H100 utilization and overlapping PR review with the next GPU experiment; the current reviewed source pin permits one pilot checkpoint while review is recorded.",
+  "h100_execution_scope": "full_matrix",
+  "authorization_basis": "User requested aggressive H100 utilization and overlapping PR review. PR #67 review 6089320605 found no blocking code issue; pilot checkpoint s53-w4102 passed compute/correctness audit, so this reviewed source pin is promoted to the preregistered 24-checkpoint matrix.",
+  "pilot_review": {
+    "pr": 67,
+    "review_id": 6089320605,
+    "head_commit": "a4bb98aaa8b5d1a9e87fb85f8b011ec8392daff3",
+    "pilot_checkpoint": "s53-w4102",
+    "blocking_findings": 0
+  },
   "generated_utc": "2026-11-27T13:48:00.961077+00:00"
 }
