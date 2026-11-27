@@ -212,14 +212,18 @@ def audit_attempts(pin, checkpoint_records, plan):
                 manifest_path = archive_dir / "manifest.json"
                 archived_cp = archive_dir / "checkpoint.json"
                 archived_attempt = archive_dir / "attempt.json"
+                original_attempt_path = ATTEMPTS / f"{unit}-{fourth['attempt_id']}.json"
                 need(manifest_path.is_file() and archived_cp.is_file() and archived_attempt.is_file(),
                      f"Telemetry-only failure archive is incomplete: {unit}.")
+                need(original_attempt_path.is_file(), f"Original fourth-attempt receipt is missing: {unit}.")
                 manifest_bytes = manifest_path.read_bytes()
                 manifest = json.loads(manifest_bytes)
                 checkpoint_bytes = archived_cp.read_bytes()
                 attempt_bytes = archived_attempt.read_bytes()
+                original_attempt_bytes = original_attempt_path.read_bytes()
                 checkpoint_sha = hashlib.sha256(checkpoint_bytes).hexdigest()
                 attempt_sha = hashlib.sha256(attempt_bytes).hexdigest()
+                original_attempt_sha = hashlib.sha256(original_attempt_bytes).hexdigest()
                 archived_record = json.loads(checkpoint_bytes)
                 archived_receipt = json.loads(attempt_bytes)
                 need(manifest.get("unit") == unit
@@ -230,6 +234,8 @@ def audit_attempts(pin, checkpoint_records, plan):
                      and manifest.get("gate_failure_classification") == "telemetry_only"
                      and manifest.get("original_checkpoint_sha256") == checkpoint_sha
                      and manifest.get("original_attempt_receipt_sha256") == attempt_sha
+                     and attempt_sha == original_attempt_sha
+                     and fourth.get("checkpoint_sha256") == checkpoint_sha
                      and archived_receipt.get("attempt_id") == fourth.get("attempt_id")
                      and archived_receipt.get("checkpoint_sha256") == checkpoint_sha
                      and archived_receipt.get("outcome") == "gate_failed"
