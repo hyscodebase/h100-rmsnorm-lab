@@ -1,0 +1,2736 @@
+{
+  "plan": "pass",
+  "resource_estimate": {
+    "persistent_live_bytes": 1888223232,
+    "persistent_live_gib": 1.758544921875,
+    "one_output_bytes": 269746176,
+    "latency_graph_logical_bytes": 2157969408,
+    "sustained_block_logical_bytes": 17263755264,
+    "latency_intervals_per_checkpoint": 1604,
+    "latency_graph_calls_per_checkpoint": 6416,
+    "sustained_target_seconds_total": 3168.0
+  },
+  "source_revision": "2a38f189c879105380182e70e6ca99023ae29713",
+  "source_pin": "pass",
+  "saved_checkpoints": 6,
+  "successful_checkpoints": 6,
+  "expected_checkpoints": 24,
+  "final_complete": false,
+  "receipt_audit": {
+    "receipt_count": 4,
+    "saved_checkpoint_receipts": 4,
+    "successful_checkpoint_receipts": 4,
+    "submitted_by_unit": {
+      "s53-w4107": 1,
+      "s53-w4108": 1,
+      "s53-w4109": 1,
+      "s53-w4111": 1
+    }
+  },
+  "predecessor": {
+    "evidence_commit": "88b3930b4f0796a875e872e1cd4a965a3453541c",
+    "source_revision": "d42481aef66b4be3f7bd2cdd71b93778274a2875",
+    "run_id": "afe1dc1c33e34210ae6b5c5ca8bc4620",
+    "carried_units": [
+      "s53-w4102",
+      "s53-w4106"
+    ],
+    "archived_failure": {
+      "checkpoint": "s53-w4107",
+      "seed": 53,
+      "width": 4107,
+      "status": "gate_failed",
+      "attempt_id": "503cda281c6f42aea47d49ad9fa85d8c",
+      "producing_attempt_id": "503cda281c6f42aea47d49ad9fa85d8c",
+      "run_id": "afe1dc1c33e34210ae6b5c5ca8bc4620",
+      "failure": {
+        "stage": "preflight",
+        "type": "GateFailure",
+        "message": "Cannot establish required NVIDIA driver provenance before measurement."
+      },
+      "failure_classification": "compute_or_execution_failure",
+      "raw_evidence_saved": true,
+      "analysis_eligible": false,
+      "telemetry_activity_eligible": false,
+      "telemetry_phases": [],
+      "source_revision": "d42481aef66b4be3f7bd2cdd71b93778274a2875",
+      "raw_path": "results/width-dispatch/raw/archives/driver-preflight-d42481a/checkpoints/s53-w4107.json"
+    },
+    "receipt_audit": {
+      "receipt_count": 5,
+      "saved_checkpoint_receipts": 3,
+      "successful_checkpoint_receipts": 2,
+      "submitted_by_unit": {
+        "s53-w4102": 3,
+        "s53-w4106": 1,
+        "s53-w4107": 1
+      }
+    }
+  },
+  "submitted_by_unit": {
+    "s53-w4102": 3,
+    "s53-w4106": 1,
+    "s53-w4107": 2,
+    "s53-w4108": 1,
+    "s53-w4109": 1,
+    "s53-w4111": 1
+  },
+  "checkpoint_results": [
+    {
+      "checkpoint": "s53-w4102",
+      "seed": 53,
+      "width": 4102,
+      "status": "complete",
+      "attempt_id": "f81dd9ec722c42b0a809d3300fd52b4b",
+      "producing_attempt_id": "f81dd9ec722c42b0a809d3300fd52b4b",
+      "run_id": "afe1dc1c33e34210ae6b5c5ca8bc4620",
+      "environment": {
+        "gpu": "NVIDIA H100 80GB HBM3",
+        "compute_capability": [
+          9,
+          0
+        ],
+        "total_memory_bytes": 84929216512,
+        "sm_count": 132,
+        "driver": "550.144.03",
+        "cuda_runtime": "12.8",
+        "torch": "2.7.1+cu128",
+        "triton": "3.3.1",
+        "python": "3.12.16"
+      },
+      "latency_median_us_per_op": {
+        "triton_4w_1r": 181.39199912548065,
+        "triton_8w_1r": 183.1440031528473,
+        "triton_4w_4r": 184.30399894714355,
+        "torch_compile": 196.96800410747528
+      },
+      "phases": {
+        "torch_compile": {
+          "logical_input_plus_output_GB_per_s": 2751.6385855278063,
+          "event_seconds": 33.01399584960937,
+          "total_graph_blocks": 5280,
+          "total_graph_calls": 168960,
+          "window_replay_counts": [
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 112,
+            "valid_rows": 112,
+            "max_query_gap_seconds": 2.537000192,
+            "max_internal_query_gap_seconds": 2.537000192,
+            "phase_start_query_gap_seconds": 0.059805952,
+            "phase_end_query_gap_seconds": 0.090265856,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 107,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 112,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 112,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 112,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 112,
+                "coverage_fraction": 1.0,
+                "median": 683.59,
+                "peak": 691.07,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 112,
+                "coverage_fraction": 1.0,
+                "median": 46.0,
+                "peak": 49.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "triton_4w_1r": {
+          "logical_input_plus_output_GB_per_s": 2986.4579230343948,
+          "event_seconds": 33.01062768554687,
+          "total_graph_blocks": 5730,
+          "total_graph_calls": 183360,
+          "window_replay_counts": [
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 116,
+            "valid_rows": 116,
+            "max_query_gap_seconds": 2.747000064,
+            "max_internal_query_gap_seconds": 2.747000064,
+            "phase_start_query_gap_seconds": 0.063259904,
+            "phase_end_query_gap_seconds": 0.076481792,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 111,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 622.26,
+                "peak": 623.33,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 48.0,
+                "peak": 48.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "triton_8w_1r": {
+          "logical_input_plus_output_GB_per_s": 2960.028445753306,
+          "event_seconds": 33.1309990234375,
+          "total_graph_blocks": 5700,
+          "total_graph_calls": 182400,
+          "window_replay_counts": [
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 110,
+            "valid_rows": 110,
+            "max_query_gap_seconds": 2.54,
+            "max_internal_query_gap_seconds": 2.54,
+            "phase_start_query_gap_seconds": 0.062732032,
+            "phase_end_query_gap_seconds": 0.023418112,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 108,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 110,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 110,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 110,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 110,
+                "coverage_fraction": 1.0,
+                "median": 645.45,
+                "peak": 647.39,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 110,
+                "coverage_fraction": 1.0,
+                "median": 49.0,
+                "peak": 50.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "triton_4w_4r": {
+          "logical_input_plus_output_GB_per_s": 2938.1543006873194,
+          "event_seconds": 33.026310913085936,
+          "total_graph_blocks": 5640,
+          "total_graph_calls": 180480,
+          "window_replay_counts": [
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 116,
+            "valid_rows": 116,
+            "max_query_gap_seconds": 2.774999808,
+            "max_internal_query_gap_seconds": 2.774999808,
+            "phase_start_query_gap_seconds": 0.070461952,
+            "phase_end_query_gap_seconds": 0.180995072,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 106,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 566.24,
+                "peak": 566.98,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 47.0,
+                "peak": 48.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        }
+      },
+      "source_revision": "d42481aef66b4be3f7bd2cdd71b93778274a2875",
+      "raw_path": "results/width-dispatch/raw/archives/driver-preflight-d42481a/checkpoints/s53-w4102.json"
+    },
+    {
+      "checkpoint": "s53-w4106",
+      "seed": 53,
+      "width": 4106,
+      "status": "complete",
+      "attempt_id": "9df56a119de64794aded0ade4dcf1c8d",
+      "producing_attempt_id": "9df56a119de64794aded0ade4dcf1c8d",
+      "run_id": "afe1dc1c33e34210ae6b5c5ca8bc4620",
+      "environment": {
+        "gpu": "NVIDIA H100 80GB HBM3",
+        "compute_capability": [
+          9,
+          0
+        ],
+        "total_memory_bytes": 84929216512,
+        "sm_count": 132,
+        "driver": "550.144.03",
+        "cuda_runtime": "12.8",
+        "torch": "2.7.1+cu128",
+        "triton": "3.3.1",
+        "python": "3.12.16"
+      },
+      "latency_median_us_per_op": {
+        "triton_4w_1r": 181.42400681972504,
+        "triton_8w_1r": 184.1599941253662,
+        "triton_4w_4r": 184.27999317646027,
+        "torch_compile": 196.80799543857574
+      },
+      "phases": {
+        "triton_8w_1r": {
+          "logical_input_plus_output_GB_per_s": 2944.2012036795113,
+          "event_seconds": 32.99061926269531,
+          "total_graph_blocks": 5640,
+          "total_graph_calls": 180480,
+          "window_replay_counts": [
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 117,
+            "valid_rows": 117,
+            "max_query_gap_seconds": 2.568999936,
+            "max_internal_query_gap_seconds": 2.568999936,
+            "phase_start_query_gap_seconds": 0.041076736,
+            "phase_end_query_gap_seconds": 0.120820992,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 114,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 644.23,
+                "peak": 647.65,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 44.0,
+                "peak": 47.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "triton_4w_4r": {
+          "logical_input_plus_output_GB_per_s": 2939.4803786106504,
+          "event_seconds": 33.04360241699219,
+          "total_graph_blocks": 5640,
+          "total_graph_calls": 180480,
+          "window_replay_counts": [
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 116,
+            "valid_rows": 116,
+            "max_query_gap_seconds": 2.738000128,
+            "max_internal_query_gap_seconds": 2.738000128,
+            "phase_start_query_gap_seconds": 0.06124416,
+            "phase_end_query_gap_seconds": 0.07365888,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 103,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 563.8050000000001,
+                "peak": 564.57,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 45.5,
+                "peak": 46.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "triton_4w_1r": {
+          "logical_input_plus_output_GB_per_s": 2985.8771182998717,
+          "event_seconds": 33.049244873046874,
+          "total_graph_blocks": 5730,
+          "total_graph_calls": 183360,
+          "window_replay_counts": [
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 81,
+            "valid_rows": 81,
+            "max_query_gap_seconds": 4.548000256,
+            "max_internal_query_gap_seconds": 4.548000256,
+            "phase_start_query_gap_seconds": 0.057853952,
+            "phase_end_query_gap_seconds": 0.047702272,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 75,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 81,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 81,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 81,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 81,
+                "coverage_fraction": 1.0,
+                "median": 630.03,
+                "peak": 631.5,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 81,
+                "coverage_fraction": 1.0,
+                "median": 49.0,
+                "peak": 49.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "torch_compile": {
+          "logical_input_plus_output_GB_per_s": 2756.2177675666635,
+          "event_seconds": 33.17873645019531,
+          "total_graph_blocks": 5310,
+          "total_graph_calls": 169920,
+          "window_replay_counts": [
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177,
+            177
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 110,
+            "valid_rows": 110,
+            "max_query_gap_seconds": 2.539000064,
+            "max_internal_query_gap_seconds": 2.539000064,
+            "phase_start_query_gap_seconds": 0.060555008,
+            "phase_end_query_gap_seconds": 0.199517952,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 107,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 110,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 110,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 110,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 110,
+                "coverage_fraction": 1.0,
+                "median": 698.655,
+                "peak": 699.81,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 110,
+                "coverage_fraction": 1.0,
+                "median": 52.0,
+                "peak": 53.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        }
+      },
+      "source_revision": "d42481aef66b4be3f7bd2cdd71b93778274a2875",
+      "raw_path": "results/width-dispatch/raw/archives/driver-preflight-d42481a/checkpoints/s53-w4106.json"
+    },
+    {
+      "checkpoint": "s53-w4107",
+      "seed": 53,
+      "width": 4107,
+      "status": "complete",
+      "attempt_id": "042f780d79d24b18bd0cf9fe3565ff79",
+      "producing_attempt_id": "042f780d79d24b18bd0cf9fe3565ff79",
+      "run_id": "1738ad44167841cd9baf700b13199a72",
+      "environment": {
+        "gpu": "NVIDIA H100 80GB HBM3",
+        "compute_capability": [
+          9,
+          0
+        ],
+        "total_memory_bytes": 84929216512,
+        "sm_count": 132,
+        "driver": "550.144.03",
+        "cuda_runtime": "12.8",
+        "torch": "2.7.1+cu128",
+        "triton": "3.3.1",
+        "python": "3.12.16"
+      },
+      "latency_median_us_per_op": {
+        "triton_4w_1r": 232.43199288845062,
+        "triton_8w_1r": 256.6240131855011,
+        "triton_4w_4r": 207.7759951353073,
+        "torch_compile": 289.359986782074
+      },
+      "phases": {
+        "triton_8w_1r": {
+          "logical_input_plus_output_GB_per_s": 2109.7202612856195,
+          "event_seconds": 33.06851989746094,
+          "total_graph_blocks": 4050,
+          "total_graph_calls": 129600,
+          "window_replay_counts": [
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 84,
+            "valid_rows": 84,
+            "max_query_gap_seconds": 2.750999808,
+            "max_internal_query_gap_seconds": 2.750999808,
+            "phase_start_query_gap_seconds": 0.039553024,
+            "phase_end_query_gap_seconds": 0.178742016,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 81,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 84,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 84,
+                "coverage_fraction": 1.0,
+                "median": 80.0,
+                "peak": 80.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 84,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 84,
+                "coverage_fraction": 1.0,
+                "median": 560.0799999999999,
+                "peak": 565.58,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 84,
+                "coverage_fraction": 1.0,
+                "median": 42.0,
+                "peak": 44.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "triton_4w_1r": {
+          "logical_input_plus_output_GB_per_s": 2331.851027279892,
+          "event_seconds": 33.021084228515626,
+          "total_graph_blocks": 4470,
+          "total_graph_calls": 143040,
+          "window_replay_counts": [
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 117,
+            "valid_rows": 117,
+            "max_query_gap_seconds": 2.006999808,
+            "max_internal_query_gap_seconds": 2.006999808,
+            "phase_start_query_gap_seconds": 0.05924608,
+            "phase_end_query_gap_seconds": 0.025647872,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 97,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 88.0,
+                "peak": 88.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 575.47,
+                "peak": 576.48,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 46.0,
+                "peak": 46.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "torch_compile": {
+          "logical_input_plus_output_GB_per_s": 1872.2846532035462,
+          "event_seconds": 33.121899169921875,
+          "total_graph_blocks": 3600,
+          "total_graph_calls": 115200,
+          "window_replay_counts": [
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 110,
+            "valid_rows": 110,
+            "max_query_gap_seconds": 2.568999936,
+            "max_internal_query_gap_seconds": 2.568999936,
+            "phase_start_query_gap_seconds": 0.03858304,
+            "phase_end_query_gap_seconds": 0.165210112,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 102,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 110,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 110,
+                "coverage_fraction": 1.0,
+                "median": 71.0,
+                "peak": 71.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 110,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 110,
+                "coverage_fraction": 1.0,
+                "median": 697.31,
+                "peak": 699.25,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 110,
+                "coverage_fraction": 1.0,
+                "median": 51.0,
+                "peak": 52.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "triton_4w_4r": {
+          "logical_input_plus_output_GB_per_s": 2610.120078246165,
+          "event_seconds": 33.064491333007815,
+          "total_graph_blocks": 5010,
+          "total_graph_calls": 160320,
+          "window_replay_counts": [
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 118,
+            "valid_rows": 118,
+            "max_query_gap_seconds": 2.276,
+            "max_internal_query_gap_seconds": 2.276,
+            "phase_start_query_gap_seconds": 0.058936064,
+            "phase_end_query_gap_seconds": 0.046468096,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 116,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 118,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 118,
+                "coverage_fraction": 1.0,
+                "median": 99.0,
+                "peak": 99.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 118,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 118,
+                "coverage_fraction": 1.0,
+                "median": 586.085,
+                "peak": 587.33,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 118,
+                "coverage_fraction": 1.0,
+                "median": 48.0,
+                "peak": 49.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        }
+      },
+      "source_revision": "2a38f189c879105380182e70e6ca99023ae29713",
+      "raw_path": "results/width-dispatch/raw/checkpoints/s53-w4107.json"
+    },
+    {
+      "checkpoint": "s53-w4108",
+      "seed": 53,
+      "width": 4108,
+      "status": "complete",
+      "attempt_id": "ce96a26a4b2a443e98771e9315ae00fc",
+      "producing_attempt_id": "ce96a26a4b2a443e98771e9315ae00fc",
+      "run_id": "1738ad44167841cd9baf700b13199a72",
+      "environment": {
+        "gpu": "NVIDIA H100 80GB HBM3",
+        "compute_capability": [
+          9,
+          0
+        ],
+        "total_memory_bytes": 84929216512,
+        "sm_count": 132,
+        "driver": "550.144.03",
+        "cuda_runtime": "12.8",
+        "torch": "2.7.1+cu128",
+        "triton": "3.3.1",
+        "python": "3.12.16"
+      },
+      "latency_median_us_per_op": {
+        "triton_4w_1r": 182.75199830532074,
+        "triton_8w_1r": 180.2240014076233,
+        "triton_4w_4r": 183.73599648475647,
+        "torch_compile": 188.60800564289093
+      },
+      "phases": {
+        "triton_8w_1r": {
+          "logical_input_plus_output_GB_per_s": 3011.235398054952,
+          "event_seconds": 33.13021057128906,
+          "total_graph_blocks": 5790,
+          "total_graph_calls": 185280,
+          "window_replay_counts": [
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193,
+            193
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 75,
+            "valid_rows": 75,
+            "max_query_gap_seconds": 2.993999872,
+            "max_internal_query_gap_seconds": 2.993999872,
+            "phase_start_query_gap_seconds": 0.060499968,
+            "phase_end_query_gap_seconds": 0.088582144,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 74,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 75,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 75,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 75,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 75,
+                "coverage_fraction": 1.0,
+                "median": 611.8,
+                "peak": 620.37,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 75,
+                "coverage_fraction": 1.0,
+                "median": 43.0,
+                "peak": 47.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "triton_4w_1r": {
+          "logical_input_plus_output_GB_per_s": 2971.115390948983,
+          "event_seconds": 33.05564807128906,
+          "total_graph_blocks": 5700,
+          "total_graph_calls": 182400,
+          "window_replay_counts": [
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 117,
+            "valid_rows": 117,
+            "max_query_gap_seconds": 2.282000128,
+            "max_internal_query_gap_seconds": 2.282000128,
+            "phase_start_query_gap_seconds": 0.06310784,
+            "phase_end_query_gap_seconds": 0.100513024,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 111,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 591.07,
+                "peak": 594.29,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 46.0,
+                "peak": 47.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "triton_4w_4r": {
+          "logical_input_plus_output_GB_per_s": 2953.1463907943075,
+          "event_seconds": 33.08174597167969,
+          "total_graph_blocks": 5670,
+          "total_graph_calls": 181440,
+          "window_replay_counts": [
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189,
+            189
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 110,
+            "valid_rows": 110,
+            "max_query_gap_seconds": 2.522000128,
+            "max_internal_query_gap_seconds": 2.522000128,
+            "phase_start_query_gap_seconds": 0.044973056,
+            "phase_end_query_gap_seconds": 0.149737728,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 108,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 110,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 110,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 110,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 110,
+                "coverage_fraction": 1.0,
+                "median": 538.215,
+                "peak": 540.53,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 110,
+                "coverage_fraction": 1.0,
+                "median": 45.0,
+                "peak": 45.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "torch_compile": {
+          "logical_input_plus_output_GB_per_s": 2880.12302094321,
+          "event_seconds": 33.02314099121094,
+          "total_graph_blocks": 5520,
+          "total_graph_calls": 176640,
+          "window_replay_counts": [
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184,
+            184
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 121,
+            "valid_rows": 121,
+            "max_query_gap_seconds": 2.274000128,
+            "max_internal_query_gap_seconds": 2.274000128,
+            "phase_start_query_gap_seconds": 0.062769152,
+            "phase_end_query_gap_seconds": 0.295375872,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 108,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 121,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 121,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 121,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 121,
+                "coverage_fraction": 1.0,
+                "median": 642.77,
+                "peak": 643.71,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 121,
+                "coverage_fraction": 1.0,
+                "median": 49.0,
+                "peak": 49.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        }
+      },
+      "source_revision": "2a38f189c879105380182e70e6ca99023ae29713",
+      "raw_path": "results/width-dispatch/raw/checkpoints/s53-w4108.json"
+    },
+    {
+      "checkpoint": "s53-w4109",
+      "seed": 53,
+      "width": 4109,
+      "status": "complete",
+      "attempt_id": "3e89594f99a54e88aec3a0f31028f36a",
+      "producing_attempt_id": "3e89594f99a54e88aec3a0f31028f36a",
+      "run_id": "1738ad44167841cd9baf700b13199a72",
+      "environment": {
+        "gpu": "NVIDIA H100 80GB HBM3",
+        "compute_capability": [
+          9,
+          0
+        ],
+        "total_memory_bytes": 84929216512,
+        "sm_count": 132,
+        "driver": "550.144.03",
+        "cuda_runtime": "12.8",
+        "torch": "2.7.1+cu128",
+        "triton": "3.3.1",
+        "python": "3.12.16"
+      },
+      "latency_median_us_per_op": {
+        "triton_4w_1r": 232.40000009536743,
+        "triton_8w_1r": 256.55999779701233,
+        "triton_4w_4r": 207.89599418640137,
+        "torch_compile": 289.2960011959076
+      },
+      "phases": {
+        "triton_8w_1r": {
+          "logical_input_plus_output_GB_per_s": 2109.330783870624,
+          "event_seconds": 33.090732299804685,
+          "total_graph_blocks": 4050,
+          "total_graph_calls": 129600,
+          "window_replay_counts": [
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 111,
+            "valid_rows": 111,
+            "max_query_gap_seconds": 2.528000256,
+            "max_internal_query_gap_seconds": 2.528000256,
+            "phase_start_query_gap_seconds": 0.055211776,
+            "phase_end_query_gap_seconds": 0.370510848,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 107,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 111,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 111,
+                "coverage_fraction": 1.0,
+                "median": 80.0,
+                "peak": 80.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 111,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 111,
+                "coverage_fraction": 1.0,
+                "median": 562.88,
+                "peak": 567.33,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 111,
+                "coverage_fraction": 1.0,
+                "median": 42.0,
+                "peak": 46.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "triton_4w_1r": {
+          "logical_input_plus_output_GB_per_s": 2330.6981463064512,
+          "event_seconds": 33.053506469726564,
+          "total_graph_blocks": 4470,
+          "total_graph_calls": 143040,
+          "window_replay_counts": [
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 83,
+            "valid_rows": 83,
+            "max_query_gap_seconds": 2.514999808,
+            "max_internal_query_gap_seconds": 2.514999808,
+            "phase_start_query_gap_seconds": 0.0571712,
+            "phase_end_query_gap_seconds": 0.33234176,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 73,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 83,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 83,
+                "coverage_fraction": 1.0,
+                "median": 88.0,
+                "peak": 88.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 83,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 83,
+                "coverage_fraction": 1.0,
+                "median": 573.18,
+                "peak": 577.52,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 83,
+                "coverage_fraction": 1.0,
+                "median": 46.0,
+                "peak": 47.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "triton_4w_4r": {
+          "logical_input_plus_output_GB_per_s": 2610.217945753272,
+          "event_seconds": 33.0793525390625,
+          "total_graph_blocks": 5010,
+          "total_graph_calls": 160320,
+          "window_replay_counts": [
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 116,
+            "valid_rows": 116,
+            "max_query_gap_seconds": 2.285750016,
+            "max_internal_query_gap_seconds": 2.004999936,
+            "phase_start_query_gap_seconds": 0.053968896,
+            "phase_end_query_gap_seconds": 2.285750016,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 114,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 99.0,
+                "peak": 99.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 578.725,
+                "peak": 580.14,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 46.0,
+                "peak": 47.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "torch_compile": {
+          "logical_input_plus_output_GB_per_s": 1872.1977060176978,
+          "event_seconds": 33.139567626953124,
+          "total_graph_blocks": 3600,
+          "total_graph_calls": 115200,
+          "window_replay_counts": [
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 128,
+            "valid_rows": 128,
+            "max_query_gap_seconds": 2.531913984,
+            "max_internal_query_gap_seconds": 0.723999744,
+            "phase_start_query_gap_seconds": 0.060381952,
+            "phase_end_query_gap_seconds": 2.531913984,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 125,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 128,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 128,
+                "coverage_fraction": 1.0,
+                "median": 71.0,
+                "peak": 71.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 128,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 128,
+                "coverage_fraction": 1.0,
+                "median": 696.645,
+                "peak": 699.76,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 128,
+                "coverage_fraction": 1.0,
+                "median": 52.0,
+                "peak": 53.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        }
+      },
+      "source_revision": "2a38f189c879105380182e70e6ca99023ae29713",
+      "raw_path": "results/width-dispatch/raw/checkpoints/s53-w4109.json"
+    },
+    {
+      "checkpoint": "s53-w4111",
+      "seed": 53,
+      "width": 4111,
+      "status": "complete",
+      "attempt_id": "74beedd8648248e997a0d7a5c7fdda0b",
+      "producing_attempt_id": "74beedd8648248e997a0d7a5c7fdda0b",
+      "run_id": "1738ad44167841cd9baf700b13199a72",
+      "environment": {
+        "gpu": "NVIDIA H100 80GB HBM3",
+        "compute_capability": [
+          9,
+          0
+        ],
+        "total_memory_bytes": 84929216512,
+        "sm_count": 132,
+        "driver": "550.144.03",
+        "cuda_runtime": "12.8",
+        "torch": "2.7.1+cu128",
+        "triton": "3.3.1",
+        "python": "3.12.16"
+      },
+      "latency_median_us_per_op": {
+        "triton_4w_1r": 232.43199288845062,
+        "triton_8w_1r": 256.6480040550232,
+        "triton_4w_4r": 207.94400572776794,
+        "torch_compile": 289.3359959125519
+      },
+      "phases": {
+        "triton_4w_1r": {
+          "logical_input_plus_output_GB_per_s": 2333.0122779586436,
+          "event_seconds": 33.03679284667969,
+          "total_graph_blocks": 4470,
+          "total_graph_calls": 143040,
+          "window_replay_counts": [
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149,
+            149
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 119,
+            "valid_rows": 119,
+            "max_query_gap_seconds": 2.759000064,
+            "max_internal_query_gap_seconds": 2.759000064,
+            "phase_start_query_gap_seconds": 0.04027008,
+            "phase_end_query_gap_seconds": 0.018585088,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 113,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 119,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 119,
+                "coverage_fraction": 1.0,
+                "median": 89.0,
+                "peak": 89.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 119,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 119,
+                "coverage_fraction": 1.0,
+                "median": 574.92,
+                "peak": 576.41,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 119,
+                "coverage_fraction": 1.0,
+                "median": 45.0,
+                "peak": 46.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "triton_8w_1r": {
+          "logical_input_plus_output_GB_per_s": 2113.2882523163516,
+          "event_seconds": 33.04484094238281,
+          "total_graph_blocks": 4050,
+          "total_graph_calls": 129600,
+          "window_replay_counts": [
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135,
+            135
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 118,
+            "valid_rows": 118,
+            "max_query_gap_seconds": 2.278000128,
+            "max_internal_query_gap_seconds": 2.278000128,
+            "phase_start_query_gap_seconds": 0.057072896,
+            "phase_end_query_gap_seconds": 0.0328,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 107,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 118,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 118,
+                "coverage_fraction": 1.0,
+                "median": 80.0,
+                "peak": 80.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 118,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 118,
+                "coverage_fraction": 1.0,
+                "median": 568.765,
+                "peak": 569.16,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 118,
+                "coverage_fraction": 1.0,
+                "median": 47.0,
+                "peak": 47.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "triton_4w_4r": {
+          "logical_input_plus_output_GB_per_s": 2609.6756945808697,
+          "event_seconds": 33.10233020019531,
+          "total_graph_blocks": 5010,
+          "total_graph_calls": 160320,
+          "window_replay_counts": [
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167,
+            167
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 111,
+            "valid_rows": 111,
+            "max_query_gap_seconds": 2.577999872,
+            "max_internal_query_gap_seconds": 2.577999872,
+            "phase_start_query_gap_seconds": 0.041728,
+            "phase_end_query_gap_seconds": 0.02463104,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 110,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 111,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 111,
+                "coverage_fraction": 1.0,
+                "median": 99.0,
+                "peak": 99.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 111,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 111,
+                "coverage_fraction": 1.0,
+                "median": 578.66,
+                "peak": 582.17,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 111,
+                "coverage_fraction": 1.0,
+                "median": 47.0,
+                "peak": 47.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "torch_compile": {
+          "logical_input_plus_output_GB_per_s": 1874.1236170689438,
+          "event_seconds": 33.1216259765625,
+          "total_graph_blocks": 3600,
+          "total_graph_calls": 115200,
+          "window_replay_counts": [
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120,
+            120
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 117,
+            "valid_rows": 117,
+            "max_query_gap_seconds": 2.760999936,
+            "max_internal_query_gap_seconds": 2.760999936,
+            "phase_start_query_gap_seconds": 0.05856896,
+            "phase_end_query_gap_seconds": 0.047097088,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": true,
+            "unique_reading_transitions": 109,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 71.0,
+                "peak": 71.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 696.35,
+                "peak": 699.41,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 52.0,
+                "peak": 54.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        }
+      },
+      "source_revision": "2a38f189c879105380182e70e6ca99023ae29713",
+      "raw_path": "results/width-dispatch/raw/checkpoints/s53-w4111.json"
+    }
+  ],
+  "checkpoint_comparisons": [
+    {
+      "seed": 53,
+      "width": 4102,
+      "rates_GB_per_s": {
+        "triton_4w_1r": 2986.4579230343948,
+        "triton_8w_1r": 2960.028445753306,
+        "triton_4w_4r": 2938.1543006873194,
+        "torch_compile": 2751.6385855278063
+      },
+      "fastest_one_row_backend": "triton_4w_1r",
+      "gain_percent": {
+        "fastest_one_row": -1.6174218285317843,
+        "torch_compile": 6.778350766720931
+      },
+      "qualifies": false
+    },
+    {
+      "seed": 53,
+      "width": 4106,
+      "rates_GB_per_s": {
+        "triton_4w_1r": 2985.8771182998717,
+        "triton_8w_1r": 2944.2012036795113,
+        "triton_4w_4r": 2939.4803786106504,
+        "torch_compile": 2756.2177675666635
+      },
+      "fastest_one_row_backend": "triton_4w_1r",
+      "gain_percent": {
+        "fastest_one_row": -1.553873044703158,
+        "torch_compile": 6.649061376807719
+      },
+      "qualifies": false
+    },
+    {
+      "seed": 53,
+      "width": 4107,
+      "rates_GB_per_s": {
+        "triton_4w_1r": 2331.851027279892,
+        "triton_8w_1r": 2109.7202612856195,
+        "triton_4w_4r": 2610.120078246165,
+        "torch_compile": 1872.2846532035462
+      },
+      "fastest_one_row_backend": "triton_4w_1r",
+      "gain_percent": {
+        "fastest_one_row": 11.93339744738644,
+        "torch_compile": 39.40829316632788
+      },
+      "qualifies": true
+    },
+    {
+      "seed": 53,
+      "width": 4108,
+      "rates_GB_per_s": {
+        "triton_4w_1r": 2971.115390948983,
+        "triton_8w_1r": 3011.235398054952,
+        "triton_4w_4r": 2953.1463907943075,
+        "torch_compile": 2880.12302094321
+      },
+      "fastest_one_row_backend": "triton_8w_1r",
+      "gain_percent": {
+        "fastest_one_row": -1.9290755979478047,
+        "torch_compile": 2.535425373155875
+      },
+      "qualifies": false
+    },
+    {
+      "seed": 53,
+      "width": 4109,
+      "rates_GB_per_s": {
+        "triton_4w_1r": 2330.6981463064512,
+        "triton_8w_1r": 2109.330783870624,
+        "triton_4w_4r": 2610.217945753272,
+        "torch_compile": 1872.1977060176978
+      },
+      "fastest_one_row_backend": "triton_4w_1r",
+      "gain_percent": {
+        "fastest_one_row": 11.992964420973461,
+        "torch_compile": 39.41999487358616
+      },
+      "qualifies": true
+    },
+    {
+      "seed": 53,
+      "width": 4111,
+      "rates_GB_per_s": {
+        "triton_4w_1r": 2333.0122779586436,
+        "triton_8w_1r": 2113.2882523163516,
+        "triton_4w_4r": 2609.6756945808697,
+        "torch_compile": 1874.1236170689438
+      },
+      "fastest_one_row_backend": "triton_4w_1r",
+      "gain_percent": {
+        "fastest_one_row": 11.858635260346894,
+        "torch_compile": 39.24778871642953
+      },
+      "qualifies": true
+    }
+  ],
+  "per_width_across_seeds": {
+    "4102": {
+      "seed_count": 1,
+      "median_rate_GB_per_s": {
+        "triton_4w_1r": 2986.4579230343948,
+        "triton_8w_1r": 2960.028445753306,
+        "triton_4w_4r": 2938.1543006873194,
+        "torch_compile": 2751.6385855278063
+      },
+      "median_gain_percent_vs_fastest_one_row": -1.6174218285317843,
+      "median_gain_percent_vs_torch_compile": 6.778350766720931,
+      "qualifying_seeds": 0,
+      "all_registered_seeds_qualify": false
+    },
+    "4106": {
+      "seed_count": 1,
+      "median_rate_GB_per_s": {
+        "triton_4w_1r": 2985.8771182998717,
+        "triton_8w_1r": 2944.2012036795113,
+        "triton_4w_4r": 2939.4803786106504,
+        "torch_compile": 2756.2177675666635
+      },
+      "median_gain_percent_vs_fastest_one_row": -1.553873044703158,
+      "median_gain_percent_vs_torch_compile": 6.649061376807719,
+      "qualifying_seeds": 0,
+      "all_registered_seeds_qualify": false
+    },
+    "4107": {
+      "seed_count": 1,
+      "median_rate_GB_per_s": {
+        "triton_4w_1r": 2331.851027279892,
+        "triton_8w_1r": 2109.7202612856195,
+        "triton_4w_4r": 2610.120078246165,
+        "torch_compile": 1872.2846532035462
+      },
+      "median_gain_percent_vs_fastest_one_row": 11.93339744738644,
+      "median_gain_percent_vs_torch_compile": 39.40829316632788,
+      "qualifying_seeds": 1,
+      "all_registered_seeds_qualify": false
+    },
+    "4108": {
+      "seed_count": 1,
+      "median_rate_GB_per_s": {
+        "triton_4w_1r": 2971.115390948983,
+        "triton_8w_1r": 3011.235398054952,
+        "triton_4w_4r": 2953.1463907943075,
+        "torch_compile": 2880.12302094321
+      },
+      "median_gain_percent_vs_fastest_one_row": -1.9290755979478047,
+      "median_gain_percent_vs_torch_compile": 2.535425373155875,
+      "qualifying_seeds": 0,
+      "all_registered_seeds_qualify": false
+    },
+    "4109": {
+      "seed_count": 1,
+      "median_rate_GB_per_s": {
+        "triton_4w_1r": 2330.6981463064512,
+        "triton_8w_1r": 2109.330783870624,
+        "triton_4w_4r": 2610.217945753272,
+        "torch_compile": 1872.1977060176978
+      },
+      "median_gain_percent_vs_fastest_one_row": 11.992964420973461,
+      "median_gain_percent_vs_torch_compile": 39.41999487358616,
+      "qualifying_seeds": 1,
+      "all_registered_seeds_qualify": false
+    },
+    "4111": {
+      "seed_count": 1,
+      "median_rate_GB_per_s": {
+        "triton_4w_1r": 2333.0122779586436,
+        "triton_8w_1r": 2113.2882523163516,
+        "triton_4w_4r": 2609.6756945808697,
+        "torch_compile": 1874.1236170689438
+      },
+      "median_gain_percent_vs_fastest_one_row": 11.858635260346894,
+      "median_gain_percent_vs_torch_compile": 39.24778871642953,
+      "qualifying_seeds": 1,
+      "all_registered_seeds_qualify": false
+    }
+  },
+  "execution_environment": {
+    "gpu": "NVIDIA H100 80GB HBM3",
+    "compute_capability": [
+      9,
+      0
+    ],
+    "total_memory_bytes": 84929216512,
+    "sm_count": 132,
+    "driver": "550.144.03",
+    "cuda_runtime": "12.8",
+    "torch": "2.7.1+cu128",
+    "triton": "3.3.1",
+    "python": "3.12.16"
+  },
+  "bounded_dispatch_screen_decision": {
+    "eligible": false,
+    "supports_registered_odd_even_split": false,
+    "all_registered_odd_widths_qualify": false,
+    "any_registered_even_width_qualifies": false,
+    "scope": "only the eight preregistered widths at 32768 BF16 rows",
+    "rule": "all registered odd widths must be at least 5.0% faster than fastest one-row Triton and torch_compile in every seed, and no registered even width may qualify",
+    "reason": "awaiting all registered checkpoints"
+  },
+  "generated_utc": "2026-11-27T15:09:24.263622+00:00"
+}

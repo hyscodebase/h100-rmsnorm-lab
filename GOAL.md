@@ -42,7 +42,8 @@
 | 512행 BF16 융합 커널의 입력 로드에서 L1 우회 | 완료 | 세 독립 시드에서 `.cg` 처리량 이득은 0.000779~0.007549%로 5% 채택 기준에 못 미쳤다. 두 출력은 비트 단위로 일치했고 H100 자원 표본 133건을 보관했다. 8워프 기준선을 유지한다. [최종 보고서와 원시 기록](experiments/rmsnorm-residual/vllm/input-load-cache-512-results/REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/59) |
 | RMSNorm 4104 인접 너비 재검증 | 완료 | 4104는 두 기준보다 5.33~5.56% 빨라 새 세 시드에서 권고를 재확인했다. 4103·4105도 각각 세 시드에서 기준을 넘었지만 기본 권고를 넓히지 않았고, 4112는 1행 대비 4.83·4.83·5.04%여서 세 시드 기준을 통과하지 못했다. 두 수치 게이트가 12개 checkpoint에서 모두 통과했다. [보고서·원시 기록](results/width-neighborhood/REPORT.md) · [PR #61](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/61) |
 | 처리량 크기에서 RMSNorm 행 타일 검증 | 완료 | 32,768행의 폭 네 개와 시드 47–49, 총 12 checkpoint에서 양쪽 수치 게이트·메모리 검사가 통과했다. 2행·4워프 후보는 가장 빠른 1행 기준보다 폭 4103에서 2.986–3.083%, 4105에서 1.866–1.895% 빨랐고, 4104·4112에서는 1.156–1.220% 느렸다. 모두 사전 등록한 5% 채택선을 넘지 못했다. [보고서와 원시 기록](results/throughput-neighborhood/REPORT.md) · [PR #63](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/63) |
-| 처리량 크기에서 4행 RMSNorm 타일 조사 | 다음 가설 | 32,768행의 인접 폭에서 4행·4워프가 가장 빠른 1행 기준보다 세 시드 모두 5% 이상 빠른지 확인한다. #62에서 2행 타일 이득이 사라진 형상에 새 시드와 동일한 정확도·메모리 가드를 적용한다. [초안 이슈 #64](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/64) — 코드·계획 고정 전 검토 대기. |
+| 처리량 크기에서 4행 RMSNorm 타일 조사 | 완료 | 32,768행, 폭 4103·4105에서 4행 후보가 세 시드 모두 5% 기준을 통과했다. 폭 4104·4112에서는 약 1.1% 느려 전체 기본 설정 변경은 거부했다. [전체 12 checkpoint 실측·자원 감사](results/sustained-throughput/PROGRESS.md) · [PR #65](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/65) |
+| 32,768행 인접 폭의 제한된 홀수·짝수 타일 선택 조사 | 일시정지 · 6/24 | 시드 53에서 폭 4,107·4,109·4,111의 4행 처리량은 가장 빠른 1행보다 11.86~11.99%, torch.compile보다 39.25~39.42% 높았다. 폭 4,102·4,106·4,108에서는 가장 빠른 1행보다 1.55~1.93% 낮았다. 폭별 채택에는 세 시드 모두에서 두 기준을 5% 이상 앞서야 한다. 2026-11-28 00:09 KST의 측정까지 원자료·영수증을 저장했다. 재개 지점은 시드 53, 폭 4,113이며 18개 조합이 남았다. [측정·자원 기록](results/width-dispatch/PROGRESS.md) · [누적 PDF](output/pdf/H100_RMSNorm_연구누적기록.pdf) · [원자료 감사](results/width-dispatch/raw/partial-audit.json) · [복구 방법](experiments/width-dispatch/RESUME.md) · [PR #67](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/67) |
 
 ## 다음 가설을 고르는 규칙
 
@@ -62,7 +63,11 @@
 
 PR 리뷰에서는 정확도 검사 범위, 같은 실행에서 측정한 기준선, 단위와 통계값, 원시 파일에서 결론을 재현할 수 있는지를 확인한다. 지적 사항에는 수정 커밋과 재검증 결과를 연결한다. 머지 전에는 마지막 코드 변경까지 검토했는지 확인한다. 일시정지 중에는 다음 GPU 작업을 시작하지 않고, 재개할 때 현재 PR의 미해결 리뷰도 확인한다.
 
+PR 리뷰와 H100 측정은 서로 독립적으로 진행할 수 있으므로, 리뷰가 대기 중인 동안 다음 체크포인트 한 개를 실행하고 끝나는 즉시 기록한다. H100에는 동시에 체크포인트 하나만 제출해 기준선과 후보 간 간섭 및 중복 실행을 막는다. 리뷰에서 실행 정확도·계측·결과 해석을 바꾸는 문제가 나오면 현재 체크포인트 경계에서 멈추고, 수정된 소스를 다시 검토한 뒤 이어간다.
+
 ## 끊어서 실행하기
+
+폭별 32,768행 실험의 상태는 `python3 experiments/width-dispatch/step.py --status`로 확인한다. `python3 scripts/continue_width_matrix.py --max-steps 24 --publish`는 미완료 조합을 한 번에 한 건씩 실행하고, 완료할 때마다 원자료·영수증·진행표를 PR 브랜치에 기록한다. 실행 중 `python3 experiments/width-dispatch/step.py --pause`를 호출하면 현재 단위 저장 후 멈춘다. `--resume`으로 표시를 해제하고 같은 명령으로 이어간다.
 
 현재 실험의 첫 실행에서 `python3 lab.py init --plan plans/prefill-gemm.json`으로 상태를 만든다. 같은 체크아웃에서 다음 명령을 사용한다.
 

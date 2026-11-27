@@ -1,0 +1,61 @@
+{
+  "status": "gate_failed",
+  "seed": 53,
+  "rows": 32768,
+  "width": 4107,
+  "attempt_id": "503cda281c6f42aea47d49ad9fa85d8c",
+  "run_id": "afe1dc1c33e34210ae6b5c5ca8bc4620",
+  "source_revision": "d42481aef66b4be3f7bd2cdd71b93778274a2875",
+  "source_sha256": {
+    "kernels.py": "431854a059ff8fa514053b7cdf47c1e32491ffdbf00dfcf37f0589f9811b36e8",
+    "experiments/width-dispatch/run.py": "05f3dc14adb18036f8c5ba2e280ced86847348a8696d40733459230d9dde0afe",
+    "experiments/width-dispatch/telemetry.py": "9b1311fe75db3e7630e749728efe01aad4a5a7adf5fc2cb7b14535d3b8ba2a22",
+    "experiments/width-dispatch/PLAN.md": "3fe2013cc527aa057b65e88882e6109e871d6ea63081ea57aa075136592d0c55",
+    "plans/width-dispatch.json": "2cf20388061b620656da77c75980913738c3b6ab679033688acdce85da450f78"
+  },
+  "started_utc": "2026-11-27T14:34:44.249715+00:00",
+  "checkpoints": [],
+  "latency_intervals": [],
+  "sustained_phases": [],
+  "correctness": {
+    "fixtures": [],
+    "timed_input": [],
+    "post_latency_replay": [],
+    "post_sustained_replay": [],
+    "graph_write_checks": []
+  },
+  "memory": {
+    "final": {
+      "allocated_bytes": 0,
+      "reserved_bytes": 0,
+      "free_bytes": 84378648576,
+      "total_bytes": 84929216512,
+      "peak_allocated_bytes": 0,
+      "peak_reserved_bytes": 0,
+      "captured_monotonic_ns": 3062300789015099
+    },
+    "capture_and_timing_peak_allocated_bytes": 0,
+    "capture_and_timing_peak_reserved_bytes": 0
+  },
+  "failure": {
+    "stage": "preflight",
+    "type": "GateFailure",
+    "message": "Cannot establish required NVIDIA driver provenance before measurement."
+  },
+  "finished_utc": "2026-11-27T14:34:56.224976+00:00",
+  "wall_seconds": 11.975272535346448,
+  "execution_source_sha256": {
+    "experiments/width-dispatch/PLAN.md": "3fe2013cc527aa057b65e88882e6109e871d6ea63081ea57aa075136592d0c55",
+    "experiments/width-dispatch/run.py": "05f3dc14adb18036f8c5ba2e280ced86847348a8696d40733459230d9dde0afe",
+    "experiments/width-dispatch/ssh_runner.sh": "4ea2f38671a56304e1e8669d0baf73b73fbde38c90f593856fb4b8e6b09e8474",
+    "experiments/width-dispatch/step.py": "6524b118c93b29bcd5b89bdb735a49e5572642db2ee297e189ece9405d5ab315",
+    "experiments/width-dispatch/summarize.py": "9d80ad173d08634d9e2bba8829edbd99438bfd9aa3b21ab0881e1e088f944354",
+    "experiments/width-dispatch/telemetry.py": "9b1311fe75db3e7630e749728efe01aad4a5a7adf5fc2cb7b14535d3b8ba2a22",
+    "kernels.py": "431854a059ff8fa514053b7cdf47c1e32491ffdbf00dfcf37f0589f9811b36e8",
+    "lab.py": "b3b54b0943d1264b89273350ab2d19ee0aa0ff5ac93714687c92cc7f3cb0149c",
+    "plans/width-dispatch.json": "2cf20388061b620656da77c75980913738c3b6ab679033688acdce85da450f78"
+  },
+  "producing_attempt_id": "503cda281c6f42aea47d49ad9fa85d8c",
+  "cache_retrieved": false,
+  "research_assistant_model": "Codex GPT-6; GPT-6 Luna requested for independent protocol review, runtime unverified"
+}

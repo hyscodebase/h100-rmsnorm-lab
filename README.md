@@ -2,6 +2,8 @@
 
 How much does the thread layout of a BF16 RMSNorm kernel matter on an NVIDIA H100? This inference microbenchmark varies the number of token rows while keeping the math and inputs fixed. The initial experiment compares a single-row Triton kernel with four or eight warps against eager PyTorch and shape-specialized TorchInductor.
 
+The [cumulative research report (PDF, Korean)](output/pdf/H100_RMSNorm_연구누적기록.pdf) covers the experiments, decisions, and H100 usage. At 32,768 rows, the four-row kernel improved sustained throughput over the fastest one-row kernel by 11.84–13.14% at widths 4,103 and 4,105 across three seeds. [Twelve paired measurements](results/sustained-throughput/PROGRESS.md) · [Follow-up at six additional widths](results/width-dispatch/PROGRESS.md)
+
 ![Speed relative to compiled PyTorch at four row counts and two hidden widths](results/warp-comparison.png)
 
 ## Findings
@@ -104,7 +106,9 @@ The fresh three-seed neighborhood check retained the 4104 recommendation: its tw
 
 At 32,768 rows, the two-row/four-warp candidate did not reach the preregistered 5% gain over the fastest one-row Triton kernel in any of four widths across three seeds. Widths 4103 and 4105 gained about 3.0% and 1.9%, while 4104 and 4112 were about 1.2% slower. All 12 checkpoints passed both numerical gates and memory guards. The runner recorded 76,992 kernel invocations and 16.67 seconds of CUDA event intervals. Sparse one-second telemetry observed peaks of 99% GPU busy, 100% memory busy, 4,800 MiB VRAM and 583.19 W, but median GPU and memory busy were both 0%, so it does not establish sustained saturation. [Throughput-scale report and raw H100 records](results/throughput-neighborhood/REPORT.md) · [PR #63](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/63).
 
-The next experiment will check whether four rows per program recover a repeatable throughput gain at 32,768 rows. It will compare the four-row/four-warp candidate with the fastest one-row Triton and compiled PyTorch baselines at the same nearby widths; the 5% all-seed rule remains unchanged. [Draft issue #64](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/64) awaits protocol and memory review before code or H100 work begins.
+At 32,768 rows, the four-row/four-warp candidate cleared the 5% margin over both the fastest one-row Triton kernel and compiled PyTorch at widths 4,103 and 4,105 in all three seeds. It missed at 4,104 and 4,112, averaging about 1.1% below the fastest one-row kernel. The preregistered rule rejects broad adoption; the result supports a width-specific follow-up only. [Full checkpoint and telemetry audit](results/sustained-throughput/PROGRESS.md) · [PR #65](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/65).
+
+The next screen tests eight unseen nearby widths at 32,768 rows, with seeds 53–55, to see whether the registered odd/even split repeats within those shapes. It will not claim a general width-parity rule. [Issue #66](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/66) records the fixed matrix, accuracy and memory gates, 52.8 minutes of target CUDA-event work, telemetry criteria, checkpoint recovery limits and PR-review overlap.
 
 ```bash
 python3 lab.py init --plan plans/width-sweep.json

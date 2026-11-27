@@ -1,0 +1,18 @@
+{
+  "issue": 66,
+  "source_revision": "013f2b46089986d77cac673f47cee3090e9fc494",
+  "source_sha256": {
+    "kernels.py": "431854a059ff8fa514053b7cdf47c1e32491ffdbf00dfcf37f0589f9811b36e8",
+    "experiments/width-dispatch/run.py": "864a3e398a57912efe2a53d30e6a208f3084f7bd3e7c9ffd5630af3ec69d2dc9",
+    "experiments/width-dispatch/telemetry.py": "d341f365ad894f42d08d491c40970aade24520a17ac1961d402ececf80e5900b",
+    "experiments/width-dispatch/PLAN.md": "31e25c45eaf376b4fd622342890b1ca86014ba2efe3384cf4d658caf6b7b5051",
+    "plans/width-dispatch.json": "ae24d096bc85eafe92e72242338512ce047f206a452b62268c345c6443fe741c",
+    "lab.py": "b3b54b0943d1264b89273350ab2d19ee0aa0ff5ac93714687c92cc7f3cb0149c",
+    "experiments/width-dispatch/step.py": "0623407270a951fb799c23afd8e43070b224e18e18b814f40057275643b8295a",
+    "experiments/width-dispatch/ssh_runner.sh": "56625ef4db82c6a34cd6005c92515b30a97305a708bb658ae4cbef868119958d",
+    "experiments/width-dispatch/summarize.py": "45a3dbf97f2fd87d1eefc2d2f97a0137957a867813ca4ae3bed68b3432d73ef8"
+  },
+  "research_assistant_model": "Codex GPT-6; GPT-6 Luna selected for independent protocol review, runtime unverified",
+  "frozen_plan_only": false,
+  "h100_execution_authorized": true
+}

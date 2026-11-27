@@ -1,0 +1,21 @@
+{
+  "issue": 66,
+  "source_revision": "d926b34a9bddb8eeec7c3e5db2905909b9300983",
+  "source_sha256": {
+    "kernels.py": "431854a059ff8fa514053b7cdf47c1e32491ffdbf00dfcf37f0589f9811b36e8",
+    "experiments/width-dispatch/run.py": "a23bd5afd23f133cec98e93dbcefebe2b6cfed1328977527526005e109256e07",
+    "experiments/width-dispatch/telemetry.py": "9b1311fe75db3e7630e749728efe01aad4a5a7adf5fc2cb7b14535d3b8ba2a22",
+    "experiments/width-dispatch/PLAN.md": "31e3296dcf04f09c868bc6e50967dff598199f1b43c126a2bc61cf113dd5db0a",
+    "plans/width-dispatch.json": "c951e2d0f34b68b0217f725b862ee2ff37aa7c81b6e5f0ad41dcad935aa3c1e6",
+    "lab.py": "b3b54b0943d1264b89273350ab2d19ee0aa0ff5ac93714687c92cc7f3cb0149c",
+    "experiments/width-dispatch/step.py": "17ca5bd6c0d1226bd1b2f43e41aff99b3bb27087aa14600e8b15dd7c3ecff83a",
+    "experiments/width-dispatch/ssh_runner.sh": "58a830db93b09d9ed51d801dfbd4ab49d65a969ea6a47f581bdeb2270b720211",
+    "experiments/width-dispatch/summarize.py": "410e41d2104055da112e518ea1fa83c0a08bb5cccb2157d5dbdf9d9f71025823"
+  },
+  "research_assistant_model": "Codex GPT-6; GPT-6 Luna selected for independent protocol review, runtime unverified",
+  "frozen_plan_only": false,
+  "h100_execution_authorized": true,
+  "h100_execution_scope": "pilot",
+  "authorization_basis": "User requested aggressive H100 use; one replacement pilot may run during PR review. Broader matrix expansion waits for the revised source review.",
+  "generated_utc": "2026-11-27T10:01:16.040567+00:00"
+}

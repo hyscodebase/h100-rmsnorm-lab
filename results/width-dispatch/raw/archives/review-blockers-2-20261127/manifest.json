@@ -1,0 +1,31 @@
+{
+  "archive_reason": "Replaced the active pilot after execution protocol fixes changed the pinned source hashes.",
+  "archive_date": "2026-11-27",
+  "checkpoint": "s53-w4102",
+  "checkpoint_status": "complete",
+  "attempt_id": "5f9112b1310145c5a3692914e51d4cbf",
+  "source_revision": "cb8cf24863194ada8534967b1ff3de463d0a1ae4",
+  "source_pin_scope": "pilot",
+  "inventory": [
+    {
+      "path": "attempts/s53-w4102-5f9112b1310145c5a3692914e51d4cbf.json",
+      "bytes": 1770,
+      "sha256": "00e59e745b16bea0ebb22a73ed3f0b8ea088aa65b0c5f664cb0614964cc340dc"
+    },
+    {
+      "path": "checkpoints/s53-w4102.json",
+      "bytes": 606076,
+      "sha256": "4c405976d8ce2d3ad76e735736c6099472ca45dbb79fe6e0567afaadc96d8fd9"
+    },
+    {
+      "path": "partial-audit.json",
+      "bytes": 14386,
+      "sha256": "f2b5a8d0c380765c615deb71c19425d93c8b82f111339bc1aad6caa1bdfa7fc5"
+    },
+    {
+      "path": "source-pin.json",
+      "bytes": 1454,
+      "sha256": "971a291b3a297687e78fed259b61efcafd4d7332e8773f3a4b1a81892ac5cd82"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "archive_date": "2026-11-27",
+  "archive_reason": "The fresh pilot passed its source-bound audit, but independent PR review found additional audit and recovery gaps in the producing code; retain as historical evidence and exclude from the replacement pin.",
+  "checkpoint": "s53-w4102",
+  "checkpoint_status": "complete",
+  "attempt_id": "072fee275bc5434cbc73b06cd147291a",
+  "source_revision": "d926b34a9bddb8eeec7c3e5db2905909b9300983",
+  "audit_successful_checkpoints": 1,
+  "inventory": [
+    {
+      "path": "attempts/s53-w4102-072fee275bc5434cbc73b06cd147291a.json",
+      "bytes": 1771,
+      "sha256": "2fff7cc834604f7b552a2eeb989f68635981754c2670706741aa9c0e75d098b9"
+    },
+    {
+      "path": "checkpoints/s53-w4102.json",
+      "bytes": 588289,
+      "sha256": "4d8e8212201f622d170d2b8ee3ac6e2e0f065642e6db850b93765423b5a535c4"
+    },
+    {
+      "path": "monitoring/20261127T100426Z.json",
+      "bytes": 651,
+      "sha256": "3c09c72022d7257c5c0a1a857fe32f1e0fefd6f2d06aaed7b19b4b6a4cd37b09"
+    },
+    {
+      "path": "monitoring/20261127T100609Z.json",
+      "bytes": 643,
+      "sha256": "af0ac08230e5cda289579328f1012cd0dfe513fb664126ff64833f3723b2a619"
+    },
+    {
+      "path": "partial-audit.json",
+      "bytes": 14559,
+      "sha256": "09e4ae39faca55c0562a723ace39bb95aa114f292499e678a2b38211330ffd9c"
+    },
+    {
+      "path": "source-pin.json",
+      "bytes": 1500,
+      "sha256": "835aa01bb4583384121ee585f6ce59adde048b7d11ec623bd8f2a7eee71bc5a0"
+    }
+  ]
+}

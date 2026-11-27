@@ -1,0 +1,17 @@
+{
+  "observed_utc": "2026-11-27T10:48:54.465033+00:00",
+  "experiment": "width-dispatch",
+  "checkpoint": "s53-w4102",
+  "checkpoint_state": "complete",
+  "source_revision": "41e623a5772affc8f77ae3c77a882a19bac01b2e",
+  "measurement_kind": "instantaneous nvidia-smi snapshot; not a substitute for checkpoint-window telemetry",
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "utilization_gpu_percent": 0,
+  "memory_used_mib": 1.0,
+  "power_w": 120.7,
+  "temperature_c": 31,
+  "collection": {
+    "command": "nvidia-smi --query-gpu=name,utilization.gpu,memory.used,power.draw,temperature.gpu",
+    "transport": "SSH; device serial and UUID omitted"
+  }
+}
