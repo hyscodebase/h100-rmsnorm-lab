@@ -151,9 +151,12 @@ def audit_attempts(pin, checkpoint_records, plan):
                  f"Current attempt source pin mismatch: {path.name}.")
         else:
             historical_gate_exception = (
-                item.get("unit") == plan["manual_telemetry_retry_unit"]
-                and item.get("outcome") == "gate_failed"
-                and item.get("manual_transport_retry_override") is True)
+                item.get("outcome") == "gate_failed"
+                and ((item.get("unit") == plan["manual_telemetry_retry_unit"]
+                      and item.get("manual_transport_retry_override") is True)
+                     or (checkpoint_records.get(item.get("unit"), {}).get("attempt_id") == attempt_id
+                         and item.get("checkpoint_status")
+                            == checkpoint_records.get(item.get("unit"), {}).get("status"))))
             need(item.get("outcome") in {"transport_or_parse_failed", "paused_before_submit"}
                  or historical_gate_exception,
                  f"Executed attempt must use the current source pin: {path.name}.")
@@ -370,21 +373,38 @@ def audit_checkpoint(path, plan, pin):
     expected_sources = {key: r.get("source_sha256", {}).get(key) for key in COMPUTE_SOURCES}
     expected_execution = r.get("execution_source_sha256", {})
     if r.get("status") != "complete":
-        need(path.stem == plan["manual_telemetry_retry_unit"] and telemetry_only_failure(r, plan),
-             f"Saved failed checkpoint is not the registered telemetry-only failure: {path.name}.")
+        need(r.get("status") in {"gate_failed", "execution_failed"}
+             and isinstance(r.get("failure"), dict),
+             f"Saved incomplete checkpoint has an unknown status or lacks failure details: {path.name}.")
+        need(set(expected_execution) == set(SOURCES)
+             and all(isinstance(digest, str) and len(digest) == 64
+                     for digest in expected_execution.values()),
+             f"Failed checkpoint execution-source manifest is incomplete: {path.name}.")
         verify_source_hashes_at(revision, expected_execution)
         need({key: expected_execution.get(key) for key in COMPUTE_SOURCES} == expected_sources,
-             f"Telemetry-only checkpoint source manifests disagree: {path.name}.")
-        phase = r["sustained_phases"][0]
-        activity = telemetry_summary(phase["telemetry_samples"], phase, plan)
+             f"Failed checkpoint source manifests disagree: {path.name}.")
+        classification = ("telemetry_only" if telemetry_only_failure(r, plan)
+                          else "compute_or_execution_failure")
+        phases = r.get("sustained_phases", [])
+        telemetry_details = []
+        for phase in phases:
+            samples = phase.get("telemetry_samples")
+            if isinstance(samples, list) and phase.get("phase_start_monotonic_ns") is not None:
+                try:
+                    telemetry = telemetry_summary(samples, phase, plan)
+                    telemetry_details.append({"backend": phase.get("backend"),
+                                              "eligible": telemetry["eligible"],
+                                              "max_query_gap_seconds": telemetry["max_query_gap_seconds"],
+                                              "summary": telemetry})
+                except (ValueError, KeyError, TypeError):
+                    telemetry_details.append({"backend": phase.get("backend"),
+                                              "eligible": False,
+                                              "summary_error": "Raw telemetry did not pass its audit."})
         return {"checkpoint": path.stem, "seed": r["seed"], "width": r["width"],
-                "status": "gate_failed", "attempt_id": r.get("attempt_id"),
-                "failure": r.get("failure"), "failure_classification": "telemetry_only",
+                "status": r["status"], "attempt_id": r.get("attempt_id"),
+                "failure": r.get("failure"), "failure_classification": classification,
                 "raw_evidence_saved": True, "analysis_eligible": False,
-                "telemetry_activity_eligible": False,
-                "telemetry_raw_gap_seconds": phase["telemetry_max_gap_seconds"],
-                "event_seconds": phase["event_seconds"],
-                "telemetry": activity}
+                "telemetry_activity_eligible": False, "telemetry_phases": telemetry_details}
     need(revision == pin["source_revision"], f"Checkpoint revision mismatch: {path.name}.")
     expected_sources = {key: pin["source_sha256"][key] for key in COMPUTE_SOURCES}
     need(r.get("source_sha256") == expected_sources, f"Checkpoint compute-source hash mismatch: {path.name}.")
