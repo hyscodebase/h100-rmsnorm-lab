@@ -1,0 +1,23 @@
+{
+  "unit": "s50-w4103",
+  "seed": 50,
+  "width": 4103,
+  "source_revision": "eaa9fc779fd6fc03d698794f7628bfadd65ace7a",
+  "source_sha256": {
+    "kernels.py": "431854a059ff8fa514053b7cdf47c1e32491ffdbf00dfcf37f0589f9811b36e8",
+    "experiments/sustained-throughput/run.py": "2ba3db86a781e5924dad717614b0a773deb349abadce3a41e68bc8b50db981f9",
+    "experiments/sustained-throughput/telemetry.py": "c37c289993e4963fb974970e1deb7e96fdb9765a5d9e98ce620508110fdc76cc",
+    "experiments/sustained-throughput/PLAN.md": "638058bf774248fe7215af0fc6328d73609a608a9213e6ba2aad821812c96fdd",
+    "plans/sustained-throughput.json": "8771927e5a83deaf368a478836d4612c11f4eed35e8cf84e49a062f39cdf2c0c",
+    "experiments/sustained-throughput/step.py": "fb1ca43a6c0b4525532510131a2dec53088fc158d4e1cb5a2b51b2183b9cc5af",
+    "experiments/sustained-throughput/ssh_runner.sh": "81af5d1add83864a07c07b2363007dcde59a844b44c82257131a846fb883595d",
+    "experiments/sustained-throughput/summarize.py": "b0cbe4dc458f2ef17fb75f520c59a547efd503d6dc6b5c007c69cff9e6fc8dd4"
+  },
+  "attempt_id": "5903eb460e50406cbb6f65ba47e161ea",
+  "started_utc": "2026-11-27T05:38:17.875579+00:00",
+  "outcome": "transport_or_parse_failed",
+  "error_type": "CalledProcessError",
+  "finished_utc": "2026-11-27T05:38:17.963358+00:00",
+  "elapsed_seconds": 0.08731566707137972,
+  "exit_code": 255
+}
