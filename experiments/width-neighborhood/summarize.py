@@ -1,6 +1,7 @@
 """Audit raw H100 checkpoints and regenerate the width-neighborhood report."""
 import hashlib
 import json
+import math
 import statistics
 import subprocess
 from pathlib import Path
@@ -82,10 +83,19 @@ def audit():
         backend_times = {}
         for sample in samples:
             by_round.setdefault(sample["round"], []).append(sample)
-            need(sample["ops_per_graph"] == 32 and sample["graph_elapsed_us"] > 0 and sample["us_per_op"] > 0,
+            ops = sample.get("ops_per_graph")
+            elapsed_us = sample.get("graph_elapsed_us")
+            reported_us_per_op = sample.get("us_per_op")
+            need(ops == plan["ops_per_graph"] and isinstance(elapsed_us, (int, float))
+                 and math.isfinite(elapsed_us) and elapsed_us > 0,
                  f"Invalid raw event interval in {key}.")
-            backend_times.setdefault(sample["backend"], []).append(sample["us_per_op"])
-            graph_event_seconds += sample["graph_elapsed_us"] / 1e6
+            derived_us_per_op = elapsed_us / ops
+            need(isinstance(reported_us_per_op, (int, float)) and math.isfinite(reported_us_per_op)
+                 and reported_us_per_op > 0
+                 and math.isclose(reported_us_per_op, derived_us_per_op, rel_tol=1e-12, abs_tol=1e-12),
+                 f"Stored per-operation time differs from the raw event interval in {key}.")
+            backend_times.setdefault(sample["backend"], []).append(derived_us_per_op)
+            graph_event_seconds += elapsed_us / 1e6
         need(set(by_round) == set(range(21)), f"Missing timing rounds in {key}.")
         for round_id, group in by_round.items():
             need(len(group) == 4 and {g["backend"] for g in group} == set(method["timed_backends"])
