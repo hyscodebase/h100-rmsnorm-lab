@@ -41,7 +41,8 @@
 | 고정 작업량을 8배 늘려 에너지 경계 오차 평가 | 완료 | 세 독립 시드에서 두 BF16 출력이 일치했고 여섯 비교쌍이 유효했다. 행당 에너지는 관측값 기준 1.180~1.599% 줄었다. 1,000W 가정의 절감률 하한이 1.5%를 넘긴 시드는 207 하나였다. [보고서와 체크포인트](experiments/rmsnorm-residual/vllm/LONG_WINDOW_ENERGY_512_REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/57) |
 | 512행 BF16 융합 커널의 입력 로드에서 L1 우회 | 완료 | 세 독립 시드에서 `.cg` 처리량 이득은 0.000779~0.007549%로 5% 채택 기준에 못 미쳤다. 두 출력은 비트 단위로 일치했고 H100 자원 표본 133건을 보관했다. 8워프 기준선을 유지한다. [최종 보고서와 원시 기록](experiments/rmsnorm-residual/vllm/input-load-cache-512-results/REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/59) |
 | RMSNorm 4104 인접 너비 재검증 | 완료 | 4104는 두 기준보다 5.33~5.56% 빨라 새 세 시드에서 권고를 재확인했다. 4103·4105도 각각 세 시드에서 기준을 넘었지만 기본 권고를 넓히지 않았고, 4112는 1행 대비 4.83·4.83·5.04%여서 세 시드 기준을 통과하지 못했다. 두 수치 게이트가 12개 checkpoint에서 모두 통과했다. [보고서·원시 기록](results/width-neighborhood/REPORT.md) · [PR #61](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/61) |
-| 처리량 크기에서 RMSNorm 행 타일 검증 | 다음 가설 | 32,768행과 폭 4103·4104·4105·4112에서 새 시드 47–49로 2행·4워프의 이득을 확인한다. 401회 graph 반복으로 자원 표본을 늘리고 최악 4.02GiB 그래프 출력 메모리를 사전 계산·가드한다. [등록 이슈 #62](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/62) |
+| 처리량 크기에서 RMSNorm 행 타일 검증 | 완료 | 32,768행의 폭 네 개와 시드 47–49, 총 12 checkpoint에서 양쪽 수치 게이트·메모리 검사가 통과했다. 2행·4워프 후보는 가장 빠른 1행 기준보다 폭 4103에서 2.986–3.083%, 4105에서 1.866–1.895% 빨랐고, 4104·4112에서는 1.156–1.220% 느렸다. 모두 사전 등록한 5% 채택선을 넘지 못했다. [보고서와 원시 기록](results/throughput-neighborhood/REPORT.md) · [PR #63](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/63) |
+| 처리량 크기에서 4행 RMSNorm 타일 조사 | 다음 가설 | 32,768행의 인접 폭에서 4행·4워프가 가장 빠른 1행 기준보다 세 시드 모두 5% 이상 빠른지 확인한다. #62에서 2행 타일 이득이 사라진 형상에 새 시드와 동일한 정확도·메모리 가드를 적용한다. |
 
 ## 다음 가설을 고르는 규칙
 
