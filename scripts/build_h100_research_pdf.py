@@ -157,15 +157,21 @@ def latest_status(audit, pin, raw_records):
                for s in phase.get("telemetry_samples", [])]
     eligible = sum(bool(p.get("activity_telemetry_eligible"))
                    for r in raw_records for p in r.get("sustained_phases", []))
+    failed = [r for r in raw_records if r.get("status") != "complete"]
     return {
         "completed": completed, "expected": expected, "seconds": seconds,
         "samples": len(samples), "eligible": eligible,
         "phase_count": sum(len(r.get("sustained_phases", [])) for r in raw_records),
         "scope": pin["h100_execution_scope"], "revision": pin["source_revision"],
+        "failed": failed,
     }
 
 
 def next_unit(plan, audited):
+    failed = next((item for item in audited["checkpoint_results"]
+                   if item.get("status") != "complete"), None)
+    if failed:
+        return f"{failed.get('checkpoint', 'unknown')} (blocked)"
     done = {(item.get("seed"), item.get("width")) for item in audited["checkpoint_results"]
             if item.get("status") == "complete"}
     for seed in plan["seeds"]:
@@ -200,7 +206,7 @@ def build_appendix(path, audit, pin, plan, raw_records):
     doc = SimpleDocTemplate(str(path), pagesize=A4, rightMargin=20 * mm, leftMargin=20 * mm,
                             topMargin=18 * mm, bottomMargin=17 * mm,
                             title="H100 RMSNorm Research Record - current active data")
-    story = [Spacer(1, 126), P("현재 실험 상태", s["section"])]
+    story = [Spacer(1, 154), P("현재 실험 상태", s["section"])]
 
     card_rows = [
         [P("활성 체크포인트", s["card_label"]), P("CUDA-event 누적", s["card_label"])],
@@ -219,6 +225,24 @@ def build_appendix(path, audit, pin, plan, raw_records):
         ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
     ]))
     story += [cards, Spacer(1, 10)]
+
+    if status["failed"]:
+        failed = status["failed"][0]
+        failure = failed.get("failure", {})
+        failed_name = f"s{failed.get('seed')}-w{failed.get('width')}"
+        failure_text = (
+            f"후속 체크포인트 중단: {failed_name}이 {failure.get('stage', 'unknown')} 단계에서 게이트 실패했습니다. "
+            f"{failure.get('message', '원인 정보 없음')} 지연 측정은 0건, 지속 계산 구간은 0개이며, 기록된 CUDA 할당·예약 메모리는 0바이트입니다. "
+            "드라이버 조회가 현재 원격 확인에서는 정상 동작했지만 실패 당시 원인은 확정되지 않았습니다. 저장된 실패 기록을 임의로 건너뛰지 않고 복구 검토 전까지 큐를 멈춥니다."
+        )
+        alert = Table([[P(failure_text, s["callout"])]], colWidths=[168 * mm])
+        alert.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, -1), RED_PALE),
+            ("BOX", (0, 0), (-1, -1), 0.7, colors.HexColor("#D78B88")),
+            ("LEFTPADDING", (0, 0), (-1, -1), 9), ("RIGHTPADDING", (0, 0), (-1, -1), 9),
+            ("TOPPADDING", (0, 0), (-1, -1), 8), ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ]))
+        story += [alert, Spacer(1, 8)]
 
     failed_even = [x for x in audit["checkpoint_comparisons"]
                    if x["width"] % 2 == 0 and x.get("qualifies") is False]
@@ -244,6 +268,14 @@ def build_appendix(path, audit, pin, plan, raw_records):
     for result in audit["checkpoint_results"]:
         name = result.get("checkpoint", "unknown")
         comp = comparisons.get(name, {})
+        if result.get("status") != "complete":
+            failure = result.get("failure", {})
+            result_rows.append([
+                P(f"{name}<br/>실패: {failure.get('stage', 'unknown')}", s["table_tiny"]),
+                P("측정 전 실패", s["table_tiny"]), P("측정 전 실패", s["table_tiny"]),
+                P("n/a", s["table_tiny"]), P("blocked", s["table_tiny"]),
+            ])
+            continue
         latencies = result.get("latency_median_us_per_op", {})
         phase_rates = {k: v.get("logical_input_plus_output_GB_per_s")
                        for k, v in result.get("phases", {}).items()}
@@ -255,7 +287,7 @@ def build_appendix(path, audit, pin, plan, raw_records):
             P("n/a" if gain is None else f"{gain:+.2f}%", s["table_tiny"]),
             P("yes" if comp.get("qualifies") else "no", s["table_tiny"]),
         ])
-    story += [band_table(result_rows, [23 * mm, 57 * mm, 57 * mm, 19 * mm, 12 * mm], tiny=True), Spacer(1, 6)]
+    story += [band_table(result_rows, [23 * mm, 55 * mm, 55 * mm, 19 * mm, 16 * mm], tiny=True), Spacer(1, 6)]
     story += [P(
         "후보 채택에는 가장 빠른 1행 Triton 및 torch.compile을 각각 5% 이상 앞서고, 같은 폭의 세 시드 모두에서 이를 반복해야 합니다. "
         "현재는 체크포인트별 결과만 공개하며, 24개 결과 전에는 dispatch 결론을 내리지 않습니다.", s["small"])]
@@ -271,6 +303,14 @@ def build_appendix(path, audit, pin, plan, raw_records):
         name = f"s{raw['seed']}-w{raw['width']}"
         phases = raw.get("sustained_phases", [])
         samples = [sample for phase in phases for sample in phase.get("telemetry_samples", [])]
+        if not phases:
+            telemetry_rows.append([
+                P(f"{name}<br/>gate failed", s["table_tiny"]), P("0.00", s["table_tiny"]),
+                P("0", s["table_tiny"]), P("n/a", s["table_tiny"]), P("n/a", s["table_tiny"]),
+                P("n/a", s["table_tiny"]), P("n/a", s["table_tiny"]), P("n/a", s["table_tiny"]),
+                P("n/a", s["table_tiny"]),
+            ])
+            continue
         busy = [x.get("gpu_busy_percent") for x in samples]
         vram = [x.get("memory_used_mib") for x in samples]
         power = [x.get("power_w") for x in samples]
@@ -310,8 +350,8 @@ def build_appendix(path, audit, pin, plan, raw_records):
     ]))
     story += [box, Spacer(1, 8)]
     story += [P(
-        f"상태: source `{pin['source_revision']}` · scope `{status['scope']}` · 다음 체크포인트 `{next_name}`. "
-        "PR #67 코드 검토에는 차단 이슈가 없어 파일럿 뒤 전체 매트릭스를 해제했습니다. 원자료, attempt receipt와 감사 요약은 "
+        f"상태: source `{pin['source_revision']}` · scope `{status['scope']}` · 다음 상태 `{next_name}`. "
+        "PR #67 코드 검토에서 차단 이슈가 없어 파일럿 뒤 전체 매트릭스를 해제했지만, 현재는 위의 저장된 preflight 게이트 실패가 후속 제출을 막습니다. 원자료, attempt receipt와 감사 요약은 "
         "`results/width-dispatch/raw/` 아래에 보존합니다. 이전 리뷰-blocked pin의 9개 체크포인트는 앞쪽 17쪽의 역사 기록이며 활성 매트릭스와 합산하지 않습니다.", s["small"])]
 
     doc.build(story, onFirstPage=draw_cover, onLaterPages=draw_appendix)

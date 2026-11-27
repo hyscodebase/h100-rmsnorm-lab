@@ -3,9 +3,9 @@
 ## Current state
 
 - Active source revision: `d42481aef66b4be3f7bd2cdd71b93778274a2875`.
-- Source scope: `full_matrix`; next checkpoint: `s53-w4107`.
+- Source scope: `full_matrix`; matrix currently blocked at `s53-w4107`.
 - Accepted checkpoints: 2/24; cumulative CUDA-event time: 264.444 seconds (4.41 minutes).
-- Attempt receipts: four total; two successful checkpoints and two transport failures before remote benchmark start.
+- Attempt receipts: five total; two successful checkpoints, two transport failures before remote benchmark start, and one saved preflight gate failure.
 
 ## Seed 53 results
 
@@ -22,4 +22,10 @@ The two checkpoints saved 878 telemetry rows and 264.444 seconds of sustained CU
 
 The initial two transport failures were caused by the default command sandbox lacking outbound network access. A network-enabled read-only WireGuard check succeeded, after which SSH confirmed the H100 and the third attempt completed the first checkpoint. Those failed attempts did not start a remote benchmark or use GPU time.
 
-The next checkpoint is `s53-w4107`. No final dispatch decision is available until the full preregistered matrix passes its audit.
+## Saved blocker: s53-w4107
+
+The third checkpoint saved `status=gate_failed` at `preflight`: `Cannot establish required NVIDIA driver provenance before measurement.` It produced zero latency intervals, zero sustained phases, zero allocated/reserved CUDA bytes, and no correctness fixtures. The remote benchmark wall time in the checkpoint is 11.975 seconds; the local attempt lasted 22.284 seconds. It used the pinned source revision and is preserved with its attempt receipt and checkpoint hash in the partial evidence audit.
+
+A later read-only SSH probe loaded the same configured remote environment: `nvidia-smi` was present and the driver-version query returned one valid row. This confirms that the query works at probe time, but it does not identify why the original preflight query failed. The original failure record does not retain whether the command was missing, timed out, returned nonzero, or produced empty output. The registered runner blocks later checkpoints on saved gate failures, so the matrix remains stopped at `s53-w4107`; no retry or bypass has been made.
+
+The two accepted checkpoints remain useful compute/correctness evidence, but their 8 sustained telemetry phases are all formally ineligible due query timestamp gaps up to 4.548 seconds. No final dispatch decision is available until the saved failure is resolved and the full preregistered matrix passes its audit.
