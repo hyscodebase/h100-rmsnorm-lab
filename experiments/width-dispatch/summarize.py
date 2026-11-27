@@ -55,6 +55,9 @@ def plan_audit():
     need(p["widths"] == [4102, 4106, 4107, 4108, 4109, 4111, 4113, 4116]
          and p["seeds"] == [53, 54, 55],
          "Frozen width or seed matrix changed.")
+    need(p["fixtures"] == ["random", "zero_rows", "constant", "tiny", "large",
+                           "alternating", "column_ramp", "outlier"],
+         "Frozen correctness fixture set changed.")
     dispatch = p["selection"]["dispatch_pattern"]
     need(dispatch["odd_widths"] == [4107, 4109, 4111, 4113]
          and dispatch["even_widths"] == [4102, 4106, 4108, 4116]
@@ -382,15 +385,31 @@ def telemetry_only_failure(record, plan):
                 or len(record.get("sustained_phases", [])) != 1
                 or phase.get("backend") != "triton_4w_4r"
                 or phase.get("telemetry_gate_passed") is not False
+                or phase.get("compute_gate_passed") is not True
+                or phase.get("gate_passed") is not True
                 or phase.get("telemetry_max_gap_seconds", 0) <= plan["maximum_active_telemetry_gap_seconds"]):
             return False
         durations = phase["window_event_seconds"]
         gaps = phase["window_event_gaps_seconds"]
+        recorded_event_seconds = phase.get("event_seconds")
         if (len(durations) != plan["sustained_event_windows_per_phase"]
                 or len(gaps) != len(durations) - 1
+                or not all(isinstance(value, (int, float)) and math.isfinite(value)
+                           and 0 < value <= plan["maximum_event_window_seconds"]
+                           for value in durations)
+                or not all(isinstance(gap, (int, float)) and math.isfinite(gap)
+                           and 0 <= gap <= plan["maximum_event_gap_between_windows_seconds"]
+                           for gap in gaps)
                 or not plan["sustained_min_seconds"] <= sum(durations) <= plan["sustained_max_seconds"]
-                or max(durations) > plan["maximum_event_window_seconds"]
-                or max(gaps) > plan["maximum_event_gap_between_windows_seconds"]):
+                or not isinstance(recorded_event_seconds, (int, float))
+                or not math.isfinite(recorded_event_seconds)
+                or abs(sum(durations) - recorded_event_seconds) >= 1e-6):
+            return False
+        memory_before = phase.get("memory_before_phase", {})
+        if (not isinstance(memory_before.get("captured_monotonic_ns"), int)
+                or memory_before["captured_monotonic_ns"] >= phase.get("phase_start_monotonic_ns", 0)
+                or not isinstance(memory_before.get("free_bytes"), int)
+                or memory_before["free_bytes"] < plan["free_memory_guard_bytes"]):
             return False
         telemetry = telemetry_summary(phase.get("telemetry_samples", []), phase, plan)
         if (not telemetry["coverage_gate_passed"]

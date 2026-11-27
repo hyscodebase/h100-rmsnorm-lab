@@ -1,0 +1,41 @@
+{
+  "archive_date": "2026-11-27",
+  "archive_reason": "The normal complete-checkpoint path passed, but an independent review found incomplete guards in the telemetry-only failure classification path. Preserve the result, but exclude it when replacing the source pin.",
+  "checkpoint": "s53-w4102",
+  "checkpoint_status": "complete",
+  "attempt_id": "8af5253abab14d6698ec06ac5f67e6fe",
+  "source_revision": "90cc5ff2f78ec7b8ee7ac4e4c7af113c0ecf7b9d",
+  "audit_successful_checkpoints": 1,
+  "inventory": [
+    {
+      "path": "attempts/s53-w4102-8af5253abab14d6698ec06ac5f67e6fe.json",
+      "bytes": 1860,
+      "sha256": "560a38fcaa9b04f6ec6d4faa681b25c2b43195b199a6940d659feaa285ca104f"
+    },
+    {
+      "path": "checkpoints/s53-w4102.json",
+      "bytes": 583808,
+      "sha256": "d647460761390aa4882e0eb506a6d87d41950a7da891e5bd4626c7a2d875eb6d"
+    },
+    {
+      "path": "monitoring/20261127T102117Z.json",
+      "bytes": 651,
+      "sha256": "c565f0d4ca1fb33e96dc4b0a7d23494716f2da04771a6002d96f9071175b8828"
+    },
+    {
+      "path": "monitoring/20261127T102245Z.json",
+      "bytes": 643,
+      "sha256": "ec352bbaaddaa23154f675aff565e6cb505ca12713828ab73c6f8475e2627447"
+    },
+    {
+      "path": "partial-audit.json",
+      "bytes": 14570,
+      "sha256": "447b839691f3b7af28196b2e25006f0959cf3f873817a0f7a3cacf1a2a6bbdec"
+    },
+    {
+      "path": "source-pin.json",
+      "bytes": 1500,
+      "sha256": "481470e25e74d1724267883295dc5de9c03f6d79f39dea207f50a691a973c579"
+    }
+  ]
+}
