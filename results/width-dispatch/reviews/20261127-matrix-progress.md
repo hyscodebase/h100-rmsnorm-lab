@@ -1,5 +1,7 @@
 # Active matrix progress — 2026-11-27
 
+This page preserves the state at the first driver failure. The resumed measurement passed its audit at commit `e86e267` with +11.93% over the fastest one-row kernel. The [current run table](../PROGRESS.md) is updated after each new unit.
+
 ## Current state
 
 - Active source revision: `d42481aef66b4be3f7bd2cdd71b93778274a2875`.

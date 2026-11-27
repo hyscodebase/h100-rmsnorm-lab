@@ -43,7 +43,7 @@
 | RMSNorm 4104 인접 너비 재검증 | 완료 | 4104는 두 기준보다 5.33~5.56% 빨라 새 세 시드에서 권고를 재확인했다. 4103·4105도 각각 세 시드에서 기준을 넘었지만 기본 권고를 넓히지 않았고, 4112는 1행 대비 4.83·4.83·5.04%여서 세 시드 기준을 통과하지 못했다. 두 수치 게이트가 12개 checkpoint에서 모두 통과했다. [보고서·원시 기록](results/width-neighborhood/REPORT.md) · [PR #61](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/61) |
 | 처리량 크기에서 RMSNorm 행 타일 검증 | 완료 | 32,768행의 폭 네 개와 시드 47–49, 총 12 checkpoint에서 양쪽 수치 게이트·메모리 검사가 통과했다. 2행·4워프 후보는 가장 빠른 1행 기준보다 폭 4103에서 2.986–3.083%, 4105에서 1.866–1.895% 빨랐고, 4104·4112에서는 1.156–1.220% 느렸다. 모두 사전 등록한 5% 채택선을 넘지 못했다. [보고서와 원시 기록](results/throughput-neighborhood/REPORT.md) · [PR #63](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/63) |
 | 처리량 크기에서 4행 RMSNorm 타일 조사 | 완료 | 32,768행, 폭 4103·4105에서 4행 후보가 세 시드 모두 5% 기준을 통과했다. 폭 4104·4112에서는 약 1.1% 느려 전체 기본 설정 변경은 거부했다. [전체 12 checkpoint 실측·자원 감사](results/sustained-throughput/PROGRESS.md) · [PR #65](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/65) |
-| 32,768행 인접 폭의 제한된 홀수·짝수 타일 선택 조사 | 진행 중 · preflight 게이트 차단 | 폭 8개·시드 53–55, 총 24 checkpoint 계획. 이전 핀의 9개 checkpoint(19.83 CUDA-event 분)는 감사/복구 결함이 확인되어 archive에 보존하고 활성 분석에서 제외했다. active source `d42481a`에서 seed 53의 폭 4,102·4,106 두 건이 완료(2/24, CUDA-event 4.41분, telemetry 878행)됐다. 두 폭에서 4행 후보는 가장 빠른 1행 기준보다 1.62%, 1.55% 느렸고 `torch.compile`보다 6.78%, 6.65% 높았다. 활동 telemetry는 최대 query gap 4.548초로 8/8 구간 모두 부적격이다. 세 번째 `s53-w4107`은 드라이버 provenance preflight에서 실패해 지연 0건·지속 구간 0개·CUDA 할당 0바이트로 저장됐다. 이후 읽기 전용 원격 점검의 드라이버 조회는 정상이나 실패 당시 정확한 원인은 미확정이며, 저장 실패를 건너뛰지 않고 매트릭스를 중단했다. 영수증 5건: 성공 2, 전송 실패 2, 게이트 실패 1. PR #67의 1차 리뷰는 차단 소견 없이 파일럿 실행을 해제했지만 이번 runtime gate는 별도 복구 검토가 필요하다. 최종 dispatch 결론은 없다. [이슈 #66](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/66) · [PR #67 리뷰](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/67) · [연구 누적 PDF](output/pdf/H100_RMSNorm_연구누적기록_2026-11-27.pdf) · [PDF 생성기](scripts/build_h100_research_pdf.py) · [원자료 감사](results/width-dispatch/raw/partial-audit.json) · [진행 기록](results/width-dispatch/reviews/20261127-matrix-progress.md) · [이전 핀 archive](results/width-dispatch/raw/archives/review-blockers-5-20261127/ARCHIVE_NOTE.md) |
+| 32,768행 인접 폭의 제한된 홀수·짝수 타일 선택 조사 | 측정 중 | 폭 8개와 시드 3개의 24개 조합에서 4행 커널을 비교한다. 시드 53에서 폭 4,102·4,106의 처리량은 가장 빠른 1행보다 1.62%·1.55% 낮았다. 폭 4,107은 드라이버 확인 복구 후 가장 빠른 1행보다 11.93%, torch.compile보다 39.41% 높았다. 초기 실패 영수증과 두 완료 건의 원자료를 대조한 뒤 같은 측정 조건으로 미완료 조합부터 재개했다. 폭별 채택 조건은 세 시드에서 두 기준보다 각각 5% 이상 높은 처리량이다. [최신 측정·자원 사용 기록](results/width-dispatch/PROGRESS.md) · [누적 PDF](output/pdf/H100_RMSNorm_연구누적기록_2026-11-27.pdf) · [원자료 감사](results/width-dispatch/raw/partial-audit.json) · [복구 방법](experiments/width-dispatch/RESUME.md) · [PR #67](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/67) |
 
 ## 다음 가설을 고르는 규칙
 
@@ -66,6 +66,8 @@ PR 리뷰에서는 정확도 검사 범위, 같은 실행에서 측정한 기준
 PR 리뷰와 H100 측정은 서로 독립적으로 진행할 수 있으므로, 리뷰가 대기 중인 동안 다음 체크포인트 한 개를 실행하고 끝나는 즉시 기록한다. H100에는 동시에 체크포인트 하나만 제출해 기준선과 후보 간 간섭 및 중복 실행을 막는다. 리뷰에서 실행 정확도·계측·결과 해석을 바꾸는 문제가 나오면 현재 체크포인트 경계에서 멈추고, 수정된 소스를 다시 검토한 뒤 이어간다.
 
 ## 끊어서 실행하기
+
+폭별 32,768행 실험의 상태는 `python3 experiments/width-dispatch/step.py --status`로 확인한다. `python3 scripts/continue_width_matrix.py --max-steps 24 --publish`는 미완료 조합을 한 번에 한 건씩 실행하고, 완료할 때마다 원자료·영수증·진행표를 PR 브랜치에 기록한다. 실행 중 `python3 experiments/width-dispatch/step.py --pause`를 호출하면 현재 단위 저장 후 멈춘다. `--resume`으로 표시를 해제하고 같은 명령으로 이어간다.
 
 현재 실험의 첫 실행에서 `python3 lab.py init --plan plans/prefill-gemm.json`으로 상태를 만든다. 같은 체크아웃에서 다음 명령을 사용한다.
 
