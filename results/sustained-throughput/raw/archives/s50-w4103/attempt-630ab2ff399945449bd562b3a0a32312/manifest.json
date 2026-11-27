@@ -1,0 +1,24 @@
+{
+  "unit": "s50-w4103",
+  "attempt_id": "630ab2ff399945449bd562b3a0a32312",
+  "original_checkpoint_path": "results/sustained-throughput/raw/checkpoints/s50-w4103.json",
+  "original_checkpoint_sha256": "d82be13058b63b57f7e4c540180648855d975a2d39e86af3b5e3e406cd9c2747",
+  "original_attempt_receipt_path": "results/sustained-throughput/raw/attempts/s50-w4103-630ab2ff399945449bd562b3a0a32312.json",
+  "original_attempt_receipt_sha256": "9b774aac44670c4b4cceb57b82c6cfd995ffb12a8b85fd38bc6ee6e97f2a128e",
+  "archived_checkpoint_path": "results/sustained-throughput/raw/archives/s50-w4103/attempt-630ab2ff399945449bd562b3a0a32312/checkpoint.json",
+  "archived_attempt_receipt_path": "results/sustained-throughput/raw/archives/s50-w4103/attempt-630ab2ff399945449bd562b3a0a32312/attempt.json",
+  "gate_failure_classification": "telemetry_only",
+  "failure_stage": "sustained_sync:triton_4w_4r",
+  "candidate_sustained_phase": {
+    "backend": "triton_4w_4r",
+    "event_seconds": 33.138972290039064,
+    "window_count": 30,
+    "telemetry_sample_count": 30,
+    "telemetry_max_gap_seconds": 2.531410302,
+    "telemetry_gap_gate_seconds": 1.5,
+    "telemetry_gate_passed": false,
+    "compute_event_gap_max_seconds": 2.976000076159835e-06,
+    "compute_duration_gate_passed": true,
+    "correctness_post_sustained_passed": true
+  }
+}
