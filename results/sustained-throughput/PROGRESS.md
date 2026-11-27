@@ -11,6 +11,7 @@ All 12 registered checkpoints are complete. This is the final result for the fro
 - References: Triton 4 warps / 1 row, Triton 8 warps / 1 row, and `torch.compile`
 - Each checkpoint records 1,604 randomized latency intervals and four 33-second sustained phases.
 - Adoption requires at least a 5% throughput gain over both the fastest one-row Triton reference and `torch.compile` for every seed and width.
+- Review fixes hardened the audit after the measurements; all measured checkpoints remain tied to the source pin above. Any follow-up H100 experiment needs its own frozen source revision.
 
 ## Completed checkpoints
 
@@ -35,13 +36,20 @@ Rates below count logical input plus output bytes. They are not measured HBM ban
 
 The 4-row candidate cleared the registered 5% margin over both references for widths 4,103 and 4,105 in all three seeds. At widths 4,104 and 4,112 it missed that margin in all three seeds, averaging about 1.1% slower than the fastest one-row Triton backend and only 2.6–2.8% faster than `torch.compile`. The preregistered rule therefore rejects broad adoption of the 4-row candidate.
 
+| Width | Candidate median (GB/s) | Fastest one-row median (GB/s) | `torch.compile` median (GB/s) | Gain vs one-row | Gain vs compile | Seeds passing |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 4,103 | 2,621.67 | 2,322.77 | 1,874.40 | +12.87% | +39.87% | 3/3 |
+| 4,104 | 2,962.82 | 2,995.01 | 2,881.96 | -1.08% | +2.81% | 0/3 |
+| 4,105 | 2,607.65 | 2,330.51 | 1,870.86 | +11.89% | +39.33% | 3/3 |
+| 4,112 | 2,967.71 | 3,000.64 | 2,889.83 | -1.10% | +2.62% | 0/3 |
+
 The stable width split is a useful result: width-aware dispatch is the next hypothesis to test, routing 4,103 and 4,105 to the 4-row candidate while retaining the fastest one-row backend for 4,104 and 4,112. That follow-up should include nearby unseen widths and a representative production shape mix to check for overfitting.
 
 ## H100 activity readings
 
 The 48 sustained phases accumulated 1,588.37 seconds (26.47 minutes) of CUDA-event time. Raw sampler medians across 1,449 samples per field were 100% GPU busy, 100% memory busy, 5,578 MiB in use, 574.66 W, and 46°C. These aggregate readings are descriptive; most phases do not meet the continuous-telemetry gate.
 
-Including the phase-start and phase-end gaps, only 3 of 48 phases pass the registered 1.5-second maximum query-gap rule. The current audit marks one additional phase eligible even though its final sample is 3.498 seconds before phase end. The audit code checks internal gaps but not phase boundaries; this review finding still needs a code fix and a fresh audit. The three qualifying phases are width 4,104's candidate and 8-warps / 1-row reference, plus width 4,112's 4-warps / 1-row reference. Full telemetry rows and their gaps remain in every raw checkpoint.
+Including phase-start and phase-end gaps, only 3 of 48 phases pass the registered 1.5-second maximum query-gap rule. The boundary-aware audit flags one stale recorded value: seed 52 / width 4,103's 8-warps / 1-row phase was stored as eligible, but its final sample is 3.498 seconds before phase end, so the corrected audit marks it ineligible. This telemetry mismatch does not invalidate the compute result. The three qualifying phases are width 4,104's candidate and 8-warps / 1-row reference, plus width 4,112's 4-warps / 1-row reference. Full telemetry rows and their gaps remain in every raw checkpoint.
 
 Eligible phases were width 4,104's candidate and 8-warps / 1-row reference, plus width 4,112's 4-warps / 1-row reference. Each recorded 100% median GPU busy and memory busy; their median power readings were 530.57 W, 583.66 W, and 549.27 W, respectively. This workload saturates compute activity while using a small fraction of H100 memory capacity.
 
@@ -60,4 +68,4 @@ Eligible phases were width 4,104's candidate and 8-warps / 1-row reference, plus
 - [Seed 52, width 4,105 checkpoint](raw/checkpoints/s52-w4105.json) and [attempt receipt](raw/attempts/s52-w4105-7f73d73acb2e49d29ee714fd0d2b2b3f.json)
 - [Seed 52, width 4,112 checkpoint](raw/checkpoints/s52-w4112.json) and [attempt receipt](raw/attempts/s52-w4112-14f3fea64d3f4d3eb26bf33ce4051fa3.json)
 
-The raw records contain all 19,248 per-operation latency intervals, event windows, correctness checks, memory snapshots, telemetry rows, source hashes, and attempt receipts. The final audit passed with 12 of 12 checkpoints complete and 12 successful checkpoint receipts (16 total attempt receipts including transport and recovery history).
+The raw records contain all 19,248 per-operation latency intervals, event windows, correctness checks, memory snapshots, telemetry rows, source hashes, and attempt receipts. The boundary-aware [final audit summary](raw/final-audit.json) verifies the frozen source pin, all 12 complete checkpoints, and 12 successful checkpoint receipts (16 total attempt receipts including transport and recovery history). It reports the corrected activity-telemetry eligibility separately from the original runtime flag.

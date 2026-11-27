@@ -358,7 +358,19 @@ def run_checkpoint(seed, width):
             per_window_replays = math.ceil(PLAN["sustained_target_seconds_per_window"] /
                                            median_block_seconds)
             sampler = InWindowSampler(PLAN["telemetry_interval_seconds"])
-            sampler.start()
+            telemetry_start_error = None
+            try:
+                sampler.start()
+            except Exception as error:
+                # Telemetry failure disqualifies activity claims, not the compute
+                # measurement. Stop any partially started poller and continue.
+                telemetry_start_error = f"{type(error).__name__}: {error}"
+                try:
+                    sampler.stop()
+                except Exception as cleanup_error:
+                    telemetry_start_error += (
+                        f"; cleanup {type(cleanup_error).__name__}: {cleanup_error}")
+                sampler = None
             window_starts, window_ends = [], []
             host_gaps = []
             current_stage = f"sustained_enqueue:{name}"
@@ -381,7 +393,16 @@ def run_checkpoint(seed, width):
             torch.cuda.synchronize(device)
             phase_end_ns = time.perf_counter_ns()
             phase_end_utc = utc_now()
-            samples_all = sampler.stop()
+            if sampler is not None:
+                try:
+                    samples_all = sampler.stop()
+                    telemetry_reader_error = sampler.error
+                except Exception as error:
+                    samples_all = []
+                    telemetry_reader_error = f"{type(error).__name__}: {error}"
+            else:
+                samples_all = []
+                telemetry_reader_error = None
             sampler = None
             phase_samples = [sample for sample in samples_all
                              if phase_start_ns <= sample.get("arrival_monotonic_ns", 0) <= phase_end_ns]
@@ -393,7 +414,15 @@ def run_checkpoint(seed, width):
             telemetry_times = [sample.get("arrival_monotonic_ns") for sample in phase_samples
                                if sample.get("error") is None]
             telemetry_gaps = [(b - a) / 1e9 for a, b in zip(telemetry_times, telemetry_times[1:])]
-            telemetry_valid = all(sample.get("error") is None for sample in phase_samples)
+            telemetry_start_gap = ((telemetry_times[0] - phase_start_ns) / 1e9
+                                   if telemetry_times else None)
+            telemetry_end_gap = ((phase_end_ns - telemetry_times[-1]) / 1e9
+                                 if telemetry_times else None)
+            measured_telemetry_gaps = (telemetry_gaps + [telemetry_start_gap, telemetry_end_gap]
+                                       if telemetry_times else [])
+            telemetry_max_gap = max(measured_telemetry_gaps, default=None)
+            telemetry_valid = (telemetry_start_error is None and telemetry_reader_error is None
+                               and all(sample.get("error") is None for sample in phase_samples))
             telemetry_required = PLAN["telemetry_required_fields"]
             telemetry_field_coverage = {
                 field: sum(sample.get(field) is not None for sample in phase_samples) / len(phase_samples)
@@ -404,16 +433,20 @@ def run_checkpoint(seed, width):
                      "phase_end_monotonic_ns": phase_end_ns,
                      "phase_host_wall_seconds": (phase_end_ns - phase_start_ns) / 1e9,
                      "telemetry_process": "single nvidia-smi --loop=1 process, phase bounded",
+                     "telemetry_start_error": telemetry_start_error,
+                     "telemetry_reader_error": telemetry_reader_error,
                      "telemetry_samples": phase_samples,
                      "telemetry_query_interval_seconds": PLAN["telemetry_interval_seconds"],
                      "telemetry_sample_count": len(phase_samples),
                      "telemetry_field_coverage": telemetry_field_coverage,
-                     "telemetry_max_gap_seconds": max(telemetry_gaps, default=None),
+                     "telemetry_start_gap_seconds": telemetry_start_gap,
+                     "telemetry_end_gap_seconds": telemetry_end_gap,
+                     "telemetry_max_gap_seconds": telemetry_max_gap,
                      "telemetry_gate_passed": bool(
                          telemetry_valid
                          and len(phase_samples) >= PLAN["minimum_active_telemetry_samples"]
-                         and telemetry_gaps
-                         and max(telemetry_gaps) <= PLAN["maximum_active_telemetry_gap_seconds"]
+                         and telemetry_max_gap is not None
+                         and telemetry_max_gap <= PLAN["maximum_active_telemetry_gap_seconds"]
                          and all(value >= PLAN["telemetry_required_field_coverage_fraction"]
                                  for value in telemetry_field_coverage.values())),
                      "pilot_replays": pilot_replays, "pilot_event_seconds": pilot_seconds,

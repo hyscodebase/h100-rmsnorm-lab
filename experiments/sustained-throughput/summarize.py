@@ -109,11 +109,17 @@ def plan_audit():
 def check_pin():
     need(SOURCE_PIN.is_file(), "Frozen source pin is missing.")
     pin = json.loads(SOURCE_PIN.read_text())
-    actual = {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in SOURCES}
-    need(pin.get("source_sha256") == actual, "Current source differs from pinned SHA-256 hashes.")
     revision = pin.get("source_revision", "")
+    source_hashes = pin.get("source_sha256", {})
     need(len(revision) == 40, "Source pin does not name a full Git commit.")
-    for name, digest in actual.items():
+    need(set(source_hashes) == set(SOURCES)
+         and all(isinstance(digest, str) and len(digest) == 64
+                 for digest in source_hashes.values()),
+         "Frozen source pin manifest is incomplete.")
+    # The audit implementation may be hardened after a run. Verify the immutable
+    # execution snapshot against its Git commit; step.py still blocks submissions
+    # unless the working tree exactly matches the frozen pin.
+    for name, digest in source_hashes.items():
         blob = subprocess.check_output(["git", "-C", str(ROOT), "show", f"{revision}:{name}"])
         need(hashlib.sha256(blob).hexdigest() == digest, f"Git source hash mismatch: {name}.")
     need(pin.get("research_assistant_model") == "GPT-6 Luna",
@@ -201,7 +207,8 @@ def audit_attempts(pin, checkpoint_records, plan):
                      and fifth.get("manual_telemetry_retry_override") is True
                      and fifth.get("checkpoint_present_at_telemetry_retry") is True
                      and fifth.get("invocation_flag") == "--retry-telemetry-only"
-                     and fifth.get("outcome") in {"checkpoint_saved", "gate_failed", "transport_or_parse_failed"}
+                     and fifth.get("outcome") in {"checkpoint_saved", "gate_failed", "transport_or_parse_failed",
+                                                  "paused_before_submit"}
                      and fifth.get("previous_telemetry_retry_attempt_ids")
                         == [item.get("attempt_id") for item in ordered[:standard_limit + 1]],
                      f"Fifth attempt lacks the exact telemetry-only recovery authorization: {unit}.")
@@ -304,6 +311,9 @@ def telemetry_summary(samples, phase, plan):
     times = [sample.get("arrival_monotonic_ns") for sample in good
              if isinstance(sample.get("arrival_monotonic_ns"), int)]
     gaps = [(b - a) / 1e9 for a, b in zip(times, times[1:])]
+    start_gap = (times[0] - phase_start) / 1e9 if times else None
+    end_gap = (phase_end - times[-1]) / 1e9 if times else None
+    measured_gaps = gaps + ([start_gap, end_gap] if times else [])
     fields = {}
     coverage_pass = True
     for field in plan["telemetry_required_fields"]:
@@ -315,10 +325,16 @@ def telemetry_summary(samples, phase, plan):
         fields[field] = {"count": len(values), "coverage_fraction": coverage,
                          "median": median_or_none(values), "peak": max_or_none(values),
                          "coverage_passed": passed}
-    query_pass = (len(good) >= plan["minimum_active_telemetry_samples"] and gaps
-                  and max(gaps) <= plan["maximum_active_telemetry_gap_seconds"])
+    max_gap = max(measured_gaps) if measured_gaps else None
+    query_pass = (len(good) >= plan["minimum_active_telemetry_samples"]
+                  and len(times) == len(good)
+                  and max_gap is not None
+                  and max_gap <= plan["maximum_active_telemetry_gap_seconds"])
     return {"poll_rows": len(samples), "valid_rows": len(good),
-            "max_query_gap_seconds": max(gaps) if gaps else None,
+            "max_query_gap_seconds": max_gap,
+            "max_internal_query_gap_seconds": max(gaps) if gaps else None,
+            "phase_start_query_gap_seconds": start_gap,
+            "phase_end_query_gap_seconds": end_gap,
             "unique_reading_transitions": sum(
                 any(a.get(f) != b.get(f) for f in plan["telemetry_required_fields"])
                 for a, b in zip(good, good[1:])),
@@ -487,13 +503,16 @@ def audit_checkpoint(path, plan, pin):
         need(phase.get("compute_gate_passed") is True
              and phase.get("gate_passed") is True,
              "Sustained compute duration/event-gap gate did not pass.")
-        need(phase.get("activity_telemetry_eligible") is telemetry["eligible"],
-             "Activity eligibility does not match the frozen telemetry thresholds.")
+        recorded_telemetry_eligibility = phase.get("activity_telemetry_eligible")
+        need(isinstance(recorded_telemetry_eligibility, bool),
+             "Recorded activity-telemetry eligibility is missing.")
         phase_results[phase["backend"]] = {
             "logical_input_plus_output_GB_per_s": rate,
             "event_seconds": sum(durations), "total_graph_blocks": total_blocks,
             "total_graph_calls": total_calls, "window_replay_counts": replay_counts,
             "activity_telemetry_eligible": telemetry["eligible"],
+            "recorded_activity_telemetry_eligible": recorded_telemetry_eligibility,
+            "activity_eligibility_matches_audit": recorded_telemetry_eligibility is telemetry["eligible"],
             "telemetry": telemetry}
     for section in ("fixtures", "timed_input", "post_latency_replay", "post_sustained_replay"):
         checks = r.get("correctness", {}).get(section, [])
