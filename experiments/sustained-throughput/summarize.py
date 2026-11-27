@@ -205,9 +205,15 @@ def audit_attempts(pin, checkpoint_records, plan):
                      and fifth.get("previous_telemetry_retry_attempt_ids")
                         == [item.get("attempt_id") for item in ordered[:standard_limit + 1]],
                      f"Fifth attempt lacks the exact telemetry-only recovery authorization: {unit}.")
-            if fourth.get("outcome") == "gate_failed":
-                # Validate the archive as soon as the telemetry-only failure exists,
-                # whether or not the one manual rerun has been attempted.
+            require_telemetry_archive = len(ordered) == standard_limit + 2
+            if len(ordered) == standard_limit + 1 and fourth.get("outcome") == "gate_failed":
+                saved_summary = checkpoint_records.get(unit, {})
+                require_telemetry_archive = (
+                    saved_summary.get("attempt_id") == fourth.get("attempt_id")
+                    and saved_summary.get("failure_classification") == "telemetry_only")
+            if fourth.get("outcome") == "gate_failed" and require_telemetry_archive:
+                # Preserve and bind the archive only for the exact telemetry-only
+                # recovery trigger or when a fifth attempt claims to use it.
                 archive_dir = RAW / "archives" / unit / f"attempt-{fourth['attempt_id']}"
                 manifest_path = archive_dir / "manifest.json"
                 archived_cp = archive_dir / "checkpoint.json"
