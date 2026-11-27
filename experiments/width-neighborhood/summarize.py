@@ -4,6 +4,7 @@ import json
 import statistics
 import subprocess
 from pathlib import Path
+from datetime import datetime
 
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
@@ -12,6 +13,7 @@ RAW = ROOT / "results/width-neighborhood/raw"
 RESULTS = RAW / "checkpoints"
 SUMMARY = RAW / "summary.json"
 REPORT = ROOT / "results/width-neighborhood/REPORT.md"
+SOURCE_PIN = RAW / "source-pin.json"
 SOURCES = ("kernels.py", "experiments/width-neighborhood/run.py", "experiments/width-neighborhood/PLAN.md", "plans/width-neighborhood.json")
 
 
@@ -31,14 +33,19 @@ def audit():
          and plan["rounds"] == 21 and plan["ops_per_graph"] == 32 and plan["threshold_percent"] == 5.0,
          "Frozen plan differs from issue #60.")
     source_hashes = {path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest() for path in SOURCES}
+    pin = json.loads(SOURCE_PIN.read_text())
+    frozen_revision = pin["source_freeze_revision"]
+    need(pin["source_sha256"] == source_hashes, "Current source differs from the frozen source pin.")
     expected = {(seed, width) for seed in plan["seeds"] for width in plan["widths"]}
     files = {path.stem: path for path in RESULTS.glob("s*-w*.json")}
     expected_names = {f"s{seed}-w{width}" for seed, width in expected}
     need(set(files) == expected_names, f"Checkpoint coverage differs. Missing {sorted(expected_names-set(files))}; extra {sorted(set(files)-expected_names)}")
     cells = {}
     environment = None
-    revision = None
+    execution_revisions = set()
     telemetry = []
+    telemetry_windows = []
+    graph_event_seconds = 0.0
     for seed, width in sorted(expected):
         key = f"s{seed}-w{width}"
         record = json.loads(files[key].read_text())
@@ -48,9 +55,7 @@ def audit():
         need(record.get("source_sha256") == source_hashes, f"Source hash mismatch in {key}.")
         need(isinstance(record.get("code_revision"), str) and len(record["code_revision"]) == 40,
              f"Missing frozen revision in {key}.")
-        if revision is None:
-            revision = record["code_revision"]
-        need(record["code_revision"] == revision, f"Mixed source revisions in {key}.")
+        execution_revisions.add(record["code_revision"])
         env = record["environment"]
         need("H100" in env["gpu"] and env["compute_capability"] == [9, 0] and env["total_memory_bytes"] > 0,
              f"Non-H100 execution in {key}.")
@@ -80,6 +85,7 @@ def audit():
             need(sample["ops_per_graph"] == 32 and sample["graph_elapsed_us"] > 0 and sample["us_per_op"] > 0,
                  f"Invalid raw event interval in {key}.")
             backend_times.setdefault(sample["backend"], []).append(sample["us_per_op"])
+            graph_event_seconds += sample["graph_elapsed_us"] / 1e6
         need(set(by_round) == set(range(21)), f"Missing timing rounds in {key}.")
         for round_id, group in by_round.items():
             need(len(group) == 4 and {g["backend"] for g in group} == set(method["timed_backends"])
@@ -97,6 +103,7 @@ def audit():
             "wall_seconds": record["wall_seconds"],
             "telemetry": record.get("telemetry", []),
         }
+        checkpoint_samples = []
         for item in record.get("telemetry", []):
             path = ROOT / item["path"]
             need(path.is_file() and hashlib.sha256(path.read_bytes()).hexdigest() == item["sha256"],
@@ -104,6 +111,13 @@ def audit():
             for line in path.read_text().splitlines():
                 sample = json.loads(line)
                 telemetry.append(sample)
+                checkpoint_samples.append(sample)
+        if checkpoint_samples:
+            stamps = sorted(datetime.fromisoformat(s["timestamp_utc"]) for s in checkpoint_samples)
+            gaps = [(b-a).total_seconds() for a, b in zip(stamps, stamps[1:])]
+            telemetry_windows.append({"checkpoint": key, "samples": len(stamps),
+                                      "span_seconds": (stamps[-1]-stamps[0]).total_seconds(),
+                                      "max_gap_seconds": max(gaps, default=0)})
     by_width = {}
     for width in plan["widths"]:
         rows = [cells[seed, width] for seed in plan["seeds"]]
@@ -112,26 +126,37 @@ def audit():
     qualifies_4104 = by_width["4104"]["qualifies"]
     if telemetry:
         stamps = [s["timestamp_utc"] for s in telemetry]
-        parsed = sorted(__import__("datetime").datetime.fromisoformat(s) for s in stamps)
+        parsed = sorted(datetime.fromisoformat(s) for s in stamps)
         gaps = [(b-a).total_seconds() for a, b in zip(parsed, parsed[1:])]
         def finite(key): return [s[key] for s in telemetry if s.get(key) is not None]
         resources = {"sample_count": len(telemetry), "span_seconds": (parsed[-1]-parsed[0]).total_seconds(),
                      "max_gap_seconds": max(gaps, default=0),
+                     "sampled_window_seconds_sum": sum(w["span_seconds"] for w in telemetry_windows),
+                     "max_within_checkpoint_gap_seconds": max((w["max_gap_seconds"] for w in telemetry_windows), default=0),
                      "gpu_util_median_percent": median(finite("util_pct")) if finite("util_pct") else None,
                      "memory_busy_median_percent": median(finite("memory_busy_pct")) if finite("memory_busy_pct") else None,
                      "vram_median_mib": median(finite("used_mib")) if finite("used_mib") else None,
                      "power_median_w": median(finite("power_w")) if finite("power_w") else None}
     else:
         resources = {"sample_count": 0, "span_seconds": 0, "max_gap_seconds": None,
+                     "sampled_window_seconds_sum": 0, "max_within_checkpoint_gap_seconds": None,
                      "gpu_util_median_percent": None, "memory_busy_median_percent": None,
                      "vram_median_mib": None, "power_median_w": None}
-    for path, digest in source_hashes.items():
-        blob = subprocess.check_output(["git", "-C", str(ROOT), "show", f"{revision}:{path}"])
-        need(hashlib.sha256(blob).hexdigest() == digest, f"Frozen source hash differs in {revision}:{path}.")
-    summary = {"plan": plan, "code_revision": revision, "source_sha256": source_hashes,
+    for revision in {frozen_revision, *execution_revisions}:
+        for path, digest in source_hashes.items():
+            blob = subprocess.check_output(["git", "-C", str(ROOT), "show", f"{revision}:{path}"])
+            need(hashlib.sha256(blob).hexdigest() == digest, f"Frozen source hash differs in {revision}:{path}.")
+    attempt_files = list((RAW / "attempts").glob("s*-w*.json"))
+    attempt_records = [json.loads(path.read_text()) for path in attempt_files]
+    failed_attempts = [record for record in attempt_records if record.get("outcome") == "failed"]
+    summary = {"plan": plan, "source_freeze_revision": frozen_revision,
+               "research_assistant_model": "GPT-6 Luna (delegated runtime)",
+               "execution_revisions": sorted(execution_revisions), "source_sha256": source_hashes,
                "environment": environment, "widths": by_width, "recommend_width_4104": qualifies_4104,
                "checkpoints": len(expected), "timing_intervals": len(expected)*21*4,
-               "runner_wall_seconds": sum(r["wall_seconds"] for r in cells.values()), "resources": resources}
+               "attempts": len(attempt_files), "failed_attempts": len(failed_attempts),
+               "runner_wall_seconds": sum(r["wall_seconds"] for r in cells.values()),
+               "graph_event_seconds": graph_event_seconds, "resources": resources}
     return summary
 
 
@@ -150,8 +175,10 @@ def write_report(summary):
         lines.append(f"| {width} | {group('candidate_us')} | {group('fastest_one_row_us')} | {group('torch_compile_us')} | {group('gain_vs_fastest_one_row_percent')}% | {group('gain_vs_torch_compile_percent')}% | {'Yes' if summary['widths'][str(width)]['qualifies'] else 'No'} |")
     res = summary["resources"]
     lines += ["", f"**Decision:** {'Retain' if summary['recommend_width_4104'] else 'Reject'} the width 4,104 recommendation under the preregistered rule; all three seeds must beat both references by at least 5%. Neighbor results do not broaden the recommendation.", "",
-              f"**H100 observations:** {res['sample_count']} one-second device samples across {res['span_seconds']:.1f}s of observed span; median GPU busy {res['gpu_util_median_percent']}%; median memory busy {res['memory_busy_median_percent']}%; median VRAM {res['vram_median_mib']} MiB; median power {res['power_median_w']} W; largest telemetry gap {res['max_gap_seconds']}s. Host runner wall across 12 checkpoints: {summary['runner_wall_seconds']:.1f}s. Device sample span is not billed GPU time.", "",
-              f"Raw archive: [`raw/`](raw). Audited source revision: `{summary['code_revision']}`. The machine-readable derivation is [`summary.json`](raw/summary.json).", ""]
+              f"**H100 observations:** {res['sample_count']} one-second device samples from 12 checkpoint windows; summed first-to-last sample spans {res['sampled_window_seconds_sum']:.1f}s. Median GPU busy {res['gpu_util_median_percent']}%; median memory busy {res['memory_busy_median_percent']}%; median VRAM {res['vram_median_mib']} MiB; median power {res['power_median_w']} W; largest within-checkpoint sample gap {res['max_within_checkpoint_gap_seconds']}s. The largest gap across checkpoints was {res['max_gap_seconds']}s, so the aggregate 0% busy medians do not measure continuous utilization. The 1,008 CUDA graph event intervals cover {summary['graph_event_seconds']:.2f}s in total; host runner wall across 12 checkpoints was {summary['runner_wall_seconds']:.1f}s. These observer samples are not billed GPU time.", "",
+              f"The raw archive contains {summary['attempts']} attempt receipts, including {summary['failed_attempts']} failed connection attempt, followed by a successful retry.", "",
+              f"The experiment runner and analysis were prepared with {summary['research_assistant_model']}.", "",
+              f"Raw archive: [`raw/`](raw). Sources were frozen at `{summary['source_freeze_revision']}`; checkpoint code revisions `{', '.join(rev[:7] for rev in summary['execution_revisions'])}` are result-only commits whose archived source hashes audit to the same frozen code. The machine-readable derivation is [`summary.json`](raw/summary.json).", ""]
     REPORT.parent.mkdir(parents=True, exist_ok=True)
     REPORT.write_text("\n".join(lines))
 
