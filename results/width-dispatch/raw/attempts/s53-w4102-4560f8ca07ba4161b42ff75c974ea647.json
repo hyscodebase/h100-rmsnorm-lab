@@ -1,0 +1,28 @@
+{
+  "unit": "s53-w4102",
+  "seed": 53,
+  "width": 4102,
+  "source_revision": "85bf889ffca8863f59e80f84e82ef9fcdc297cee",
+  "source_sha256": {
+    "kernels.py": "431854a059ff8fa514053b7cdf47c1e32491ffdbf00dfcf37f0589f9811b36e8",
+    "experiments/width-dispatch/run.py": "ee1f1f5479fe2ee508a6cd9d98bfa871c99c5af8b5cef35b60879b902cd81a73",
+    "experiments/width-dispatch/telemetry.py": "d341f365ad894f42d08d491c40970aade24520a17ac1961d402ececf80e5900b",
+    "experiments/width-dispatch/PLAN.md": "6247dc7cb7880440685d6b6a9f5579ac216384732c9dbba117c13a9229471dee",
+    "plans/width-dispatch.json": "b900fbb665ff90232fc95e280850f4512a8edf48c9660de677d4f515b1f76ece",
+    "lab.py": "b3b54b0943d1264b89273350ab2d19ee0aa0ff5ac93714687c92cc7f3cb0149c",
+    "experiments/width-dispatch/step.py": "b1d6ea6590e4ea26558dde1471910452b641bc46edc6082ae07b78fe1dfd5abf",
+    "experiments/width-dispatch/ssh_runner.sh": "207b657887b23b8616bc71f9a6d03f7ad1274835cd4f3908a16358b400fb8e3b",
+    "experiments/width-dispatch/summarize.py": "2cece4ec1630ff51e176c5eb1e5dae611cb32cd582a33c7d3cc3dfac2d8c9952"
+  },
+  "attempt_id": "4560f8ca07ba4161b42ff75c974ea647",
+  "started_utc": "2026-11-27T09:08:43.641245+00:00",
+  "outcome": "checkpoint_saved",
+  "manual_recovery": false,
+  "invocation_flag": null,
+  "finished_utc": "2026-11-27T09:11:19.902566+00:00",
+  "elapsed_seconds": 156.26176216604654,
+  "checkpoint_status": "complete",
+  "checkpoint_path": "results/width-dispatch/raw/checkpoints/s53-w4102.json",
+  "checkpoint_sha256": "f12f0fa1214637d773e22df988846345157c20ca786c243ea521614e61afb4e5",
+  "failure": null
+}

@@ -1,0 +1,452 @@
+{
+  "plan": "pass",
+  "resource_estimate": {
+    "persistent_live_bytes": 1888223232,
+    "persistent_live_gib": 1.758544921875,
+    "one_output_bytes": 269746176,
+    "latency_graph_logical_bytes": 2157969408,
+    "sustained_block_logical_bytes": 17263755264,
+    "latency_intervals_per_checkpoint": 1604,
+    "latency_graph_calls_per_checkpoint": 6416,
+    "sustained_target_seconds_total": 3168.0
+  },
+  "source_revision": "85bf889ffca8863f59e80f84e82ef9fcdc297cee",
+  "source_pin": "pass",
+  "saved_checkpoints": 1,
+  "successful_checkpoints": 1,
+  "expected_checkpoints": 24,
+  "final_complete": false,
+  "receipt_audit": {
+    "receipt_count": 1,
+    "saved_checkpoint_receipts": 1,
+    "successful_checkpoint_receipts": 1
+  },
+  "checkpoint_results": [
+    {
+      "checkpoint": "s53-w4102",
+      "seed": 53,
+      "width": 4102,
+      "status": "complete",
+      "attempt_id": "4560f8ca07ba4161b42ff75c974ea647",
+      "latency_median_us_per_op": {
+        "triton_4w_1r": 181.36799335479736,
+        "triton_8w_1r": 183.1520050764084,
+        "triton_4w_4r": 184.29599702358246,
+        "torch_compile": 196.97600603103638
+      },
+      "phases": {
+        "torch_compile": {
+          "logical_input_plus_output_GB_per_s": 2752.1039235052026,
+          "event_seconds": 33.00841369628906,
+          "total_graph_blocks": 5280,
+          "total_graph_calls": 168960,
+          "window_replay_counts": [
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176,
+            176
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 112,
+            "valid_rows": 112,
+            "max_query_gap_seconds": 2.536681006,
+            "max_internal_query_gap_seconds": 2.536681006,
+            "phase_start_query_gap_seconds": 0.075822535,
+            "phase_end_query_gap_seconds": 0.085601925,
+            "unique_reading_transitions": 108,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 112,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 112,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 112,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 112,
+                "coverage_fraction": 1.0,
+                "median": 680.385,
+                "peak": 692.46,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 112,
+                "coverage_fraction": 1.0,
+                "median": 46.0,
+                "peak": 49.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "triton_4w_1r": {
+          "logical_input_plus_output_GB_per_s": 2986.3200052463562,
+          "event_seconds": 33.012152221679685,
+          "total_graph_blocks": 5730,
+          "total_graph_calls": 183360,
+          "window_replay_counts": [
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191,
+            191
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 116,
+            "valid_rows": 116,
+            "max_query_gap_seconds": 2.321082106,
+            "max_internal_query_gap_seconds": 2.321082106,
+            "phase_start_query_gap_seconds": 0.082148241,
+            "phase_end_query_gap_seconds": 0.140526811,
+            "unique_reading_transitions": 113,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 623.405,
+                "peak": 627.93,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 116,
+                "coverage_fraction": 1.0,
+                "median": 48.0,
+                "peak": 51.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "triton_8w_1r": {
+          "logical_input_plus_output_GB_per_s": 2960.1865933564823,
+          "event_seconds": 33.12922900390625,
+          "total_graph_blocks": 5700,
+          "total_graph_calls": 182400,
+          "window_replay_counts": [
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190,
+            190
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 112,
+            "valid_rows": 112,
+            "max_query_gap_seconds": 2.571793297,
+            "max_internal_query_gap_seconds": 2.571793297,
+            "phase_start_query_gap_seconds": 0.085015386,
+            "phase_end_query_gap_seconds": 0.029975236,
+            "unique_reading_transitions": 110,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 112,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 112,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 112,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 112,
+                "coverage_fraction": 1.0,
+                "median": 648.7149999999999,
+                "peak": 651.69,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 112,
+                "coverage_fraction": 1.0,
+                "median": 52.0,
+                "peak": 52.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        },
+        "triton_4w_4r": {
+          "logical_input_plus_output_GB_per_s": 2938.2473618531767,
+          "event_seconds": 33.02526489257812,
+          "total_graph_blocks": 5640,
+          "total_graph_calls": 180480,
+          "window_replay_counts": [
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188,
+            188
+          ],
+          "activity_telemetry_eligible": false,
+          "recorded_activity_telemetry_eligible": false,
+          "activity_eligibility_matches_audit": true,
+          "telemetry": {
+            "poll_rows": 117,
+            "valid_rows": 117,
+            "max_query_gap_seconds": 2.277123437,
+            "max_internal_query_gap_seconds": 2.277123437,
+            "phase_start_query_gap_seconds": 0.084315634,
+            "phase_end_query_gap_seconds": 0.099085329,
+            "unique_reading_transitions": 105,
+            "fields": {
+              "gpu_busy_percent": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_busy_percent": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 100.0,
+                "peak": 100.0,
+                "coverage_passed": true
+              },
+              "memory_used_mib": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 5064.0,
+                "peak": 5064.0,
+                "coverage_passed": true
+              },
+              "power_w": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 567.27,
+                "peak": 568.47,
+                "coverage_passed": true
+              },
+              "temperature_c": {
+                "count": 117,
+                "coverage_fraction": 1.0,
+                "median": 48.0,
+                "peak": 49.0,
+                "coverage_passed": true
+              }
+            },
+            "coverage_gate_passed": true,
+            "query_gate_passed": false,
+            "device_mapping_verified": true,
+            "sampler_error_free": true,
+            "eligible": false
+          }
+        }
+      }
+    }
+  ],
+  "checkpoint_comparisons": [
+    {
+      "seed": 53,
+      "width": 4102,
+      "rates_GB_per_s": {
+        "triton_4w_1r": 2986.3200052463562,
+        "triton_8w_1r": 2960.1865933564823,
+        "triton_4w_4r": 2938.2473618531767,
+        "torch_compile": 2752.1039235052026
+      },
+      "fastest_one_row_backend": "triton_4w_1r",
+      "gain_percent": {
+        "fastest_one_row": -1.6097619581533662,
+        "torch_compile": 6.763677663410816
+      },
+      "qualifies": false
+    }
+  ],
+  "per_width_across_seeds": {
+    "4102": {
+      "seed_count": 1,
+      "median_rate_GB_per_s": {
+        "triton_4w_1r": 2986.3200052463562,
+        "triton_8w_1r": 2960.1865933564823,
+        "triton_4w_4r": 2938.2473618531767,
+        "torch_compile": 2752.1039235052026
+      },
+      "median_gain_percent_vs_fastest_one_row": -1.6097619581533662,
+      "median_gain_percent_vs_torch_compile": 6.763677663410816,
+      "qualifying_seeds": 0,
+      "all_registered_seeds_qualify": false
+    }
+  },
+  "bounded_dispatch_screen_decision": {
+    "eligible": false,
+    "supports_registered_odd_even_split": false,
+    "all_registered_odd_widths_qualify": false,
+    "any_registered_even_width_qualifies": false,
+    "scope": "only the eight preregistered widths at 32768 BF16 rows",
+    "rule": "all registered odd widths must be at least 5.0% faster than fastest one-row Triton and torch_compile in every seed, and no registered even width may qualify",
+    "reason": "awaiting all registered checkpoints"
+  },
+  "generated_utc": "2026-11-27T09:12:12.882825+00:00"
+}
