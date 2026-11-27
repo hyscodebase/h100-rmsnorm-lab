@@ -16,7 +16,13 @@
   },
   "attempt_id": "5457ddc33d914de7983e4df7b20b643f",
   "started_utc": "2026-11-27T09:12:12.884176+00:00",
-  "outcome": "started",
+  "outcome": "checkpoint_saved",
   "manual_recovery": false,
-  "invocation_flag": null
+  "invocation_flag": null,
+  "finished_utc": "2026-11-27T09:15:09.674730+00:00",
+  "elapsed_seconds": 176.7639229579363,
+  "checkpoint_status": "complete",
+  "checkpoint_path": "results/width-dispatch/raw/checkpoints/s53-w4106.json",
+  "checkpoint_sha256": "cea9951617b5de0cfdeeb3dc6c5783b93c0ca20812c29864aea37fada334d9a4",
+  "failure": null
 }
