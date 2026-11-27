@@ -7,6 +7,7 @@ import random
 import statistics
 import subprocess
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -42,6 +43,10 @@ def median_or_none(values):
 def max_or_none(values):
     values = [v for v in values if v is not None and math.isfinite(v)]
     return max(values) if values else None
+
+
+def utc_epoch_ns(value):
+    return int(datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp() * 1_000_000_000)
 
 
 def plan_audit():
@@ -139,6 +144,8 @@ def check_pin():
         need(current == digest, f"Working source differs from the frozen source pin: {name}.")
     need(pin.get("research_assistant_model") == json.loads(PLAN_PATH.read_text())["research_assistant_model"],
          "Research-assistant model provenance is missing or changed.")
+    need(pin.get("h100_execution_scope") in {"pilot", "full_matrix"},
+         "H100 source pin lacks an explicit pilot/full-matrix execution scope.")
     return pin
 
 
@@ -207,10 +214,21 @@ def audit_attempts(pin, checkpoint_records, plan):
              f"Attempt does not match the current source pin: {path.name}.")
         need(item.get("outcome") in allowed,
              f"Unknown or unfinished attempt outcome: {path.name}.")
-        need(item.get("finished_utc")
-             and isinstance(item.get("elapsed_seconds"), (int, float))
-             and math.isfinite(item["elapsed_seconds"]) and item["elapsed_seconds"] >= 0,
-             f"Attempt receipt lacks valid completion metadata: {path.name}.")
+        need(item.get("finished_utc"),
+             f"Attempt receipt lacks a completion timestamp: {path.name}.")
+        elapsed = item.get("elapsed_seconds")
+        if elapsed is None:
+            need(item.get("reconciled_after_interruption") is True
+                 and item.get("local_elapsed_seconds_observed") is False,
+                 f"Unknown attempt duration is not marked as interrupted: {path.name}.")
+        else:
+            need(isinstance(elapsed, (int, float)) and math.isfinite(elapsed) and elapsed >= 0,
+                 f"Attempt receipt has an invalid local duration: {path.name}.")
+        remote_elapsed = item.get("remote_benchmark_wall_seconds")
+        need(remote_elapsed is None or
+             (isinstance(remote_elapsed, (int, float)) and math.isfinite(remote_elapsed)
+              and remote_elapsed >= 0),
+             f"Attempt receipt has an invalid remote benchmark duration: {path.name}.")
         need(not item.get("manual_transport_retry_override")
              and not item.get("manual_telemetry_retry_override"),
              f"Manual retry is not registered in this protocol: {path.name}.")
@@ -277,13 +295,25 @@ def telemetry_summary(samples, phase, plan):
     need(isinstance(phase_start, int) and isinstance(phase_end, int) and phase_start < phase_end,
          "Phase monotonic boundaries are absent or invalid.")
     arrivals = [sample.get("arrival_monotonic_ns") for sample in samples]
-    need(all(isinstance(t, int) and phase_start <= t <= phase_end for t in arrivals),
-         "A retained telemetry row falls outside the recorded phase monotonic bounds.")
-    times = [sample.get("arrival_monotonic_ns") for sample in good
-             if isinstance(sample.get("arrival_monotonic_ns"), int)]
+    need(all(isinstance(t, int) for t in arrivals),
+         "A telemetry row lacks its reader-arrival monotonic timestamp.")
+    phase_start_utc = phase.get("phase_start_utc")
+    phase_end_utc = phase.get("phase_end_utc")
+    need(isinstance(phase_start_utc, str) and isinstance(phase_end_utc, str),
+         "Phase UTC boundaries are absent.")
+    phase_start_query_ns = utc_epoch_ns(phase_start_utc)
+    phase_end_query_ns = utc_epoch_ns(phase_end_utc)
+    need(phase_start_query_ns < phase_end_query_ns, "Phase UTC boundaries are invalid.")
+    times = [sample.get("query_unix_ns") for sample in good
+             if isinstance(sample.get("query_unix_ns"), int)]
+    need(len(times) == len(good)
+         and all(phase_start_query_ns <= value <= phase_end_query_ns for value in times),
+         "A valid telemetry query timestamp is missing or outside the measured phase.")
     gaps = [(b - a) / 1e9 for a, b in zip(times, times[1:])]
-    start_gap = (times[0] - phase_start) / 1e9 if times else None
-    end_gap = (phase_end - times[-1]) / 1e9 if times else None
+    need(all(b > a for a, b in zip(times, times[1:])),
+         "Telemetry query timestamps are duplicated or out of order.")
+    start_gap = (times[0] - phase_start_query_ns) / 1e9 if times else None
+    end_gap = (phase_end_query_ns - times[-1]) / 1e9 if times else None
     measured_gaps = gaps + ([start_gap, end_gap] if times else [])
     fields = {}
     coverage_pass = True
@@ -317,6 +347,7 @@ def telemetry_summary(samples, phase, plan):
             "max_internal_query_gap_seconds": max(gaps) if gaps else None,
             "phase_start_query_gap_seconds": start_gap,
             "phase_end_query_gap_seconds": end_gap,
+            "time_basis": "nvidia-smi query timestamp (UTC)",
             "unique_reading_transitions": sum(
                 any(a.get(f) != b.get(f) for f in plan["telemetry_required_fields"])
                 for a, b in zip(good, good[1:])),
@@ -475,8 +506,17 @@ def audit_checkpoint(path, plan, pin):
         need(30 <= sum(durations) <= 60 and abs(sum(durations) - phase["event_seconds"]) < 1e-6,
              "Sustained event duration is outside 30–60s or not reproducible.")
         calls = phase["graph_calls_per_block"]
-        need(calls == 32 and phase.get("replays_per_window") == replay_counts[0],
-             "Sustained replay block count differs from per-window records.")
+        pilot_replays = phase.get("pilot_replays")
+        pilot_seconds = phase.get("pilot_event_seconds")
+        need(isinstance(pilot_replays, int) and pilot_replays > 0
+             and isinstance(pilot_seconds, (int, float))
+             and math.isfinite(pilot_seconds) and pilot_seconds > 0,
+             "Sustained replay calibration is missing or invalid.")
+        expected_replays = math.ceil(plan["sustained_target_seconds_per_window"]
+                                     / (pilot_seconds / pilot_replays))
+        need(calls == 32 and phase.get("replays_per_window") == expected_replays
+             and all(value == expected_replays for value in replay_counts),
+             "Every sustained window must match the replay count recalibrated from its pilot.")
         total_blocks = sum(replay_counts)
         total_calls = total_blocks * calls
         raw_bytes = plan["rows"] * r["width"] * plan["input_element_bytes"] * 2 * total_calls
@@ -521,13 +561,31 @@ def audit_checkpoint(path, plan, pin):
          "Free-memory floor failed before allocations.")
     need(r["memory"]["after_persistent_allocation"]["free_bytes"] >= 16 * GIB,
          "Free-memory floor failed after persistent allocations.")
+    environment = r.get("environment")
+    environment_fields = ("gpu", "compute_capability", "total_memory_bytes", "sm_count",
+                          "driver", "cuda_runtime", "torch", "triton", "python")
+    need(isinstance(environment, dict)
+         and all(field in environment for field in environment_fields)
+         and "H100" in str(environment.get("gpu"))
+         and environment.get("compute_capability") == [9, 0]
+         and all(isinstance(environment.get(field), str) and environment[field]
+                 for field in ("gpu", "driver", "cuda_runtime", "torch", "triton", "python"))
+         and isinstance(environment.get("total_memory_bytes"), int)
+         and isinstance(environment.get("sm_count"), int),
+         "Complete checkpoint lacks a verifiable H100/software environment.")
     return {"checkpoint": path.stem, "seed": r["seed"], "width": r["width"], "status": "complete",
             "attempt_id": r.get("attempt_id"),
+            "environment": {field: environment[field] for field in environment_fields},
             "latency_median_us_per_op": latency_medians, "phases": phase_results}
 
 
 def compare_checkpoints(results, plan):
     by_unit = {item["checkpoint"]: item for item in results if item.get("status") == "complete"}
+    environments = {json.dumps(item["environment"], sort_keys=True, separators=(",", ":"))
+                    for item in by_unit.values()}
+    need(len(environments) <= 1,
+         "Checkpoint matrix mixes H100 variants or software environments; refusing pooled comparisons.")
+    execution_environment = (next(iter(by_unit.values()))["environment"] if by_unit else None)
     by_width = {}
     checkpoint_decisions = []
     threshold = 5.0
@@ -568,6 +626,7 @@ def compare_checkpoints(results, plan):
                            for width in pattern["even_widths"])
     bounded_pattern_supported = complete and odd_all_qualify and not even_any_qualify
     return {"checkpoint_comparisons": checkpoint_decisions, "per_width_across_seeds": by_width,
+            "execution_environment": execution_environment,
             "bounded_dispatch_screen_decision": {
                 "eligible": complete,
                 "supports_registered_odd_even_split": bounded_pattern_supported,

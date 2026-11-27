@@ -56,6 +56,10 @@ def utc_now():
     return datetime.now(timezone.utc).isoformat()
 
 
+def utc_epoch_ns(value):
+    return int(datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp() * 1_000_000_000)
+
+
 def sha256_tensor(tensor):
     raw = tensor.detach().cpu().contiguous().view(torch.uint8).numpy().tobytes()
     return hashlib.sha256(raw).hexdigest()
@@ -370,6 +374,10 @@ def run_checkpoint(seed, width):
         latency_graphs, sustained_graphs = {}, {}
         capture_snapshots = []
         baseline_reserved = capture_baseline["reserved_bytes"]
+        record["memory"]["per_backend_capture"] = capture_snapshots
+        record["memory"]["capture_reserved_delta_peak_bytes"] = 0
+        record["memory"]["capture_reserved_delta_ceiling_bytes"] = PLAN[
+            "capture_reserved_delta_ceiling_bytes"]
         for name in BACKENDS:
             latency_graphs[name] = capture_graph(calls[name], OPS)
             sustained_graphs[name] = capture_graph(calls[name], SUSTAINED_CALLS)
@@ -378,13 +386,10 @@ def run_checkpoint(seed, width):
             delta = max(0, snap["peak_reserved_bytes"] - baseline_reserved)
             snap.update(backend=name, capture_reserved_delta_bytes=delta)
             capture_snapshots.append(snap)
+            record["memory"]["capture_reserved_delta_peak_bytes"] = max(
+                record["memory"]["capture_reserved_delta_peak_bytes"], delta)
             if delta > PLAN["capture_reserved_delta_ceiling_bytes"]:
                 raise GateFailure(f"Capture reserved-delta ceiling failed after {name}: {delta} bytes.")
-        record["memory"]["per_backend_capture"] = capture_snapshots
-        record["memory"]["capture_reserved_delta_peak_bytes"] = max(
-            snap["capture_reserved_delta_bytes"] for snap in capture_snapshots)
-        record["memory"]["capture_reserved_delta_ceiling_bytes"] = PLAN[
-            "capture_reserved_delta_ceiling_bytes"]
 
         current_stage = "captured_graph_write_validation"
         for name in BACKENDS:
@@ -499,25 +504,38 @@ def run_checkpoint(seed, width):
                 samples_all = []
                 telemetry_reader_error = None
             sampler = None
-            phase_samples = [sample for sample in samples_all
-                             if phase_start_ns <= sample.get("arrival_monotonic_ns", 0) <= phase_end_ns]
+            phase_start_utc_ns = utc_epoch_ns(phase_start_utc)
+            phase_end_utc_ns = utc_epoch_ns(phase_end_utc)
+            phase_samples = []
+            for sample in samples_all:
+                query_ns = sample.get("query_unix_ns")
+                if isinstance(query_ns, int) and phase_start_utc_ns <= query_ns <= phase_end_utc_ns:
+                    phase_samples.append(sample)
+                elif (sample.get("error") is not None
+                      and phase_start_ns <= sample.get("arrival_monotonic_ns", 0) <= phase_end_ns):
+                    phase_samples.append(sample)
             event_durations = [start.elapsed_time(end) / 1000.0
                                for start, end in zip(window_starts, window_ends)]
             event_gaps = [window_ends[index].elapsed_time(window_starts[index + 1]) / 1000.0
                           for index in range(len(window_ends) - 1)]
             phase_seconds = sum(event_durations)
-            telemetry_times = [sample.get("arrival_monotonic_ns") for sample in phase_samples
-                               if sample.get("error") is None]
+            telemetry_times = [sample.get("query_unix_ns") for sample in phase_samples
+                               if sample.get("error") is None
+                               and isinstance(sample.get("query_unix_ns"), int)]
+            telemetry_query_ordered = all(b > a for a, b in zip(telemetry_times, telemetry_times[1:]))
             telemetry_gaps = [(b - a) / 1e9 for a, b in zip(telemetry_times, telemetry_times[1:])]
-            telemetry_start_gap = ((telemetry_times[0] - phase_start_ns) / 1e9
+            telemetry_start_gap = ((telemetry_times[0] - phase_start_utc_ns) / 1e9
                                    if telemetry_times else None)
-            telemetry_end_gap = ((phase_end_ns - telemetry_times[-1]) / 1e9
+            telemetry_end_gap = ((phase_end_utc_ns - telemetry_times[-1]) / 1e9
                                  if telemetry_times else None)
             measured_telemetry_gaps = (telemetry_gaps + [telemetry_start_gap, telemetry_end_gap]
                                        if telemetry_times else [])
             telemetry_max_gap = max(measured_telemetry_gaps, default=None)
             telemetry_valid = (telemetry_start_error is None and telemetry_reader_error is None
-                               and all(sample.get("error") is None for sample in phase_samples))
+                               and all(sample.get("error") is None
+                                       and isinstance(sample.get("query_unix_ns"), int)
+                                       for sample in phase_samples)
+                               and telemetry_query_ordered)
             telemetry_required = PLAN["telemetry_required_fields"]
             telemetry_field_coverage = {
                 field: sum(sample.get(field) is not None for sample in phase_samples) / len(phase_samples)

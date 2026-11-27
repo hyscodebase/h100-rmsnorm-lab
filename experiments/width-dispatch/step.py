@@ -46,11 +46,7 @@ def utc_now():
 
 def atomic_json(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
-    temp = path.with_suffix(path.suffix + ".tmp")
-    temp.write_text(json.dumps(value, indent=2, allow_nan=False) + "\n")
-    with temp.open("rb+") as stream:
-        os.fsync(stream.fileno())
-    os.replace(temp, path)
+    lab.save_json(path, value)
 
 
 def hashes():
@@ -134,8 +130,11 @@ def reconcile_dangling_attempts(saved_records):
             status = record.get("status")
             attempt.update(
                 outcome="checkpoint_saved" if status == "complete" else "gate_failed",
-                finished_utc=record.get("finished_utc") or utc_now(),
-                elapsed_seconds=max(0.0, float(record.get("wall_seconds") or 0.0)),
+                finished_utc=utc_now(),
+                remote_checkpoint_finished_utc=record.get("finished_utc"),
+                elapsed_seconds=None,
+                local_elapsed_seconds_observed=False,
+                remote_benchmark_wall_seconds=record.get("wall_seconds"),
                 checkpoint_status=status,
                 checkpoint_path=str(checkpoint_path.relative_to(ROOT)),
                 checkpoint_sha256=digest,
@@ -144,7 +143,8 @@ def reconcile_dangling_attempts(saved_records):
             saved_records[unit] = record
         else:
             attempt.update(outcome="transport_or_parse_failed", finished_utc=utc_now(),
-                           elapsed_seconds=0.0, error_type="InterruptedError",
+                           elapsed_seconds=None, local_elapsed_seconds_observed=False,
+                           error_type="InterruptedError",
                            error_message="Reconciled an unfinished local attempt before retry.",
                            reconciled_after_interruption=True)
         atomic_json(path, attempt)
@@ -252,17 +252,56 @@ def show_status():
     (STATE / ".worker.lock").touch(exist_ok=True)
     active = lab.worker_active(STATE)
     records = read_saved_checkpoints()
-    saved = {unit: record.get("status") for unit, record in records.items()}
+    audit_command = [sys.executable, str(ROOT / "experiments/width-dispatch/summarize.py"), "--audit"]
+    try:
+        audit_process = subprocess.run(audit_command, cwd=ROOT, text=True,
+                                       capture_output=True, check=False, timeout=120)
+        audit = json.loads(audit_process.stdout) if audit_process.returncode == 0 else None
+        audit_error = None if audit is not None else (audit_process.stderr.strip().splitlines()[-1]
+                                                      if audit_process.stderr.strip()
+                                                      else "partial evidence audit failed")
+    except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as error:
+        audit, audit_error = None, f"partial evidence audit unavailable ({type(error).__name__})"
+    audited_records = (audit or {}).get("checkpoint_results", [])
+    saved = {item.get("checkpoint"): item.get("status") for item in audited_records}
     units = work_units()
     completed = {unit for unit, status in saved.items() if status == "complete"}
     failed = sorted(unit for unit, status in saved.items() if status != "complete")
-    next_unit = (None if failed else next((f"s{seed}-w{width}" for seed, width in units
-                                           if f"s{seed}-w{width}" not in completed), None))
+    blockers = []
+    if audit is None:
+        blockers.append("source/receipt/evidence audit failed")
+    if failed:
+        blockers.append("saved failed checkpoint(s): " + ", ".join(failed))
+    if audit is not None:
+        pin = json.loads(SOURCE_PIN.read_text()) if SOURCE_PIN.is_file() else {}
+        scope = pin.get("h100_execution_scope")
+        if scope not in {"pilot", "full_matrix"}:
+            blockers.append("source pin lacks an explicit pilot/full-matrix execution scope")
+        attempts_by_unit = {}
+        for path in sorted(ATTEMPTS.glob("*.json")) if ATTEMPTS.exists() else []:
+            try:
+                item = json.loads(path.read_text())
+            except (OSError, json.JSONDecodeError):
+                blockers.append(f"unreadable attempt receipt: {path.name}")
+                continue
+            attempts_by_unit.setdefault(item.get("unit"), []).append(item)
+        for unit, items in attempts_by_unit.items():
+            submitted = [item for item in items if item.get("outcome") != "paused_before_submit"]
+            if unit not in saved and len(submitted) >= PLAN["standard_max_attempts_per_checkpoint"]:
+                blockers.append(f"retry limit exhausted for {unit}")
+        if scope == "pilot" and completed:
+            blockers.append("pilot checkpoint allowance used; full-matrix review is required")
+    next_unit = (None if blockers else next((f"s{seed}-w{width}" for seed, width in units
+                                             if f"s{seed}-w{width}" not in completed), None))
     markers = [str(path.relative_to(ROOT)) for path in PAUSE_MARKERS if path.exists()]
-    print(f"Completed: {len(completed)}/{len(units)} checkpoints.")
+    print(f"Accepted completed: {len(completed)}/{len(units)} checkpoints.")
+    print(f"Raw checkpoint files saved: {len(records)}")
     print(f"Saved failed/incomplete: {len(failed)}")
-    print(f"Blocking checkpoint(s): {', '.join(failed) if failed else 'none'}")
-    next_label = f"blocked by {', '.join(failed)}" if failed else (next_unit or "none")
+    blocker_label = "; ".join(blockers) if blockers else "none"
+    if audit_error and audit is None:
+        blocker_label += f" ({audit_error})"
+    print(f"Submission blocker(s): {blocker_label}")
+    next_label = f"blocked by {blocker_label}" if blockers else (next_unit or "none")
     print(f"Next: {next_label}")
     worker_state = ("pausing" if active and is_paused() else "running" if active
                     else "paused" if is_paused() else "idle")
@@ -296,6 +335,9 @@ def run_one(lock):
     revision, source_digests, pin = verify_source_pin()
     if pin.get("h100_execution_authorized") is not True:
         raise SystemExit("Source pin is plan-only; H100 execution is not authorized.")
+    execution_scope = pin.get("h100_execution_scope")
+    if execution_scope not in {"pilot", "full_matrix"}:
+        raise SystemExit("Source pin must explicitly authorize a pilot or the full checkpoint matrix.")
     CHECKPOINTS.mkdir(parents=True, exist_ok=True)
     ATTEMPTS.mkdir(parents=True, exist_ok=True)
     saved_records = read_saved_checkpoints()
@@ -310,6 +352,8 @@ def run_one(lock):
     else:
         unit = next(((seed, width) for seed, width in work_units()
                      if f"s{seed}-w{width}" not in saved_records), None)
+    if execution_scope == "pilot" and saved_records and unit is not None:
+        raise SystemExit("Pilot checkpoint is already saved; review and explicitly authorize the full matrix before continuing.")
     if unit is None:
         print(f"All {len(work_units())} registered checkpoints are saved.")
         return
@@ -344,7 +388,9 @@ def run_one(lock):
     record = None
     try:
         output = subprocess.check_output(
-            command, cwd=ROOT, env={**os.environ, "BENCH_REVISION": revision},
+            command, cwd=ROOT, env={**os.environ, "BENCH_REVISION": revision,
+                                    "BENCH_EXECUTION_SOURCE_SHA256": json.dumps(
+                                        source_digests, sort_keys=True, separators=(",", ":"))},
             pass_fds=(lock.fileno(),), timeout=PLAN["remote_total_timeout_seconds"] + 10)
         record = redact_remote_value(json.loads(output))
         if not isinstance(record, dict):
@@ -364,6 +410,9 @@ def run_one(lock):
         success = record.get("status") == "complete"
         attempt.update(outcome="checkpoint_saved" if success else "gate_failed",
                        finished_utc=utc_now(), elapsed_seconds=time.monotonic() - started,
+                       local_elapsed_seconds_observed=True,
+                       remote_checkpoint_finished_utc=record.get("finished_utc"),
+                       remote_benchmark_wall_seconds=record.get("wall_seconds"),
                        checkpoint_status=record.get("status"), checkpoint_path=str(checkpoint_path.relative_to(ROOT)),
                        checkpoint_sha256=checkpoint_sha256, failure=record.get("failure"))
         atomic_json(attempt_path, attempt)
@@ -378,6 +427,32 @@ def run_one(lock):
             latest = json.loads(attempt_path.read_text())
             if latest.get("outcome") == "started":
                 checkpoint_path = CHECKPOINTS / f"{name}.json"
+                if (isinstance(error, subprocess.CalledProcessError)
+                        and error.returncode == 124 and not checkpoint_path.exists()):
+                    timeout_record = {
+                        "status": "execution_failed", "seed": seed, "rows": PLAN["rows"],
+                        "width": width, "source_revision": revision,
+                        "source_sha256": {key: source_digests[key] for key in COMPUTE_SOURCES},
+                        "execution_source_sha256": source_digests,
+                        "attempt_id": attempt_id,
+                        "research_assistant_model": pin["research_assistant_model"],
+                        "started_utc": latest["started_utc"], "finished_utc": utc_now(),
+                        "wall_seconds": None,
+                        "failure": {"stage": "remote_total_timeout", "type": "TimeoutExpired",
+                                    "message": "The complete remote lock/setup/run deadline expired."}}
+                    atomic_json(checkpoint_path, timeout_record)
+                    checkpoint_sha256 = hashlib.sha256(checkpoint_path.read_bytes()).hexdigest()
+                    latest.update(outcome="gate_failed", finished_utc=utc_now(),
+                                  elapsed_seconds=time.monotonic() - started,
+                                  local_elapsed_seconds_observed=True,
+                                  remote_benchmark_wall_seconds=None,
+                                  checkpoint_status="execution_failed",
+                                  checkpoint_path=str(checkpoint_path.relative_to(ROOT)),
+                                  checkpoint_sha256=checkpoint_sha256,
+                                  failure=timeout_record["failure"])
+                    atomic_json(attempt_path, latest)
+                    refresh_partial_audit()
+                    raise
                 published = False
                 if checkpoint_path.is_file():
                     try:
@@ -390,7 +465,8 @@ def run_one(lock):
                     atomic_json(attempt_path, latest)
                 else:
                     latest.update(outcome="transport_or_parse_failed", error_type=type(error).__name__,
-                                  finished_utc=utc_now(), elapsed_seconds=time.monotonic() - started)
+                                  finished_utc=utc_now(), elapsed_seconds=time.monotonic() - started,
+                                  local_elapsed_seconds_observed=True)
                     if isinstance(error, subprocess.CalledProcessError):
                         latest["exit_code"] = error.returncode
                     atomic_json(attempt_path, latest)

@@ -23,6 +23,21 @@ def number(value):
     return parsed if math.isfinite(parsed) else None
 
 
+def query_time(value):
+    value = value.strip()
+    parsed = None
+    for pattern in ("%Y/%m/%d %H:%M:%S.%f", "%Y/%m/%d %H:%M:%S"):
+        try:
+            parsed = datetime.strptime(value, pattern)
+            break
+        except ValueError:
+            continue
+    if parsed is None:
+        raise ValueError(f"Unrecognized nvidia-smi timestamp: {value}")
+    utc = parsed.astimezone(timezone.utc)
+    return utc.isoformat(), int(utc.timestamp() * 1_000_000_000)
+
+
 class InWindowSampler:
     """Start one persistent nvidia-smi loop only for one active replay phase."""
 
@@ -70,9 +85,12 @@ class InWindowSampler:
                 else:
                     try:
                         gpu, memory, used, power, temperature = map(number, row[1:])
+                        query_utc, query_unix_ns = query_time(row[0])
                         sample = {"arrival_utc": arrival_utc,
                                   "arrival_monotonic_ns": arrival_ns,
                                   "nvidia_smi_timestamp": row[0].strip(),
+                                  "query_utc": query_utc,
+                                  "query_unix_ns": query_unix_ns,
                                   "gpu_busy_percent": gpu,
                                   "memory_busy_percent": memory,
                                   "memory_used_mib": used,
