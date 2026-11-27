@@ -100,6 +100,8 @@ Grouping two or four token rows per program passed all 60 numerical checks. At t
 
 The five-width follow-up found one qualifying shape. At 1024×4104 the two-row, four-warp kernel reduced latency by 5.42–5.77% against the best one-row configuration in two independent processes. [Width-sweep results and reproduction](results/width-sweep/REPORT.md) · [Experiment PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/2)
 
+The fresh three-seed neighborhood check retained the 4104 recommendation: its two-row, four-warp candidate beat the fastest one-row Triton variant by 5.33–5.56% and compiled PyTorch by 10.46–10.72%. Widths 4103 and 4105 also passed in all three seeds, while 4112 missed the one-row threshold in two seeds. We keep the recommendation at 4104 and will test the four shapes at 32,768 rows for throughput-relevant load. The 12 raw H100 checkpoints, 1,008 event intervals, source hashes, and device samples are archived in the [report](results/width-neighborhood/REPORT.md) · [PR #61](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/61) · [next issue #62](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/62).
+
 ```bash
 python3 lab.py init --plan plans/width-sweep.json
 python3 lab.py step

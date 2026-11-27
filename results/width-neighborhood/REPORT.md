@@ -21,4 +21,6 @@ The raw archive contains 13 attempt receipts, including 1 failed connection atte
 
 The experiment runner and analysis were prepared with GPT-6 Luna (delegated runtime).
 
+Next: retest widths 4,103, 4,104, 4,105, and 4,112 at 32,768 rows with seeds 47–49 and a 4.02 GiB graph-output estimate under the registered [issue #62](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/62).
+
 Raw archive: [`raw/`](raw). Sources were frozen at `54c7d426a658d989aedbf442b24b9ba862fb1e2b`; checkpoint code revisions `113a26e, 54c7d42, bb2c59d, be4168d, d314d5e` are result-only commits whose archived source hashes audit to the same frozen code. The machine-readable derivation is [`summary.json`](raw/summary.json).
