@@ -1,0 +1,1025 @@
+{
+  "seed": 46,
+  "rows": 1024,
+  "width": 4105,
+  "code_revision": "be4168d9bc6ff9234553f42627e57cda1248d1c8",
+  "source_sha256": {
+    "kernels.py": "b265c4d3164ff65c1d6ecf09d611b793ecb2cfb3e10d3ac7080e8c5279018df5",
+    "experiments/width-neighborhood/run.py": "8227b4296fd998516a3a9f0f7d1a47adf56dd21dce970164b8d582e13d77e500",
+    "experiments/width-neighborhood/PLAN.md": "31c5fbd75cd7ababa681da01d4df4af0df20ba8917f5fb41d5a3877950e41e17",
+    "plans/width-neighborhood.json": "e6b2935b1488193a7c04a14d4381117633847fb36cc05587845c15ea6e0fd216"
+  },
+  "started_utc": "2026-11-27T03:36:39.342681+00:00",
+  "finished_utc": "2026-11-27T03:36:43.940402+00:00",
+  "wall_seconds": 4.597724367398769,
+  "environment": {
+    "gpu": "NVIDIA H100 80GB HBM3",
+    "compute_capability": [
+      9,
+      0
+    ],
+    "total_memory_bytes": 84929216512,
+    "sm_count": 132,
+    "driver": "550.144.03",
+    "cuda_runtime": "12.8",
+    "torch": "2.7.1+cu128",
+    "triton": "3.3.1",
+    "python": "3.12.16"
+  },
+  "method": {
+    "dtype": "bfloat16",
+    "accumulation": "float32",
+    "eps": 1e-06,
+    "correctness_rtol": 0.016,
+    "correctness_atol": 1e-05,
+    "timing": "CUDA events around one graph replay, 32 calls per replay",
+    "cache": "same input addresses; no explicit L2 flush",
+    "rounds": 21,
+    "ops_per_graph": 32,
+    "backend_order_shuffled_each_round": true,
+    "timed_backends": [
+      "triton_4w_1r",
+      "triton_8w_1r",
+      "triton_4w_2r",
+      "torch_compile"
+    ]
+  },
+  "input_sha256": "ef34c8048fbd8f0e0e2b19d668251a1c5fc69badde307e6ca603df4d6c9e31aa",
+  "weight_sha256": "80f396e290f0130d4f49773c3906f0e0f07b26c1c3720213600b3b890d76ca06",
+  "torch_cuda_peak_allocated_bytes": 201777664,
+  "torch_cuda_peak_reserved_bytes": 257949696,
+  "correctness": {
+    "strict_gate": {
+      "rtol": 0.005,
+      "atol": 1e-06,
+      "passed": true
+    },
+    "benchmark_crosscheck": {
+      "rtol": 0.016,
+      "atol": 1e-05,
+      "passed": true
+    },
+    "fixtures": [
+      {
+        "fixture": "random",
+        "backend": "triton_4w_1r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.031129837036132812,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.031129837036132812
+      },
+      {
+        "fixture": "random",
+        "backend": "triton_8w_1r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.031129837036132812,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.031129837036132812
+      },
+      {
+        "fixture": "random",
+        "backend": "triton_4w_2r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.031129837036132812,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.031129837036132812
+      },
+      {
+        "fixture": "random",
+        "backend": "torch_compile",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.031129837036132812,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.031129837036132812
+      },
+      {
+        "fixture": "zero_rows",
+        "backend": "triton_4w_1r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.030725479125976562,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.030725479125976562
+      },
+      {
+        "fixture": "zero_rows",
+        "backend": "triton_8w_1r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.030725479125976562,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.030725479125976562
+      },
+      {
+        "fixture": "zero_rows",
+        "backend": "triton_4w_2r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.030725479125976562,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.030725479125976562
+      },
+      {
+        "fixture": "zero_rows",
+        "backend": "torch_compile",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.030725479125976562,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.030725479125976562
+      },
+      {
+        "fixture": "constant",
+        "backend": "triton_4w_1r",
+        "strict_passed": true,
+        "strict_max_abs_error": 4.291534423828125e-06,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 4.291534423828125e-06
+      },
+      {
+        "fixture": "constant",
+        "backend": "triton_8w_1r",
+        "strict_passed": true,
+        "strict_max_abs_error": 4.291534423828125e-06,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 4.291534423828125e-06
+      },
+      {
+        "fixture": "constant",
+        "backend": "triton_4w_2r",
+        "strict_passed": true,
+        "strict_max_abs_error": 4.291534423828125e-06,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 4.291534423828125e-06
+      },
+      {
+        "fixture": "constant",
+        "backend": "torch_compile",
+        "strict_passed": true,
+        "strict_max_abs_error": 4.291534423828125e-06,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 4.291534423828125e-06
+      },
+      {
+        "fixture": "tiny",
+        "backend": "triton_4w_1r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.00024412572383880615,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.00024412572383880615
+      },
+      {
+        "fixture": "tiny",
+        "backend": "triton_8w_1r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.00024412572383880615,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.00024412572383880615
+      },
+      {
+        "fixture": "tiny",
+        "backend": "triton_4w_2r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.00024412572383880615,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.00024412572383880615
+      },
+      {
+        "fixture": "tiny",
+        "backend": "torch_compile",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.00024412572383880615,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.00024412572383880615
+      },
+      {
+        "fixture": "large",
+        "backend": "triton_4w_1r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.031133651733398438,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.031133651733398438
+      },
+      {
+        "fixture": "large",
+        "backend": "triton_8w_1r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.031133651733398438,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.031133651733398438
+      },
+      {
+        "fixture": "large",
+        "backend": "triton_4w_2r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.031133651733398438,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.031133651733398438
+      },
+      {
+        "fixture": "large",
+        "backend": "torch_compile",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.031133651733398438,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.031133651733398438
+      },
+      {
+        "fixture": "alternating",
+        "backend": "triton_4w_1r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.031129837036132812,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.031129837036132812
+      },
+      {
+        "fixture": "alternating",
+        "backend": "triton_8w_1r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.031129837036132812,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.031129837036132812
+      },
+      {
+        "fixture": "alternating",
+        "backend": "triton_4w_2r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.031129837036132812,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.031129837036132812
+      },
+      {
+        "fixture": "alternating",
+        "backend": "torch_compile",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.031129837036132812,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.031129837036132812
+      },
+      {
+        "fixture": "column_ramp",
+        "backend": "triton_4w_1r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.013964176177978516,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.013964176177978516
+      },
+      {
+        "fixture": "column_ramp",
+        "backend": "triton_8w_1r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.013964176177978516,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.013964176177978516
+      },
+      {
+        "fixture": "column_ramp",
+        "backend": "triton_4w_2r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.013964176177978516,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.013964176177978516
+      },
+      {
+        "fixture": "column_ramp",
+        "backend": "torch_compile",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.013964176177978516,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.013964176177978516
+      },
+      {
+        "fixture": "outlier",
+        "backend": "triton_4w_1r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.24863433837890625,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.24863433837890625
+      },
+      {
+        "fixture": "outlier",
+        "backend": "triton_8w_1r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.24863433837890625,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.24863433837890625
+      },
+      {
+        "fixture": "outlier",
+        "backend": "triton_4w_2r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.24863433837890625,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.24863433837890625
+      },
+      {
+        "fixture": "outlier",
+        "backend": "torch_compile",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.24863433837890625,
+        "benchmark_passed": true,
+        "benchmark_max_abs_error": 0.24863433837890625
+      }
+    ],
+    "timing_input": [
+      {
+        "backend": "triton_4w_1r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.049160003662109375
+      },
+      {
+        "backend": "triton_8w_1r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.049160003662109375
+      },
+      {
+        "backend": "triton_4w_2r",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.049160003662109375
+      },
+      {
+        "backend": "torch_compile",
+        "strict_passed": true,
+        "strict_max_abs_error": 0.049160003662109375
+      }
+    ]
+  },
+  "timing_intervals": [
+    {
+      "round": 0,
+      "order_index": 0,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 336.60799264907837,
+      "ops_per_graph": 32,
+      "us_per_op": 10.518999770283699
+    },
+    {
+      "round": 0,
+      "order_index": 1,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 305.11999130249023,
+      "ops_per_graph": 32,
+      "us_per_op": 9.53499972820282
+    },
+    {
+      "round": 0,
+      "order_index": 2,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 366.5600121021271,
+      "ops_per_graph": 32,
+      "us_per_op": 11.455000378191471
+    },
+    {
+      "round": 0,
+      "order_index": 3,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 248.79999458789825,
+      "ops_per_graph": 32,
+      "us_per_op": 7.7749998308718204
+    },
+    {
+      "round": 1,
+      "order_index": 0,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 243.13600361347198,
+      "ops_per_graph": 32,
+      "us_per_op": 7.5980001129209995
+    },
+    {
+      "round": 1,
+      "order_index": 1,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 304.7359883785248,
+      "ops_per_graph": 32,
+      "us_per_op": 9.5229996368289
+    },
+    {
+      "round": 1,
+      "order_index": 2,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 334.27199721336365,
+      "ops_per_graph": 32,
+      "us_per_op": 10.445999912917614
+    },
+    {
+      "round": 1,
+      "order_index": 3,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 365.85599184036255,
+      "ops_per_graph": 32,
+      "us_per_op": 11.43299974501133
+    },
+    {
+      "round": 2,
+      "order_index": 0,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 333.7920010089874,
+      "ops_per_graph": 32,
+      "us_per_op": 10.431000031530857
+    },
+    {
+      "round": 2,
+      "order_index": 1,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 249.439999461174,
+      "ops_per_graph": 32,
+      "us_per_op": 7.794999983161688
+    },
+    {
+      "round": 2,
+      "order_index": 2,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 303.3280074596405,
+      "ops_per_graph": 32,
+      "us_per_op": 9.479000233113766
+    },
+    {
+      "round": 2,
+      "order_index": 3,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 366.5280044078827,
+      "ops_per_graph": 32,
+      "us_per_op": 11.454000137746334
+    },
+    {
+      "round": 3,
+      "order_index": 0,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 248.54399263858795,
+      "ops_per_graph": 32,
+      "us_per_op": 7.7669997699558735
+    },
+    {
+      "round": 3,
+      "order_index": 1,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 335.07201075553894,
+      "ops_per_graph": 32,
+      "us_per_op": 10.471000336110592
+    },
+    {
+      "round": 3,
+      "order_index": 2,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 366.784006357193,
+      "ops_per_graph": 32,
+      "us_per_op": 11.462000198662281
+    },
+    {
+      "round": 3,
+      "order_index": 3,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 304.4160008430481,
+      "ops_per_graph": 32,
+      "us_per_op": 9.513000026345253
+    },
+    {
+      "round": 4,
+      "order_index": 0,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 296.4800000190735,
+      "ops_per_graph": 32,
+      "us_per_op": 9.265000000596046
+    },
+    {
+      "round": 4,
+      "order_index": 1,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 334.9120020866394,
+      "ops_per_graph": 32,
+      "us_per_op": 10.466000065207481
+    },
+    {
+      "round": 4,
+      "order_index": 2,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 249.24799799919128,
+      "ops_per_graph": 32,
+      "us_per_op": 7.788999937474728
+    },
+    {
+      "round": 4,
+      "order_index": 3,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 366.14400148391724,
+      "ops_per_graph": 32,
+      "us_per_op": 11.442000046372414
+    },
+    {
+      "round": 5,
+      "order_index": 0,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 246.91200256347656,
+      "ops_per_graph": 32,
+      "us_per_op": 7.716000080108643
+    },
+    {
+      "round": 5,
+      "order_index": 1,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 335.04000306129456,
+      "ops_per_graph": 32,
+      "us_per_op": 10.470000095665455
+    },
+    {
+      "round": 5,
+      "order_index": 2,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 366.5919899940491,
+      "ops_per_graph": 32,
+      "us_per_op": 11.455999687314034
+    },
+    {
+      "round": 5,
+      "order_index": 3,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 304.03199791908264,
+      "ops_per_graph": 32,
+      "us_per_op": 9.500999934971333
+    },
+    {
+      "round": 6,
+      "order_index": 0,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 362.8480136394501,
+      "ops_per_graph": 32,
+      "us_per_op": 11.339000426232815
+    },
+    {
+      "round": 6,
+      "order_index": 1,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 334.6880078315735,
+      "ops_per_graph": 32,
+      "us_per_op": 10.459000244736671
+    },
+    {
+      "round": 6,
+      "order_index": 2,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 303.5520017147064,
+      "ops_per_graph": 32,
+      "us_per_op": 9.486000053584576
+    },
+    {
+      "round": 6,
+      "order_index": 3,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 249.05599653720856,
+      "ops_per_graph": 32,
+      "us_per_op": 7.782999891787767
+    },
+    {
+      "round": 7,
+      "order_index": 0,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 334.04800295829773,
+      "ops_per_graph": 32,
+      "us_per_op": 10.439000092446804
+    },
+    {
+      "round": 7,
+      "order_index": 1,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 366.5919899940491,
+      "ops_per_graph": 32,
+      "us_per_op": 11.455999687314034
+    },
+    {
+      "round": 7,
+      "order_index": 2,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 248.1600046157837,
+      "ops_per_graph": 32,
+      "us_per_op": 7.75500014424324
+    },
+    {
+      "round": 7,
+      "order_index": 3,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 303.77599596977234,
+      "ops_per_graph": 32,
+      "us_per_op": 9.492999874055386
+    },
+    {
+      "round": 8,
+      "order_index": 0,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 247.0400035381317,
+      "ops_per_graph": 32,
+      "us_per_op": 7.720000110566616
+    },
+    {
+      "round": 8,
+      "order_index": 1,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 302.4640083312988,
+      "ops_per_graph": 32,
+      "us_per_op": 9.452000260353088
+    },
+    {
+      "round": 8,
+      "order_index": 2,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 366.239994764328,
+      "ops_per_graph": 32,
+      "us_per_op": 11.44499983638525
+    },
+    {
+      "round": 8,
+      "order_index": 3,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 334.1760039329529,
+      "ops_per_graph": 32,
+      "us_per_op": 10.443000122904778
+    },
+    {
+      "round": 9,
+      "order_index": 0,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 328.96000146865845,
+      "ops_per_graph": 32,
+      "us_per_op": 10.280000045895576
+    },
+    {
+      "round": 9,
+      "order_index": 1,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 249.08800423145294,
+      "ops_per_graph": 32,
+      "us_per_op": 7.784000132232904
+    },
+    {
+      "round": 9,
+      "order_index": 2,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 302.7519881725311,
+      "ops_per_graph": 32,
+      "us_per_op": 9.460999630391598
+    },
+    {
+      "round": 9,
+      "order_index": 3,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 366.0160005092621,
+      "ops_per_graph": 32,
+      "us_per_op": 11.43800001591444
+    },
+    {
+      "round": 10,
+      "order_index": 0,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 360.54399609565735,
+      "ops_per_graph": 32,
+      "us_per_op": 11.266999877989292
+    },
+    {
+      "round": 10,
+      "order_index": 1,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 248.83200228214264,
+      "ops_per_graph": 32,
+      "us_per_op": 7.7760000713169575
+    },
+    {
+      "round": 10,
+      "order_index": 2,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 305.6640028953552,
+      "ops_per_graph": 32,
+      "us_per_op": 9.55200009047985
+    },
+    {
+      "round": 10,
+      "order_index": 3,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 334.56000685691833,
+      "ops_per_graph": 32,
+      "us_per_op": 10.455000214278698
+    },
+    {
+      "round": 11,
+      "order_index": 0,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 302.0159900188446,
+      "ops_per_graph": 32,
+      "us_per_op": 9.437999688088894
+    },
+    {
+      "round": 11,
+      "order_index": 1,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 249.24799799919128,
+      "ops_per_graph": 32,
+      "us_per_op": 7.788999937474728
+    },
+    {
+      "round": 11,
+      "order_index": 2,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 366.0160005092621,
+      "ops_per_graph": 32,
+      "us_per_op": 11.43800001591444
+    },
+    {
+      "round": 11,
+      "order_index": 3,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 333.69600772857666,
+      "ops_per_graph": 32,
+      "us_per_op": 10.42800024151802
+    },
+    {
+      "round": 12,
+      "order_index": 0,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 248.83200228214264,
+      "ops_per_graph": 32,
+      "us_per_op": 7.7760000713169575
+    },
+    {
+      "round": 12,
+      "order_index": 1,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 366.4639890193939,
+      "ops_per_graph": 32,
+      "us_per_op": 11.45199965685606
+    },
+    {
+      "round": 12,
+      "order_index": 2,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 334.3679904937744,
+      "ops_per_graph": 32,
+      "us_per_op": 10.44899970293045
+    },
+    {
+      "round": 12,
+      "order_index": 3,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 302.94400453567505,
+      "ops_per_graph": 32,
+      "us_per_op": 9.467000141739845
+    },
+    {
+      "round": 13,
+      "order_index": 0,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 248.1279969215393,
+      "ops_per_graph": 32,
+      "us_per_op": 7.753999903798103
+    },
+    {
+      "round": 13,
+      "order_index": 1,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 335.2000117301941,
+      "ops_per_graph": 32,
+      "us_per_op": 10.475000366568565
+    },
+    {
+      "round": 13,
+      "order_index": 2,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 304.4480085372925,
+      "ops_per_graph": 32,
+      "us_per_op": 9.51400026679039
+    },
+    {
+      "round": 13,
+      "order_index": 3,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 366.40000343322754,
+      "ops_per_graph": 32,
+      "us_per_op": 11.45000010728836
+    },
+    {
+      "round": 14,
+      "order_index": 0,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 334.75199341773987,
+      "ops_per_graph": 32,
+      "us_per_op": 10.46099979430437
+    },
+    {
+      "round": 14,
+      "order_index": 1,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 364.44801092147827,
+      "ops_per_graph": 32,
+      "us_per_op": 11.389000341296196
+    },
+    {
+      "round": 14,
+      "order_index": 2,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 304.28799986839294,
+      "ops_per_graph": 32,
+      "us_per_op": 9.50899999588728
+    },
+    {
+      "round": 14,
+      "order_index": 3,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 248.19199740886688,
+      "ops_per_graph": 32,
+      "us_per_op": 7.75599991902709
+    },
+    {
+      "round": 15,
+      "order_index": 0,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 365.56801199913025,
+      "ops_per_graph": 32,
+      "us_per_op": 11.42400037497282
+    },
+    {
+      "round": 15,
+      "order_index": 1,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 304.22401428222656,
+      "ops_per_graph": 32,
+      "us_per_op": 9.50700044631958
+    },
+    {
+      "round": 15,
+      "order_index": 2,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 248.06399643421173,
+      "ops_per_graph": 32,
+      "us_per_op": 7.751999888569117
+    },
+    {
+      "round": 15,
+      "order_index": 3,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 334.04800295829773,
+      "ops_per_graph": 32,
+      "us_per_op": 10.439000092446804
+    },
+    {
+      "round": 16,
+      "order_index": 0,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 367.3279881477356,
+      "ops_per_graph": 32,
+      "us_per_op": 11.478999629616737
+    },
+    {
+      "round": 16,
+      "order_index": 1,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 304.1920065879822,
+      "ops_per_graph": 32,
+      "us_per_op": 9.506000205874443
+    },
+    {
+      "round": 16,
+      "order_index": 2,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 333.8240087032318,
+      "ops_per_graph": 32,
+      "us_per_op": 10.432000271975994
+    },
+    {
+      "round": 16,
+      "order_index": 3,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 250.46399235725403,
+      "ops_per_graph": 32,
+      "us_per_op": 7.826999761164188
+    },
+    {
+      "round": 17,
+      "order_index": 0,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 366.62399768829346,
+      "ops_per_graph": 32,
+      "us_per_op": 11.45699992775917
+    },
+    {
+      "round": 17,
+      "order_index": 1,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 248.35200607776642,
+      "ops_per_graph": 32,
+      "us_per_op": 7.761000189930201
+    },
+    {
+      "round": 17,
+      "order_index": 2,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 335.2639973163605,
+      "ops_per_graph": 32,
+      "us_per_op": 10.476999916136265
+    },
+    {
+      "round": 17,
+      "order_index": 3,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 303.8400113582611,
+      "ops_per_graph": 32,
+      "us_per_op": 9.49500035494566
+    },
+    {
+      "round": 18,
+      "order_index": 0,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 248.60799312591553,
+      "ops_per_graph": 32,
+      "us_per_op": 7.76899978518486
+    },
+    {
+      "round": 18,
+      "order_index": 1,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 300.2240061759949,
+      "ops_per_graph": 32,
+      "us_per_op": 9.38200019299984
+    },
+    {
+      "round": 18,
+      "order_index": 2,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 366.3040101528168,
+      "ops_per_graph": 32,
+      "us_per_op": 11.447000317275524
+    },
+    {
+      "round": 18,
+      "order_index": 3,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 334.56000685691833,
+      "ops_per_graph": 32,
+      "us_per_op": 10.455000214278698
+    },
+    {
+      "round": 19,
+      "order_index": 0,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 249.08800423145294,
+      "ops_per_graph": 32,
+      "us_per_op": 7.784000132232904
+    },
+    {
+      "round": 19,
+      "order_index": 1,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 366.5280044078827,
+      "ops_per_graph": 32,
+      "us_per_op": 11.454000137746334
+    },
+    {
+      "round": 19,
+      "order_index": 2,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 303.26399207115173,
+      "ops_per_graph": 32,
+      "us_per_op": 9.476999752223492
+    },
+    {
+      "round": 19,
+      "order_index": 3,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 335.3919982910156,
+      "ops_per_graph": 32,
+      "us_per_op": 10.480999946594238
+    },
+    {
+      "round": 20,
+      "order_index": 0,
+      "backend": "triton_8w_1r",
+      "graph_elapsed_us": 327.64801383018494,
+      "ops_per_graph": 32,
+      "us_per_op": 10.23900043219328
+    },
+    {
+      "round": 20,
+      "order_index": 1,
+      "backend": "triton_4w_1r",
+      "graph_elapsed_us": 303.0720055103302,
+      "ops_per_graph": 32,
+      "us_per_op": 9.471000172197819
+    },
+    {
+      "round": 20,
+      "order_index": 2,
+      "backend": "triton_4w_2r",
+      "graph_elapsed_us": 248.09600412845612,
+      "ops_per_graph": 32,
+      "us_per_op": 7.753000129014254
+    },
+    {
+      "round": 20,
+      "order_index": 3,
+      "backend": "torch_compile",
+      "graph_elapsed_us": 366.6880130767822,
+      "ops_per_graph": 32,
+      "us_per_op": 11.459000408649445
+    }
+  ],
+  "research_assistant_model": "GPT-6 Luna (delegated runtime)",
+  "telemetry": [
+    {
+      "path": "results/width-neighborhood/raw/telemetry/s46-w4105-00.jsonl",
+      "sha256": "d7a374b465856d067b5f839c9ef047978ba67d40fe2d05768383a37515be15a6",
+      "samples": 7
+    }
+  ]
+}
