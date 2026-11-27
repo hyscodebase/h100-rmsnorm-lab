@@ -138,6 +138,10 @@ def audit_attempts(pin, checkpoint_records):
              f"Attempt receipt lacks completion metadata: {path.name}.")
         receipts[attempt_id] = item
     complete_units = set()
+    successful_receipts = defaultdict(list)
+    for attempt_id, item in receipts.items():
+        if item.get("outcome") == "checkpoint_saved" and item.get("checkpoint_status") == "complete":
+            successful_receipts[item["unit"]].append(attempt_id)
     for unit, record in checkpoint_records.items():
         attempt_id = record.get("attempt_id")
         need(attempt_id in receipts, f"Checkpoint has no attempt receipt: {unit}.")
@@ -152,12 +156,17 @@ def audit_attempts(pin, checkpoint_records):
             need(receipt.get("outcome") == "checkpoint_saved"
                  and receipt.get("checkpoint_status") == "complete",
                  f"Complete checkpoint lacks a successful attempt receipt: {unit}.")
+            successes = successful_receipts.get(unit, [])
+            need(len(successes) == 1 and successes[0] == attempt_id,
+                 f"Successful checkpoint must have exactly one receipt matching its attempt_id: {unit}.")
             complete_units.add(unit)
         else:
             need(receipt.get("outcome") == "gate_failed"
                  and receipt.get("checkpoint_status") == record.get("status"),
                  f"Failed checkpoint/attempt receipt status mismatch: {unit}.")
     need(all(count <= 3 for count in per_unit_counts.values()), "Attempt limit exceeded.")
+    for unit in successful_receipts:
+        need(unit in complete_units, f"Orphan successful attempt receipt for {unit}.")
     for attempt_id, receipt in receipts.items():
         if receipt.get("outcome") in {"checkpoint_saved", "gate_failed"}:
             need(receipt.get("unit") in checkpoint_records,

@@ -1,6 +1,7 @@
 """One long-lived, phase-bounded nvidia-smi poller for sustained GPU windows."""
 import csv
 import io
+import math
 import subprocess
 import threading
 import time
@@ -18,7 +19,8 @@ def number(value):
     value = value.strip()
     if value.lower() in {"n/a", "[n/a]", "not supported", "[not supported]"}:
         return None
-    return float(value)
+    parsed = float(value)
+    return parsed if math.isfinite(parsed) else None
 
 
 class InWindowSampler:
