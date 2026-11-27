@@ -399,6 +399,10 @@ def run_checkpoint(seed, width):
                                if sample.get("error") is None]
             telemetry_gaps = [(b - a) / 1e9 for a, b in zip(telemetry_times, telemetry_times[1:])]
             telemetry_valid = all(sample.get("error") is None for sample in phase_samples)
+            telemetry_required = PLAN["telemetry_required_fields"]
+            telemetry_field_coverage = {
+                field: sum(sample.get(field) is not None for sample in phase_samples) / len(phase_samples)
+                if phase_samples else 0.0 for field in telemetry_required}
             phase = {"backend": name, "phase_start_utc": phase_start_utc,
                      "phase_end_utc": phase_end_utc,
                      "phase_host_wall_seconds": (phase_end_ns - phase_start_ns) / 1e9,
@@ -406,18 +410,22 @@ def run_checkpoint(seed, width):
                      "telemetry_samples": phase_samples,
                      "telemetry_query_interval_seconds": PLAN["telemetry_interval_seconds"],
                      "telemetry_sample_count": len(phase_samples),
+                     "telemetry_field_coverage": telemetry_field_coverage,
                      "telemetry_max_gap_seconds": max(telemetry_gaps, default=None),
                      "telemetry_gate_passed": bool(
                          telemetry_valid
                          and len(phase_samples) >= PLAN["minimum_active_telemetry_samples"]
                          and telemetry_gaps
-                         and max(telemetry_gaps) <= PLAN["maximum_active_telemetry_gap_seconds"]),
+                         and max(telemetry_gaps) <= PLAN["maximum_active_telemetry_gap_seconds"]
+                         and all(value >= PLAN["telemetry_required_field_coverage_fraction"]
+                                 for value in telemetry_field_coverage.values())),
                      "pilot_replays": 128, "pilot_event_seconds": pilot_seconds,
                      "pilot_seconds_per_graph_block": median_block_seconds,
                      "unmeasured_preroll_replays": preroll_count,
                      "unmeasured_preroll_event_seconds": preroll_seconds,
                      "graph_calls_per_block": SUSTAINED_CALLS,
                      "replays_per_window": per_window_replays,
+                     "window_replay_counts": [per_window_replays] * len(event_durations),
                      "window_event_seconds": event_durations,
                      "window_event_gaps_seconds": event_gaps,
                      "window_host_enqueue_gaps_seconds": host_gaps,
@@ -425,10 +433,10 @@ def run_checkpoint(seed, width):
                      "event_seconds": phase_seconds,
                      "logical_input_plus_output_bytes": int(
                          ROWS * width * PLAN["input_element_bytes"] * 2
-                         * SUSTAINED_CALLS * per_window_replays * len(event_durations)),
+                         * SUSTAINED_CALLS * sum([per_window_replays] * len(event_durations))),
                      "logical_input_plus_output_GB_per_s": (
                          ROWS * width * PLAN["input_element_bytes"] * 2 * SUSTAINED_CALLS
-                         * per_window_replays * len(event_durations) / phase_seconds / 1e9),
+                         * sum([per_window_replays] * len(event_durations)) / phase_seconds / 1e9),
                      "memory_before_phase": memory_snapshot(device)}
             phase["gate_passed"] = bool(
                 phase_seconds >= PLAN["sustained_min_seconds"]

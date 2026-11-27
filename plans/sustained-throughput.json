@@ -23,6 +23,8 @@
   "minimum_active_telemetry_samples": 120,
   "nvidia_smi_utilization_rolling_sample_period_seconds": [0.166667, 1.0],
   "maximum_active_telemetry_gap_seconds": 1.5,
+  "telemetry_required_fields": ["gpu_busy_percent", "memory_busy_percent", "memory_used_mib", "power_w", "temperature_c"],
+  "telemetry_required_field_coverage_fraction": 0.95,
   "strict_correctness": {"rtol": 0.005, "atol": 1e-6},
   "benchmark_crosscheck": {"rtol": 0.016, "atol": 1e-5},
   "fixtures": ["random", "zero_rows", "constant", "tiny", "large", "alternating", "column_ramp", "outlier"],

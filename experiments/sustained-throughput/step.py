@@ -135,11 +135,15 @@ def run_one(lock):
             raise ValueError("Remote source pin or checkpoint identity mismatch.")
         record["execution_source_sha256"] = source_digests
         record["research_assistant_model"] = pin["research_assistant_model"]
-        atomic_json(CHECKPOINTS / f"{name}.json", record)
+        record["attempt_id"] = attempt_id
+        checkpoint_path = CHECKPOINTS / f"{name}.json"
+        atomic_json(checkpoint_path, record)
+        checkpoint_sha256 = hashlib.sha256(checkpoint_path.read_bytes()).hexdigest()
         success = record.get("status") == "complete"
         attempt.update(outcome="checkpoint_saved" if success else "gate_failed",
                        finished_utc=utc_now(), elapsed_seconds=time.monotonic() - started,
-                       checkpoint_status=record.get("status"), failure=record.get("failure"))
+                       checkpoint_status=record.get("status"), checkpoint_path=str(checkpoint_path.relative_to(ROOT)),
+                       checkpoint_sha256=checkpoint_sha256, failure=record.get("failure"))
         atomic_json(attempt_path, attempt)
         print(f"Saved {name}: status={record.get('status')}, "
               f"latency intervals={len(record.get('latency_intervals', []))}, "
