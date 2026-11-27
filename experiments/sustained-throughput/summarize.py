@@ -333,8 +333,7 @@ def telemetry_only_failure(record, plan):
                 or max(gaps) > plan["maximum_event_gap_between_windows_seconds"]):
             return False
         telemetry = telemetry_summary(phase.get("telemetry_samples", []), phase, plan)
-        if (not telemetry["query_gate_passed"]
-                or not telemetry["coverage_gate_passed"]
+        if (not telemetry["coverage_gate_passed"]
                 or telemetry["eligible"]
                 or phase.get("telemetry_sample_count") < plan["minimum_active_telemetry_samples"]):
             return False
