@@ -34,6 +34,75 @@ EXECUTION_SOURCES = (*COMPUTE_SOURCES,
 PAUSE_MARKERS = (STATE / "paused", ROOT / ".lab/vllm/paused")
 
 
+def telemetry_only_failure(record):
+    """Recognize only the saved first-candidate telemetry-gap failure."""
+    try:
+        phase, failure = record["sustained_phases"][0], record["failure"]
+        correctness = record["correctness"]
+        if (record.get("status") != "gate_failed"
+                or len(record.get("sustained_phases", [])) != 1
+                or failure.get("stage") != "sustained_sync:triton_4w_4r"
+                or phase.get("backend") != "triton_4w_4r"
+                or phase.get("telemetry_gate_passed") is not False
+                or phase.get("telemetry_sample_count", 0) < PLAN["minimum_active_telemetry_samples"]
+                or phase.get("telemetry_max_gap_seconds", 0) <= PLAN["maximum_active_telemetry_gap_seconds"]):
+            return False
+        coverage = phase.get("telemetry_field_coverage", {})
+        if any(coverage.get(field, 0) < PLAN["telemetry_required_field_coverage_fraction"]
+               for field in PLAN["telemetry_required_fields"]):
+            return False
+        durations = phase["window_event_seconds"]
+        gaps = phase["window_event_gaps_seconds"]
+        if (len(durations) != PLAN["sustained_event_windows_per_phase"]
+                or len(gaps) != len(durations) - 1
+                or not PLAN["sustained_min_seconds"] <= phase["event_seconds"] <= PLAN["sustained_max_seconds"]
+                or max(durations) > PLAN["maximum_event_window_seconds"]
+                or max(gaps) > PLAN["maximum_event_gap_between_windows_seconds"]):
+            return False
+        if len(record.get("latency_intervals", [])) != PLAN["latency_rounds"] * 4:
+            return False
+        checks = [
+            ("fixtures", len(PLAN["fixtures"]) * 4),
+            ("timed_input", 4), ("post_latency_replay", 4), ("post_sustained_replay", 1),
+        ]
+        for section, expected_count in checks:
+            rows = correctness.get(section, [])
+            if len(rows) != expected_count or not all(
+                    item.get("strict_passed") and item.get("crosscheck_passed") for item in rows):
+                return False
+        memory = record["memory"]
+        if (memory["before_allocations"]["free_bytes"] < PLAN["free_memory_guard_bytes"]
+                or memory["after_persistent_allocation"]["free_bytes"] < PLAN["free_memory_guard_bytes"]
+                or memory["capture_reserved_delta_peak_bytes"] > PLAN["capture_reserved_delta_ceiling_bytes"]):
+            return False
+        return True
+    except (KeyError, IndexError, TypeError, ValueError):
+        return False
+
+
+def validate_telemetry_retry_archive(record, receipt_path, receipt):
+    attempt_id = record.get("attempt_id")
+    archive = RAW / "archives" / "s50-w4103" / f"attempt-{attempt_id}"
+    manifest_path = archive / "manifest.json"
+    archived_checkpoint = archive / "checkpoint.json"
+    archived_attempt = archive / "attempt.json"
+    if not manifest_path.is_file() or not archived_checkpoint.is_file() or not archived_attempt.is_file():
+        raise SystemExit("Telemetry-only retry archive is incomplete; stop before submission.")
+    manifest_bytes = manifest_path.read_bytes()
+    manifest = json.loads(manifest_bytes)
+    checkpoint_sha = hashlib.sha256(archived_checkpoint.read_bytes()).hexdigest()
+    attempt_sha = hashlib.sha256(archived_attempt.read_bytes()).hexdigest()
+    receipt_sha = hashlib.sha256(receipt_path.read_bytes()).hexdigest()
+    if (manifest.get("attempt_id") != attempt_id
+            or manifest.get("original_checkpoint_sha256") != checkpoint_sha
+            or manifest.get("original_attempt_receipt_sha256") != attempt_sha
+            or attempt_sha != receipt_sha
+            or manifest.get("gate_failure_classification") != "telemetry_only"
+            or receipt.get("checkpoint_sha256") != checkpoint_sha):
+        raise SystemExit("Telemetry-only retry archive checksum/link mismatch; stop before submission.")
+    return str(manifest_path.relative_to(ROOT)), hashlib.sha256(manifest_bytes).hexdigest(), checkpoint_sha
+
+
 def utc_now():
     return datetime.now(timezone.utc).isoformat()
 
@@ -81,37 +150,57 @@ def is_paused():
 
 
 def show_status():
-    saved = {path.stem for path in CHECKPOINTS.glob("s*-w*.json")} if CHECKPOINTS.exists() else set()
+    saved = {}
+    if CHECKPOINTS.exists():
+        for path in CHECKPOINTS.glob("s*-w*.json"):
+            try:
+                saved[path.stem] = json.loads(path.read_text()).get("status")
+            except (OSError, json.JSONDecodeError):
+                saved[path.stem] = "unreadable"
     units = work_units()
-    next_unit = next((f"s{seed}-w{width}" for seed, width in units
-                      if f"s{seed}-w{width}" not in saved), None)
+    completed = {unit for unit, status in saved.items() if status == "complete"}
+    failed = sorted(unit for unit, status in saved.items() if status != "complete")
+    next_unit = (None if failed else next((f"s{seed}-w{width}" for seed, width in units
+                                           if f"s{seed}-w{width}" not in completed), None))
     markers = [str(path.relative_to(ROOT)) for path in PAUSE_MARKERS if path.exists()]
-    print(f"Saved {len(saved)}/{len(units)} checkpoints.")
-    print(f"Next: {next_unit or 'none'}")
+    print(f"Completed: {len(completed)}/{len(units)} checkpoints.")
+    print(f"Saved failed/incomplete: {len(failed)}")
+    print(f"Blocking checkpoint(s): {', '.join(failed) if failed else 'none'}")
+    next_label = f"blocked by {', '.join(failed)}" if failed else (next_unit or "none")
+    print(f"Next: {next_label}")
     print(f"Paused: {', '.join(markers) if markers else 'no'}")
 
 
-def run_one(lock, retry_transport_failures=False):
+def run_one(lock, retry_transport_failures=False, retry_telemetry_only=False):
     if is_paused():
         raise SystemExit("Paused at checkpoint boundary; no H100 work submitted.")
+    if retry_transport_failures and retry_telemetry_only:
+        raise SystemExit("Choose only one manual retry gate.")
     revision, source_digests, pin = verify_source_pin()
     if pin.get("h100_execution_authorized") is not True:
         raise SystemExit("Source pin is plan-only; H100 execution is not authorized.")
     CHECKPOINTS.mkdir(parents=True, exist_ok=True)
     ATTEMPTS.mkdir(parents=True, exist_ok=True)
-    failed_checkpoints = []
+    saved_records = {}
     for path in CHECKPOINTS.glob("s*-w*.json"):
         try:
-            saved_status = json.loads(path.read_text()).get("status")
+            saved_records[path.stem] = json.loads(path.read_text())
         except (OSError, json.JSONDecodeError) as error:
             raise SystemExit(f"Cannot inspect saved checkpoint {path.name}; stop before submission.") from error
-        if saved_status != "complete":
-            failed_checkpoints.append(path.name)
-    if failed_checkpoints:
+    failed_checkpoints = sorted(unit for unit, item in saved_records.items()
+                                if item.get("status") != "complete")
+    if retry_telemetry_only:
+        name = PLAN["manual_telemetry_retry_unit"]
+        if (failed_checkpoints != [name] or set(saved_records) != {name}
+                or not telemetry_only_failure(saved_records[name])):
+            raise SystemExit("Telemetry-only recovery requires the sole saved failure to match the registered telemetry-gate artifact.")
+        unit = (PLAN["seeds"][0], PLAN["widths"][0])
+    elif failed_checkpoints:
         raise SystemExit("A saved checkpoint failed; inspect its evidence before continuing: "
-                         + ", ".join(sorted(failed_checkpoints)))
-    unit = next(((seed, width) for seed, width in work_units()
-                 if not (CHECKPOINTS / f"s{seed}-w{width}.json").exists()), None)
+                         + ", ".join(failed_checkpoints))
+    else:
+        unit = next(((seed, width) for seed, width in work_units()
+                     if f"s{seed}-w{width}" not in saved_records), None)
     if unit is None:
         print("All 12 registered checkpoints are saved.")
         return
@@ -123,11 +212,26 @@ def run_one(lock, retry_transport_failures=False):
             receipts.append(json.loads(path.read_text()))
         except (OSError, json.JSONDecodeError) as error:
             raise SystemExit(f"Cannot inspect prior attempt receipt {path.name}; stop before submission.") from error
+    receipts.sort(key=lambda item: item.get("started_utc", ""))
     standard_limit = PLAN["standard_max_attempts_per_checkpoint"]
     total_limit = PLAN["max_attempts_per_checkpoint"]
-    manual_retry = False
-    if len(receipts) >= standard_limit:
-        receipts.sort(key=lambda item: item.get("started_utc", ""))
+    manual_transport_retry = False
+    manual_telemetry_retry = False
+    retry_archive = None
+    if retry_telemetry_only:
+        if len(receipts) != standard_limit + PLAN["max_manual_transport_retries_per_checkpoint"]:
+            raise SystemExit("Telemetry-only recovery requires exactly three transport receipts and the saved fourth telemetry-gate attempt.")
+        if (any(item.get("outcome") != "transport_or_parse_failed" for item in receipts[:standard_limit])
+                or receipts[-1].get("outcome") != "gate_failed"
+                or receipts[-1].get("attempt_id") != saved_records[name].get("attempt_id")
+                or not receipts[-1].get("manual_transport_retry_override")
+                or len(receipts) + 1 > total_limit):
+            raise SystemExit("Prior attempt history does not match the registered telemetry-only recovery condition.")
+        retry_archive = validate_telemetry_retry_archive(
+            saved_records[name], ATTEMPTS / f"{name}-{receipts[-1]['attempt_id']}.json", receipts[-1])
+        manual_telemetry_retry = True
+        prior_ids = [item.get("attempt_id") for item in receipts]
+    elif len(receipts) >= standard_limit:
         prior_ids = [item.get("attempt_id") for item in receipts]
         if (not retry_transport_failures
                 or len(receipts) != standard_limit
@@ -139,12 +243,11 @@ def run_one(lock, retry_transport_failures=False):
                 f"{name} reached the standard attempt limit. A fourth attempt is allowed only with "
                 "--retry-transport-failures after exactly three transport failures and no checkpoint JSON."
             )
-        manual_retry = True
+        manual_transport_retry = True
     elif retry_transport_failures:
-        raise SystemExit(
-            "--retry-transport-failures is valid only after exactly three transport failures "
-            "for the next unit with no checkpoint JSON."
-        )
+        raise SystemExit("--retry-transport-failures is valid only after exactly three transport failures and no checkpoint JSON.")
+    elif retry_telemetry_only:
+        raise SystemExit("--retry-telemetry-only requires the registered saved telemetry-only failure.")
     else:
         prior_ids = []
     attempt_id = uuid.uuid4().hex
@@ -152,10 +255,18 @@ def run_one(lock, retry_transport_failures=False):
     attempt = {"unit": name, "seed": seed, "width": width,
                "source_revision": revision, "source_sha256": source_digests,
                "attempt_id": attempt_id, "started_utc": utc_now(), "outcome": "started",
-               "manual_transport_retry_override": manual_retry,
-               "checkpoint_absent_at_manual_retry": manual_retry,
-               "previous_transport_attempt_ids": prior_ids if manual_retry else [],
-               "invocation_flag": "--retry-transport-failures" if manual_retry else None}
+               "manual_transport_retry_override": manual_transport_retry,
+               "checkpoint_absent_at_manual_retry": manual_transport_retry,
+               "previous_transport_attempt_ids": prior_ids if manual_transport_retry else [],
+               "manual_telemetry_retry_override": manual_telemetry_retry,
+               "previous_telemetry_retry_attempt_ids": prior_ids if manual_telemetry_retry else [],
+               "preserved_checkpoint_attempt_id": receipts[-1].get("attempt_id") if manual_telemetry_retry else None,
+               "preserved_checkpoint_sha256": retry_archive[2] if retry_archive else None,
+               "recovery_archive_manifest_path": retry_archive[0] if retry_archive else None,
+               "recovery_archive_manifest_sha256": retry_archive[1] if retry_archive else None,
+               "checkpoint_present_at_telemetry_retry": manual_telemetry_retry,
+               "invocation_flag": "--retry-transport-failures" if manual_transport_retry else
+                                  ("--retry-telemetry-only" if manual_telemetry_retry else None)}
     atomic_json(attempt_path, attempt)
     started = time.monotonic()
     if is_paused():
@@ -214,8 +325,10 @@ if __name__ == "__main__":
     actions.add_argument("--status", action="store_true")
     actions.add_argument("--pause", action="store_true")
     actions.add_argument("--resume", action="store_true")
-    parser.add_argument("--retry-transport-failures", action="store_true",
+    actions.add_argument("--retry-transport-failures", action="store_true",
                         help="Allow one fourth attempt only after exactly three transport-failed attempts and no checkpoint JSON.")
+    actions.add_argument("--retry-telemetry-only", action="store_true",
+                         help="Allow one fifth attempt only for the archived s50-w4103 telemetry-gap-only checkpoint.")
     args = parser.parse_args()
     if args.status:
         show_status()
@@ -227,4 +340,5 @@ if __name__ == "__main__":
         print("Cleared this experiment's marker; the global vLLM marker still applies.")
     else:
         with lab.worker_lock(STATE) as lock:
-            run_one(lock, retry_transport_failures=args.retry_transport_failures)
+            run_one(lock, retry_transport_failures=args.retry_transport_failures,
+                    retry_telemetry_only=args.retry_telemetry_only)

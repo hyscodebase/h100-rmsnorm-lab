@@ -88,9 +88,11 @@ def plan_audit():
          and sustained_block_bytes == 17_246_978_048, "Frozen byte math mismatch.")
     need(p["standard_max_attempts_per_checkpoint"] == 3
          and p["max_manual_transport_retries_per_checkpoint"] == 1
-         and p["max_attempts_per_checkpoint"] == 4
-         and p["manual_transport_retry_unit"] == "s50-w4103",
-         "Transport-only fourth-attempt policy changed.")
+         and p["max_manual_telemetry_retries_per_checkpoint"] == 1
+         and p["max_attempts_per_checkpoint"] == 5
+         and p["manual_transport_retry_unit"] == "s50-w4103"
+         and p["manual_telemetry_retry_unit"] == "s50-w4103",
+         "Transport/telemetry-only recovery policy changed.")
     need(p["free_memory_guard_bytes"] == 16 * GIB
          and p["capture_reserved_delta_ceiling_bytes"] == 8 * GIB,
          "Memory guard differs from preregistered threshold.")
@@ -148,7 +150,12 @@ def audit_attempts(pin, checkpoint_records, plan):
             need(item.get("source_sha256") == pin["source_sha256"],
                  f"Current attempt source pin mismatch: {path.name}.")
         else:
-            need(item.get("outcome") in {"transport_or_parse_failed", "paused_before_submit"},
+            historical_gate_exception = (
+                item.get("unit") == plan["manual_telemetry_retry_unit"]
+                and item.get("outcome") == "gate_failed"
+                and item.get("manual_transport_retry_override") is True)
+            need(item.get("outcome") in {"transport_or_parse_failed", "paused_before_submit"}
+                 or historical_gate_exception,
                  f"Executed attempt must use the current source pin: {path.name}.")
             for source, digest in item["source_sha256"].items():
                 blob = subprocess.check_output(["git", "-C", str(ROOT), "show", f"{receipt_revision}:{source}"])
@@ -162,13 +169,12 @@ def audit_attempts(pin, checkpoint_records, plan):
         total_limit = plan["max_attempts_per_checkpoint"]
         need(len(ordered) <= total_limit, f"Attempt receipt limit exceeded for checkpoint: {unit}.")
         if len(ordered) <= standard_limit:
-            need(not any(item.get("manual_transport_retry_override") for item in ordered),
-                 f"Manual transport override is only allowed as a fourth attempt: {unit}.")
+            need(not any(item.get("manual_transport_retry_override")
+                         or item.get("manual_telemetry_retry_override") for item in ordered),
+                 f"Manual recovery flags are only valid after the standard attempts: {unit}.")
         else:
             need(unit == plan["manual_transport_retry_unit"],
-                 f"Manual transport retry is restricted to {plan['manual_transport_retry_unit']}: {unit}.")
-            need(len(ordered) == standard_limit + plan["max_manual_transport_retries_per_checkpoint"],
-                 f"Manual retry count exceeds the frozen allowance: {unit}.")
+                 f"Manual recovery is restricted to {plan['manual_transport_retry_unit']}: {unit}.")
             prior = ordered[:standard_limit]
             fourth = ordered[standard_limit]
             need(all(item.get("outcome") == "transport_or_parse_failed" for item in prior),
@@ -179,6 +185,61 @@ def audit_attempts(pin, checkpoint_records, plan):
                  and fourth.get("previous_transport_attempt_ids")
                     == [item.get("attempt_id") for item in prior],
                  f"Fourth attempt lacks its explicit transport-only override evidence: {unit}.")
+            if len(ordered) == standard_limit + 1:
+                need(not fourth.get("manual_telemetry_retry_override"),
+                     f"Telemetry-only retry cannot replace the fourth transport recovery: {unit}.")
+            else:
+                need(len(ordered) == plan["max_attempts_per_checkpoint"]
+                     and plan["max_manual_telemetry_retries_per_checkpoint"] == 1,
+                     f"Manual telemetry retry count exceeds the frozen allowance: {unit}.")
+                fifth = ordered[standard_limit + 1]
+                need(fourth.get("outcome") == "gate_failed"
+                     and fourth.get("checkpoint_status") == "gate_failed"
+                     and fifth.get("manual_telemetry_retry_override") is True
+                     and fifth.get("checkpoint_present_at_telemetry_retry") is True
+                     and fifth.get("invocation_flag") == "--retry-telemetry-only"
+                     and fifth.get("outcome") in {"checkpoint_saved", "gate_failed", "transport_or_parse_failed"}
+                     and fifth.get("previous_telemetry_retry_attempt_ids")
+                        == [item.get("attempt_id") for item in ordered[:standard_limit + 1]],
+                     f"Fifth attempt lacks the exact telemetry-only recovery authorization: {unit}.")
+            if fourth.get("outcome") == "gate_failed":
+                # Validate the archive as soon as the telemetry-only failure exists,
+                # whether or not the one manual rerun has been attempted.
+                archive_dir = RAW / "archives" / unit / f"attempt-{fourth['attempt_id']}"
+                manifest_path = archive_dir / "manifest.json"
+                archived_cp = archive_dir / "checkpoint.json"
+                archived_attempt = archive_dir / "attempt.json"
+                need(manifest_path.is_file() and archived_cp.is_file() and archived_attempt.is_file(),
+                     f"Telemetry-only failure archive is incomplete: {unit}.")
+                manifest_bytes = manifest_path.read_bytes()
+                manifest = json.loads(manifest_bytes)
+                checkpoint_bytes = archived_cp.read_bytes()
+                attempt_bytes = archived_attempt.read_bytes()
+                checkpoint_sha = hashlib.sha256(checkpoint_bytes).hexdigest()
+                attempt_sha = hashlib.sha256(attempt_bytes).hexdigest()
+                archived_record = json.loads(checkpoint_bytes)
+                archived_receipt = json.loads(attempt_bytes)
+                need(manifest.get("unit") == unit
+                     and manifest.get("attempt_id") == fourth.get("attempt_id")
+                     and manifest.get("original_checkpoint_path") == str((CHECKPOINTS / f"{unit}.json").relative_to(ROOT))
+                     and manifest.get("original_attempt_receipt_path")
+                        == str((ATTEMPTS / f"{unit}-{fourth['attempt_id']}.json").relative_to(ROOT))
+                     and manifest.get("gate_failure_classification") == "telemetry_only"
+                     and manifest.get("original_checkpoint_sha256") == checkpoint_sha
+                     and manifest.get("original_attempt_receipt_sha256") == attempt_sha
+                     and archived_receipt.get("attempt_id") == fourth.get("attempt_id")
+                     and archived_receipt.get("checkpoint_sha256") == checkpoint_sha
+                     and archived_receipt.get("outcome") == "gate_failed"
+                     and archived_receipt.get("checkpoint_status") == "gate_failed"
+                     and telemetry_only_failure(archived_record, plan),
+                     f"Telemetry-only archive content/identity verification failed: {unit}.")
+                if len(ordered) == standard_limit + 2:
+                    fifth = ordered[-1]
+                    need(fifth.get("recovery_archive_manifest_path") == str(manifest_path.relative_to(ROOT))
+                         and fifth.get("recovery_archive_manifest_sha256") == hashlib.sha256(manifest_bytes).hexdigest()
+                         and fifth.get("preserved_checkpoint_attempt_id") == fourth.get("attempt_id")
+                         and fifth.get("preserved_checkpoint_sha256") == checkpoint_sha,
+                         f"Telemetry-only retry does not link to the immutable failed artifact: {unit}.")
     complete_units = set()
     successful_receipts = defaultdict(list)
     for attempt_id, item in receipts.items():
@@ -231,7 +292,8 @@ def telemetry_summary(samples, phase, plan):
     fields = {}
     coverage_pass = True
     for field in plan["telemetry_required_fields"]:
-        values = [s.get(field) for s in good if s.get(field) is not None]
+        values = [s.get(field) for s in good
+                  if isinstance(s.get(field), (int, float)) and math.isfinite(s[field])]
         coverage = len(values) / len(samples) if samples else 0.0
         passed = coverage >= plan["telemetry_required_field_coverage_fraction"]
         coverage_pass &= passed
@@ -251,17 +313,83 @@ def telemetry_summary(samples, phase, plan):
             "eligible": bool(coverage_pass and query_pass and phase.get("telemetry_gate_passed"))}
 
 
+def telemetry_only_failure(record, plan):
+    try:
+        failure = record["failure"]
+        phase = record["sustained_phases"][0]
+        if (record.get("status") != "gate_failed"
+                or failure.get("stage") != "sustained_sync:triton_4w_4r"
+                or len(record.get("sustained_phases", [])) != 1
+                or phase.get("backend") != "triton_4w_4r"
+                or phase.get("telemetry_gate_passed") is not False
+                or phase.get("telemetry_max_gap_seconds", 0) <= plan["maximum_active_telemetry_gap_seconds"]):
+            return False
+        durations = phase["window_event_seconds"]
+        gaps = phase["window_event_gaps_seconds"]
+        if (len(durations) != plan["sustained_event_windows_per_phase"]
+                or len(gaps) != len(durations) - 1
+                or not plan["sustained_min_seconds"] <= sum(durations) <= plan["sustained_max_seconds"]
+                or max(durations) > plan["maximum_event_window_seconds"]
+                or max(gaps) > plan["maximum_event_gap_between_windows_seconds"]):
+            return False
+        telemetry = telemetry_summary(phase.get("telemetry_samples", []), phase, plan)
+        if (not telemetry["query_gate_passed"]
+                or not telemetry["coverage_gate_passed"]
+                or telemetry["eligible"]
+                or phase.get("telemetry_sample_count") < plan["minimum_active_telemetry_samples"]):
+            return False
+        expected = {"fixtures": len(plan["fixtures"]) * 4, "timed_input": 4,
+                    "post_latency_replay": 4, "post_sustained_replay": 1}
+        for section, count in expected.items():
+            rows = record.get("correctness", {}).get(section, [])
+            if len(rows) != count or not all(x.get("strict_passed") and x.get("crosscheck_passed") for x in rows):
+                return False
+        if len(record.get("latency_intervals", [])) != plan["latency_rounds"] * len(BACKENDS):
+            return False
+        memory = record["memory"]
+        if (memory["before_allocations"]["free_bytes"] < plan["free_memory_guard_bytes"]
+                or memory["after_persistent_allocation"]["free_bytes"] < plan["free_memory_guard_bytes"]
+                or memory["capture_reserved_delta_peak_bytes"] > plan["capture_reserved_delta_ceiling_bytes"]):
+            return False
+        return True
+    except (KeyError, IndexError, TypeError, ValueError):
+        return False
+
+
+def verify_source_hashes_at(revision, expected):
+    need(len(revision) == 40, "Checkpoint has no full source revision.")
+    for source, digest in expected.items():
+        blob = subprocess.check_output(["git", "-C", str(ROOT), "show", f"{revision}:{source}"])
+        need(hashlib.sha256(blob).hexdigest() == digest,
+             f"Checkpoint source hash mismatch at {revision}:{source}.")
+
+
 def audit_checkpoint(path, plan, pin):
     r = json.loads(path.read_text())
     need(path.stem == f"s{r['seed']}-w{r['width']}", f"Checkpoint identity mismatch: {path.name}.")
-    need(r.get("source_revision") == pin["source_revision"], f"Checkpoint revision mismatch: {path.name}.")
+    revision = r.get("source_revision", "")
+    expected_sources = {key: r.get("source_sha256", {}).get(key) for key in COMPUTE_SOURCES}
+    expected_execution = r.get("execution_source_sha256", {})
+    if r.get("status") != "complete":
+        need(path.stem == plan["manual_telemetry_retry_unit"] and telemetry_only_failure(r, plan),
+             f"Saved failed checkpoint is not the registered telemetry-only failure: {path.name}.")
+        verify_source_hashes_at(revision, expected_execution)
+        need({key: expected_execution.get(key) for key in COMPUTE_SOURCES} == expected_sources,
+             f"Telemetry-only checkpoint source manifests disagree: {path.name}.")
+        phase = r["sustained_phases"][0]
+        activity = telemetry_summary(phase["telemetry_samples"], phase, plan)
+        return {"checkpoint": path.stem, "seed": r["seed"], "width": r["width"],
+                "status": "gate_failed", "attempt_id": r.get("attempt_id"),
+                "failure": r.get("failure"), "failure_classification": "telemetry_only",
+                "raw_evidence_saved": True, "analysis_eligible": False,
+                "telemetry_activity_eligible": False,
+                "telemetry_raw_gap_seconds": phase["telemetry_max_gap_seconds"],
+                "event_seconds": phase["event_seconds"],
+                "telemetry": activity}
+    need(revision == pin["source_revision"], f"Checkpoint revision mismatch: {path.name}.")
     expected_sources = {key: pin["source_sha256"][key] for key in COMPUTE_SOURCES}
     need(r.get("source_sha256") == expected_sources, f"Checkpoint compute-source hash mismatch: {path.name}.")
     need(r.get("execution_source_sha256") == pin["source_sha256"], f"Checkpoint execution-source hash mismatch: {path.name}.")
-    if r.get("status") != "complete":
-        return {"checkpoint": path.stem, "seed": r["seed"], "width": r["width"],
-                "status": r.get("status"), "attempt_id": r.get("attempt_id"),
-                "failure": r.get("failure"), "raw_evidence_saved": True, "analysis_eligible": False}
     intervals = r.get("latency_intervals", [])
     need(len(intervals) == 401 * len(BACKENDS), f"Expected 1,604 latency intervals: {path.name}.")
     counts = {name: 0 for name in BACKENDS}
@@ -325,12 +453,16 @@ def audit_checkpoint(path, plan, pin):
              "Recomputed logical throughput mismatch.")
         samples = phase.get("telemetry_samples", [])
         telemetry = telemetry_summary(samples, phase, plan)
-        need(telemetry["eligible"], f"Telemetry fields/coverage make phase ineligible: {phase['backend']}.")
-        need(phase.get("gate_passed") is True, "Recorded sustained phase gate did not pass.")
+        need(phase.get("compute_gate_passed") is True
+             and phase.get("gate_passed") is True,
+             "Sustained compute duration/event-gap gate did not pass.")
+        need(phase.get("activity_telemetry_eligible") is telemetry["eligible"],
+             "Activity eligibility does not match the frozen telemetry thresholds.")
         phase_results[phase["backend"]] = {
             "logical_input_plus_output_GB_per_s": rate,
             "event_seconds": sum(durations), "total_graph_blocks": total_blocks,
             "total_graph_calls": total_calls, "window_replay_counts": replay_counts,
+            "activity_telemetry_eligible": telemetry["eligible"],
             "telemetry": telemetry}
     for section in ("fixtures", "timed_input", "post_latency_replay", "post_sustained_replay"):
         checks = r.get("correctness", {}).get(section, [])

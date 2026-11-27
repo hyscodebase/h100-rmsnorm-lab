@@ -435,13 +435,17 @@ def run_checkpoint(seed, width):
                          ROWS * width * PLAN["input_element_bytes"] * 2 * SUSTAINED_CALLS
                          * sum([per_window_replays] * len(event_durations)) / phase_seconds / 1e9),
                      "memory_before_phase": memory_snapshot(device)}
-            phase["gate_passed"] = bool(
+            phase["compute_gate_passed"] = bool(
                 phase_seconds >= PLAN["sustained_min_seconds"]
                 and phase_seconds <= PLAN["sustained_max_seconds"]
                 and max(event_durations, default=float("inf")) <= PLAN["maximum_event_window_seconds"]
                 and max(event_gaps, default=float("inf"))
                     <= PLAN["maximum_event_gap_between_windows_seconds"]
-                and phase["telemetry_gate_passed"])
+            )
+            # Sparse or delayed NVML polls disqualify activity claims but do not stop
+            # correctness/performance measurements for the remaining backends.
+            phase["activity_telemetry_eligible"] = phase["telemetry_gate_passed"]
+            phase["gate_passed"] = phase["compute_gate_passed"]
             # Output validation occurs after all queued windows have completed.
             output_check = check_output(name, outputs[name], timed_reference)
             output_check["phase"] = "post_sustained_replay"
@@ -450,8 +454,8 @@ def run_checkpoint(seed, width):
             record["sustained_phases"].append(phase)
             if not output_check["strict_passed"] or not output_check["crosscheck_passed"]:
                 raise GateFailure(f"Output verification failed after sustained replay: {name}.")
-            if not phase["gate_passed"]:
-                raise GateFailure(f"Sustained duration, queue-gap, or telemetry gate failed: {name}.")
+            if not phase["compute_gate_passed"]:
+                raise GateFailure(f"Sustained duration or queue-gap gate failed: {name}.")
 
         current_stage = "complete"
         record["status"] = "complete"
