@@ -86,6 +86,11 @@ def plan_audit():
          "Sustained block logical-byte estimate mismatch.")
     need(live == 1_886_388_224 and latency_graph_bytes == 2_155_872_256
          and sustained_block_bytes == 17_246_978_048, "Frozen byte math mismatch.")
+    need(p["standard_max_attempts_per_checkpoint"] == 3
+         and p["max_manual_transport_retries_per_checkpoint"] == 1
+         and p["max_attempts_per_checkpoint"] == 4
+         and p["manual_transport_retry_unit"] == "s50-w4103",
+         "Transport-only fourth-attempt policy changed.")
     need(p["free_memory_guard_bytes"] == 16 * GIB
          and p["capture_reserved_delta_ceiling_bytes"] == 8 * GIB,
          "Memory guard differs from preregistered threshold.")
@@ -114,9 +119,9 @@ def check_pin():
     return pin
 
 
-def audit_attempts(pin, checkpoint_records):
+def audit_attempts(pin, checkpoint_records, plan):
     receipts = {}
-    per_unit_counts = defaultdict(int)
+    per_unit_receipts = defaultdict(list)
     for path in sorted(ATTEMPTS.glob("*.json")) if ATTEMPTS.exists() else []:
         item = json.loads(path.read_text())
         attempt_id = item.get("attempt_id")
@@ -125,8 +130,6 @@ def audit_attempts(pin, checkpoint_records):
         unit = item.get("unit")
         expected_unit = f"s{item.get('seed')}-w{item.get('width')}"
         need(unit == expected_unit, f"Attempt checkpoint identity mismatch: {path.name}.")
-        per_unit_counts[unit] += 1
-        need(per_unit_counts[unit] <= 3, f"More than three attempt receipts for checkpoint: {unit}.")
         need(item.get("seed") in [50, 51, 52] and item.get("width") in [4103, 4104, 4105, 4112],
              f"Attempt contains unregistered checkpoint: {path.name}.")
         receipt_revision = item.get("source_revision", "")
@@ -152,6 +155,30 @@ def audit_attempts(pin, checkpoint_records):
                 need(hashlib.sha256(blob).hexdigest() == digest,
                      f"Historical transport attempt source mismatch at {receipt_revision}:{source}.")
         receipts[attempt_id] = item
+        per_unit_receipts[unit].append(item)
+    for unit, items in per_unit_receipts.items():
+        ordered = sorted(items, key=lambda item: item.get("started_utc", ""))
+        standard_limit = plan["standard_max_attempts_per_checkpoint"]
+        total_limit = plan["max_attempts_per_checkpoint"]
+        need(len(ordered) <= total_limit, f"Attempt receipt limit exceeded for checkpoint: {unit}.")
+        if len(ordered) <= standard_limit:
+            need(not any(item.get("manual_transport_retry_override") for item in ordered),
+                 f"Manual transport override is only allowed as a fourth attempt: {unit}.")
+        else:
+            need(unit == plan["manual_transport_retry_unit"],
+                 f"Manual transport retry is restricted to {plan['manual_transport_retry_unit']}: {unit}.")
+            need(len(ordered) == standard_limit + plan["max_manual_transport_retries_per_checkpoint"],
+                 f"Manual retry count exceeds the frozen allowance: {unit}.")
+            prior = ordered[:standard_limit]
+            fourth = ordered[standard_limit]
+            need(all(item.get("outcome") == "transport_or_parse_failed" for item in prior),
+                 f"Fourth attempt requires exactly three prior transport failures: {unit}.")
+            need(fourth.get("manual_transport_retry_override") is True
+                 and fourth.get("checkpoint_absent_at_manual_retry") is True
+                 and fourth.get("invocation_flag") == "--retry-transport-failures"
+                 and fourth.get("previous_transport_attempt_ids")
+                    == [item.get("attempt_id") for item in prior],
+                 f"Fourth attempt lacks its explicit transport-only override evidence: {unit}.")
     complete_units = set()
     successful_receipts = defaultdict(list)
     for attempt_id, item in receipts.items():
@@ -179,7 +206,6 @@ def audit_attempts(pin, checkpoint_records):
             need(receipt.get("outcome") == "gate_failed"
                  and receipt.get("checkpoint_status") == record.get("status"),
                  f"Failed checkpoint/attempt receipt status mismatch: {unit}.")
-    need(all(count <= 3 for count in per_unit_counts.values()), "Attempt limit exceeded.")
     for unit in successful_receipts:
         need(unit in complete_units, f"Orphan successful attempt receipt for {unit}.")
     for attempt_id, receipt in receipts.items():
@@ -385,7 +411,7 @@ def main():
             need(path.stem in expected, f"Unexpected checkpoint file: {path.name}.")
             need(path.stem not in records, f"Duplicate checkpoint unit: {path.stem}.")
             records[path.stem] = audit_checkpoint(path, plan, pin)
-        receipt_audit = audit_attempts(pin, records)
+        receipt_audit = audit_attempts(pin, records, plan)
         comparisons = compare_checkpoints(list(records.values()), plan)
         complete = (set(records) == expected
                     and all(item.get("status") == "complete" for item in records.values()))

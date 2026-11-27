@@ -91,7 +91,7 @@ def show_status():
     print(f"Paused: {', '.join(markers) if markers else 'no'}")
 
 
-def run_one(lock):
+def run_one(lock, retry_transport_failures=False):
     if is_paused():
         raise SystemExit("Paused at checkpoint boundary; no H100 work submitted.")
     revision, source_digests, pin = verify_source_pin()
@@ -117,13 +117,45 @@ def run_one(lock):
         return
     seed, width = unit
     name = f"s{seed}-w{width}"
-    if len(list(ATTEMPTS.glob(f"{name}-*.json"))) >= PLAN["max_attempts_per_checkpoint"]:
-        raise SystemExit(f"{name} has three attempt receipts; inspect them before retry.")
+    receipts = []
+    for path in sorted(ATTEMPTS.glob(f"{name}-*.json")):
+        try:
+            receipts.append(json.loads(path.read_text()))
+        except (OSError, json.JSONDecodeError) as error:
+            raise SystemExit(f"Cannot inspect prior attempt receipt {path.name}; stop before submission.") from error
+    standard_limit = PLAN["standard_max_attempts_per_checkpoint"]
+    total_limit = PLAN["max_attempts_per_checkpoint"]
+    manual_retry = False
+    if len(receipts) >= standard_limit:
+        receipts.sort(key=lambda item: item.get("started_utc", ""))
+        prior_ids = [item.get("attempt_id") for item in receipts]
+        if (not retry_transport_failures
+                or len(receipts) != standard_limit
+                or len(receipts) + 1 > total_limit
+                or name != PLAN["manual_transport_retry_unit"]
+                or any(item.get("outcome") != "transport_or_parse_failed" for item in receipts)
+                or (CHECKPOINTS / f"{name}.json").exists()):
+            raise SystemExit(
+                f"{name} reached the standard attempt limit. A fourth attempt is allowed only with "
+                "--retry-transport-failures after exactly three transport failures and no checkpoint JSON."
+            )
+        manual_retry = True
+    elif retry_transport_failures:
+        raise SystemExit(
+            "--retry-transport-failures is valid only after exactly three transport failures "
+            "for the next unit with no checkpoint JSON."
+        )
+    else:
+        prior_ids = []
     attempt_id = uuid.uuid4().hex
     attempt_path = ATTEMPTS / f"{name}-{attempt_id}.json"
     attempt = {"unit": name, "seed": seed, "width": width,
                "source_revision": revision, "source_sha256": source_digests,
-               "attempt_id": attempt_id, "started_utc": utc_now(), "outcome": "started"}
+               "attempt_id": attempt_id, "started_utc": utc_now(), "outcome": "started",
+               "manual_transport_retry_override": manual_retry,
+               "checkpoint_absent_at_manual_retry": manual_retry,
+               "previous_transport_attempt_ids": prior_ids if manual_retry else [],
+               "invocation_flag": "--retry-transport-failures" if manual_retry else None}
     atomic_json(attempt_path, attempt)
     started = time.monotonic()
     if is_paused():
@@ -182,6 +214,8 @@ if __name__ == "__main__":
     actions.add_argument("--status", action="store_true")
     actions.add_argument("--pause", action="store_true")
     actions.add_argument("--resume", action="store_true")
+    parser.add_argument("--retry-transport-failures", action="store_true",
+                        help="Allow one fourth attempt only after exactly three transport-failed attempts and no checkpoint JSON.")
     args = parser.parse_args()
     if args.status:
         show_status()
@@ -193,4 +227,4 @@ if __name__ == "__main__":
         print("Cleared this experiment's marker; the global vLLM marker still applies.")
     else:
         with lab.worker_lock(STATE) as lock:
-            run_one(lock)
+            run_one(lock, retry_transport_failures=args.retry_transport_failures)

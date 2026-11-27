@@ -71,7 +71,7 @@
   "persistent_output_buffers_per_checkpoint": 4,
   "free_memory_guard_bytes": 17179869184,
   "capture_reserved_delta_ceiling_bytes": 8589934592,
-  "max_attempts_per_checkpoint": 3,
+  "max_attempts_per_checkpoint": 4,
   "remote_timeout_seconds": 300,
   "estimated_one_output_bytes": 269484032,
   "estimated_persistent_outputs_bytes": 1077936128,
@@ -90,5 +90,8 @@
     ],
     "must_pass_all_seeds": true,
     "throughput_metric": "logical_input_plus_output_GB_per_s"
-  }
+  },
+  "standard_max_attempts_per_checkpoint": 3,
+  "max_manual_transport_retries_per_checkpoint": 1,
+  "manual_transport_retry_unit": "s50-w4103"
 }
