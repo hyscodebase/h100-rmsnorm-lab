@@ -10,7 +10,7 @@
     "latency_graph_calls_per_checkpoint": 6416,
     "sustained_target_seconds_total": 3168.0
   },
-  "source_revision": "c1afffb27ef8428888a73ea456a21dfe3bb771b0",
+  "source_revision": "cb8cf24863194ada8534967b1ff3de463d0a1ae4",
   "source_pin": "pass",
   "saved_checkpoints": 0,
   "successful_checkpoints": 0,
@@ -34,5 +34,5 @@
     "rule": "all registered odd widths must be at least 5.0% faster than fastest one-row Triton and torch_compile in every seed, and no registered even width may qualify",
     "reason": "awaiting all registered checkpoints"
   },
-  "generated_utc": "2026-11-27T09:36:18.143214+00:00"
+  "generated_utc": "2026-11-27T09:40:22.130485+00:00"
 }

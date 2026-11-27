@@ -1,0 +1,38 @@
+{
+  "plan": "pass",
+  "resource_estimate": {
+    "persistent_live_bytes": 1888223232,
+    "persistent_live_gib": 1.758544921875,
+    "one_output_bytes": 269746176,
+    "latency_graph_logical_bytes": 2157969408,
+    "sustained_block_logical_bytes": 17263755264,
+    "latency_intervals_per_checkpoint": 1604,
+    "latency_graph_calls_per_checkpoint": 6416,
+    "sustained_target_seconds_total": 3168.0
+  },
+  "source_revision": "c1afffb27ef8428888a73ea456a21dfe3bb771b0",
+  "source_pin": "pass",
+  "saved_checkpoints": 0,
+  "successful_checkpoints": 0,
+  "expected_checkpoints": 24,
+  "final_complete": false,
+  "receipt_audit": {
+    "receipt_count": 1,
+    "saved_checkpoint_receipts": 0,
+    "successful_checkpoint_receipts": 0
+  },
+  "checkpoint_results": [],
+  "checkpoint_comparisons": [],
+  "per_width_across_seeds": {},
+  "execution_environment": null,
+  "bounded_dispatch_screen_decision": {
+    "eligible": false,
+    "supports_registered_odd_even_split": false,
+    "all_registered_odd_widths_qualify": false,
+    "any_registered_even_width_qualifies": false,
+    "scope": "only the eight preregistered widths at 32768 BF16 rows",
+    "rule": "all registered odd widths must be at least 5.0% faster than fastest one-row Triton and torch_compile in every seed, and no registered even width may qualify",
+    "reason": "awaiting all registered checkpoints"
+  },
+  "generated_utc": "2026-11-27T09:38:15.216682+00:00"
+}
