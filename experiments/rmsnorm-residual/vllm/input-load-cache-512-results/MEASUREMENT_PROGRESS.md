@@ -1,14 +1,29 @@
 # Input-load cache policy: measurement progress
 
-Seed 210 completed both separately checkpointed backend periods. Each period processed 2,147,483,648 normalized rows across 512 measured bursts after at least three seconds of warm-up. Captured outputs remained bitwise exact, both inputs and weights stayed unchanged, and the fingerprints matched across periods.
+## Paired throughput
 
-| Backend | Median burst throughput | Period wall time | Median GPU / memory busy | Median power |
-| --- | ---: | ---: | ---: | ---: |
-| Eight-warp baseline | 91,547,406 normalized rows/s | 23.464 s | 100% / 100% | 514.95 W |
-| Eight-warp `.cg` candidate | 91,548,119 normalized rows/s | 23.463 s | 100% / 100% | 515.07 W |
+Each period warmed up for at least three seconds, then recorded 512 bursts processing 2,147,483,648 normalized rows. Median burst throughput is the median of `4,194,304 / burst_wall_seconds`. All four periods passed post-period exactness checks; seed fingerprints match within both completed seeds.
 
-The candidate's median burst throughput was **0.000779% higher** in seed 210, below the preregistered 5% adoption threshold. The observer associated 22 device samples with the baseline period and 23 with the candidate period. The largest gap between samples was 1.789 seconds in the baseline period. Auxiliary snapshots and all raw burst intervals are retained in [s210-p0.json](s210-p0.json) and [s210-p1.json](s210-p1.json).
+| Seed | Eight-warp baseline | Eight-warp `.cg` | Candidate gain | Exact and matched |
+| ---: | ---: | ---: | ---: | :---: |
+| 210 | 91,547,406 rows/s | 91,548,119 rows/s | +0.000779% | Yes |
+| 211 | 91,544,022 rows/s | 91,544,924 rows/s | +0.000985% | Yes |
 
-This seed does not support adopting `.cg`. Seeds 211 and 212 remain in the registered sequence. The [attempt history](attempts.json) includes both seed-210 period receipts.
+The candidate is effectively tied with the baseline in both seeds and is far below the preregistered 5% adoption threshold. Seed 212 remains scheduled to complete the reversed comparison as an independent confirmation.
 
-Seed 211 period 0 has also completed: the candidate measured 91,544,924 normalized rows/s over 23.464 seconds. Its 21 associated telemetry samples had 100% median GPU and memory busy, 518.51 W median power, and 8,431.25 MiB median VRAM use. Outputs remained exact. The baseline period is pending, so this is not yet a paired result. See [s211-p0.json](s211-p0.json).
+## H100 resource samples
+
+All four measured periods had 100% median GPU and memory busy. The NVML observer associated 21–23 samples with each period; median VRAM use was 8,431.25 MiB in each. The largest sample gap was 2.499 seconds. Auxiliary snapshots and every sample are retained in the raw period files.
+
+| Seed-period | Backend | Samples | Median power | Median SM clock | Largest gap |
+| --- | --- | ---: | ---: | ---: | ---: |
+| 210-p0 | Baseline | 22 | 514.95 W | 1,980 MHz | 1.789 s |
+| 210-p1 | `.cg` | 23 | 515.07 W | 1,980 MHz | 1.897 s |
+| 211-p0 | `.cg` | 21 | 518.51 W | 1,980 MHz | 2.154 s |
+| 211-p1 | Baseline | 21 | 514.88 W | 1,980 MHz | 2.499 s |
+
+The complete measurements and auxiliary snapshots are in [s210-p0.json](s210-p0.json), [s210-p1.json](s210-p1.json), [s211-p0.json](s211-p0.json), and [s211-p1.json](s211-p1.json). [attempts.json](attempts.json) retains all sanitized submission and recovery receipts.
+
+## Next step
+
+Run seed 212 in the preregistered baseline-then-candidate order. The final report will derive all three gains directly from the saved burst intervals and record whether the `.cg` candidate meets the adoption rule.
