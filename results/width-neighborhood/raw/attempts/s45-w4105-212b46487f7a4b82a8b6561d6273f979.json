@@ -1,0 +1,17 @@
+{
+  "unit": "s45-w4105",
+  "seed": 45,
+  "width": 4105,
+  "code_revision": "bb2c59da74b639f0c56738d19ab34eacfbe5d69e",
+  "source_sha256": {
+    "kernels.py": "b265c4d3164ff65c1d6ecf09d611b793ecb2cfb3e10d3ac7080e8c5279018df5",
+    "experiments/width-neighborhood/run.py": "8227b4296fd998516a3a9f0f7d1a47adf56dd21dce970164b8d582e13d77e500",
+    "experiments/width-neighborhood/PLAN.md": "31c5fbd75cd7ababa681da01d4df4af0df20ba8917f5fb41d5a3877950e41e17",
+    "plans/width-neighborhood.json": "e6b2935b1488193a7c04a14d4381117633847fb36cc05587845c15ea6e0fd216"
+  },
+  "started_utc": "2026-11-27T03:35:12.879880+00:00",
+  "outcome": "checkpoint_saved",
+  "telemetry_samples": 5,
+  "finished_utc": "2026-11-27T03:35:22.626710+00:00",
+  "elapsed_s": 9.746092458022758
+}
