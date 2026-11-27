@@ -69,6 +69,7 @@
   "manual_transport_retry_unit": null,
   "manual_telemetry_retry_unit": null,
   "remote_timeout_seconds": 300,
+  "remote_timeout_cleanup_reserve_seconds": 20,
   "remote_total_timeout_seconds": 350,
   "estimated_one_output_bytes": 269746176,
   "estimated_persistent_outputs_bytes": 1078984704,

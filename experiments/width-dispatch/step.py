@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import statistics
 import subprocess
 import sys
@@ -52,6 +53,19 @@ def atomic_json(path, value):
 def hashes():
     return {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
             for name in EXECUTION_SOURCES}
+
+
+def validate_runner_prerequisites():
+    if not RUNNER.is_file() or not os.access(RUNNER, os.X_OK):
+        raise SystemExit("Local H100 runner is missing or not executable; no attempt was submitted.")
+    if any(shutil.which(command) is None for command in ("ssh", "tar")):
+        raise SystemExit("A local SSH or tar executable is unavailable; no attempt was submitted.")
+    for key in ("rmsnorm.host", "rmsnorm.setup"):
+        result = subprocess.run(["git", "-C", str(ROOT), "config", "--local", "--get", key],
+                                text=True, capture_output=True, check=False)
+        value = result.stdout.strip()
+        if result.returncode != 0 or not value or "\n" in value:
+            raise SystemExit(f"Local Git setting {key} is missing or invalid; no attempt was submitted.")
 
 
 def verify_source_pin():
@@ -253,15 +267,47 @@ def show_status():
     active = lab.worker_active(STATE)
     records = read_saved_checkpoints()
     audit_command = [sys.executable, str(ROOT / "experiments/width-dispatch/summarize.py"), "--audit"]
-    try:
-        audit_process = subprocess.run(audit_command, cwd=ROOT, text=True,
-                                       capture_output=True, check=False, timeout=120)
-        audit = json.loads(audit_process.stdout) if audit_process.returncode == 0 else None
-        audit_error = None if audit is not None else (audit_process.stderr.strip().splitlines()[-1]
-                                                      if audit_process.stderr.strip()
-                                                      else "partial evidence audit failed")
-    except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as error:
-        audit, audit_error = None, f"partial evidence audit unavailable ({type(error).__name__})"
+    audit, audit_error, in_flight_unit = None, None, None
+    started_receipts = []
+    if active:
+        for path in sorted(ATTEMPTS.glob("*.json")) if ATTEMPTS.exists() else []:
+            try:
+                item = json.loads(path.read_text())
+            except (OSError, json.JSONDecodeError):
+                continue
+            if item.get("outcome") == "started":
+                started_receipts.append(item)
+        if len(started_receipts) == 1:
+            try:
+                pin = json.loads(SOURCE_PIN.read_text())
+                current = hashes()
+                receipt = started_receipts[0]
+                cached = json.loads((RAW / "partial-audit.json").read_text())
+                cached_units = {item.get("checkpoint") for item in cached.get("checkpoint_results", [])}
+                if (pin.get("source_sha256") == current
+                        and receipt.get("source_revision") == pin.get("source_revision")
+                        and receipt.get("source_sha256") == pin.get("source_sha256")
+                        and cached.get("source_revision") == pin.get("source_revision")
+                        and cached_units == set(records)):
+                    audit = cached
+                    in_flight_unit = receipt.get("unit")
+                else:
+                    audit_error = "active receipt or cached partial audit does not match the current source pin"
+            except (OSError, json.JSONDecodeError, KeyError) as error:
+                audit_error = f"cannot validate in-flight checkpoint state ({type(error).__name__})"
+        elif started_receipts:
+            audit_error = "multiple unfinished attempt receipts exist while the worker lock is active"
+    if audit is None:
+        try:
+            audit_process = subprocess.run(audit_command, cwd=ROOT, text=True,
+                                           capture_output=True, check=False, timeout=120)
+            audit = json.loads(audit_process.stdout) if audit_process.returncode == 0 else None
+            if audit is None and audit_error is None:
+                audit_error = (audit_process.stderr.strip().splitlines()[-1]
+                               if audit_process.stderr.strip()
+                               else "partial evidence audit failed")
+        except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as error:
+            audit, audit_error = None, f"partial evidence audit unavailable ({type(error).__name__})"
     audited_records = (audit or {}).get("checkpoint_results", [])
     saved = {item.get("checkpoint"): item.get("status") for item in audited_records}
     units = work_units()
@@ -301,11 +347,14 @@ def show_status():
     if audit_error and audit is None:
         blocker_label += f" ({audit_error})"
     print(f"Submission blocker(s): {blocker_label}")
-    next_label = f"blocked by {blocker_label}" if blockers else (next_unit or "none")
+    next_label = (f"in progress: {in_flight_unit}" if in_flight_unit else
+                  f"blocked by {blocker_label}" if blockers else (next_unit or "none"))
     print(f"Next: {next_label}")
     worker_state = ("pausing" if active and is_paused() else "running" if active
                     else "paused" if is_paused() else "idle")
     print(f"Worker: {worker_state}")
+    if in_flight_unit:
+        print(f"Current attempt: {in_flight_unit}; saved progress comes from the last partial audit.")
     print(f"Pause markers: {', '.join(markers) if markers else 'none'}")
     phases = [phase for record in records.values() for phase in record.get("sustained_phases", [])]
     event_seconds = sum(float(phase.get("event_seconds", 0.0)) for phase in phases
@@ -371,6 +420,7 @@ def run_one(lock):
                           if item.get("outcome") != "paused_before_submit"]
     if len(submitted_attempts) >= standard_limit:
         raise SystemExit(f"{name} reached the three-attempt limit; inspect the saved receipts before manual recovery.")
+    validate_runner_prerequisites()
     attempt_id = uuid.uuid4().hex
     attempt_path = ATTEMPTS / f"{name}-{attempt_id}.json"
     attempt = {"unit": name, "seed": seed, "width": width,
@@ -398,10 +448,10 @@ def run_one(lock):
         expected_sources = {name: source_digests[name] for name in COMPUTE_SOURCES}
         if (record.get("source_revision") != revision
                 or record.get("source_sha256") != expected_sources
+                or record.get("execution_source_sha256") != source_digests
                 or (record.get("seed"), record.get("rows"), record.get("width"))
                    != (seed, PLAN["rows"], width)):
             raise ValueError("Remote source pin or checkpoint identity mismatch.")
-        record["execution_source_sha256"] = source_digests
         record["research_assistant_model"] = pin["research_assistant_model"]
         record["attempt_id"] = attempt_id
         checkpoint_path = CHECKPOINTS / f"{name}.json"
@@ -427,8 +477,11 @@ def run_one(lock):
             latest = json.loads(attempt_path.read_text())
             if latest.get("outcome") == "started":
                 checkpoint_path = CHECKPOINTS / f"{name}.json"
-                if (isinstance(error, subprocess.CalledProcessError)
-                        and error.returncode == 124 and not checkpoint_path.exists()):
+                remote_deadline_expired = (
+                    isinstance(error, subprocess.TimeoutExpired)
+                    or (isinstance(error, subprocess.CalledProcessError)
+                        and error.returncode in {124, 137}))
+                if remote_deadline_expired and not checkpoint_path.exists():
                     timeout_record = {
                         "status": "execution_failed", "seed": seed, "rows": PLAN["rows"],
                         "width": width, "source_revision": revision,

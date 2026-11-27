@@ -291,13 +291,16 @@ def run_checkpoint(seed, width):
         capability = list(torch.cuda.get_device_capability(device))
         if "H100" not in torch.cuda.get_device_name(device) or capability != [9, 0]:
             raise GateFailure("This registered experiment requires an NVIDIA H100 (CC 9.0).")
+        driver = driver_version()
+        if not driver:
+            raise GateFailure("Cannot establish required NVIDIA driver provenance before measurement.")
         estimate = output_pool_estimate()
         record["graph_memory_estimate"] = estimate
         record["environment"] = {"gpu": torch.cuda.get_device_name(device),
                                   "compute_capability": capability,
                                   "total_memory_bytes": int(props.total_memory),
                                   "sm_count": int(props.multi_processor_count),
-                                  "driver": driver_version(), "cuda_runtime": torch.version.cuda,
+                                  "driver": driver, "cuda_runtime": torch.version.cuda,
                                   "torch": str(torch.__version__), "triton": triton.__version__,
                                   "python": platform.python_version()}
         record["memory"]["before_allocations"] = memory_snapshot(device)

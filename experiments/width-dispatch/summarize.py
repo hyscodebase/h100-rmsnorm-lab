@@ -111,8 +111,9 @@ def plan_audit():
          and p["manual_telemetry_retry_unit"] is None,
          "Three-attempt stop policy changed.")
     need(p["remote_timeout_seconds"] == 300
+         and p["remote_timeout_cleanup_reserve_seconds"] == 20
          and p["remote_total_timeout_seconds"] == 350,
-         "Benchmark or complete remote-operation timeout changed.")
+         "Benchmark, timeout cleanup reserve or complete remote-operation deadline changed.")
     need(p["free_memory_guard_bytes"] == 16 * GIB
          and p["capture_reserved_delta_ceiling_bytes"] == 8 * GIB,
          "Memory guard differs from preregistered threshold.")
@@ -310,8 +311,7 @@ def telemetry_summary(samples, phase, plan):
          and all(phase_start_query_ns <= value <= phase_end_query_ns for value in times),
          "A valid telemetry query timestamp is missing or outside the measured phase.")
     gaps = [(b - a) / 1e9 for a, b in zip(times, times[1:])]
-    need(all(b > a for a, b in zip(times, times[1:])),
-         "Telemetry query timestamps are duplicated or out of order.")
+    query_ordered = all(b > a for a, b in zip(times, times[1:]))
     start_gap = (times[0] - phase_start_query_ns) / 1e9 if times else None
     end_gap = (phase_end_query_ns - times[-1]) / 1e9 if times else None
     measured_gaps = gaps + ([start_gap, end_gap] if times else [])
@@ -329,6 +329,7 @@ def telemetry_summary(samples, phase, plan):
     max_gap = max(measured_gaps) if measured_gaps else None
     query_pass = (len(good) >= plan["minimum_active_telemetry_samples"]
                   and len(times) == len(good)
+                  and query_ordered
                   and max_gap is not None
                   and max_gap <= plan["maximum_active_telemetry_gap_seconds"])
     device_mapping_verified = (phase.get("telemetry_device_verified") is True
@@ -348,6 +349,7 @@ def telemetry_summary(samples, phase, plan):
             "phase_start_query_gap_seconds": start_gap,
             "phase_end_query_gap_seconds": end_gap,
             "time_basis": "nvidia-smi query timestamp (UTC)",
+            "query_timestamps_ordered": query_ordered,
             "unique_reading_transitions": sum(
                 any(a.get(f) != b.get(f) for f in plan["telemetry_required_fields"])
                 for a, b in zip(good, good[1:])),
@@ -650,7 +652,7 @@ def main():
     if args.audit or args.final:
         pin = check_pin()
         records = {}
-        files = sorted(CHECKPOINTS.glob("s*-w*.json")) if CHECKPOINTS.exists() else []
+        files = sorted(CHECKPOINTS.glob("*.json")) if CHECKPOINTS.exists() else []
         expected = {f"s{s}-w{w}" for s in plan["seeds"] for w in plan["widths"]}
         for path in files:
             need(path.stem in expected, f"Unexpected checkpoint file: {path.name}.")
