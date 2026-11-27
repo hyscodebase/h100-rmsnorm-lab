@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import re
+import statistics
 import subprocess
 import sys
 import time
@@ -33,6 +34,10 @@ EXECUTION_SOURCES = (*COMPUTE_SOURCES,
     "experiments/width-dispatch/ssh_runner.sh",
     "experiments/width-dispatch/summarize.py")
 PAUSE_MARKERS = (STATE / "paused", ROOT / ".lab/vllm/paused")
+PRIVATE_PATH = re.compile(r"/(?:Users|home|root)/[^\s\"'<>]+")
+GPU_UUID = re.compile(r"\b(?:GPU|MIG)-[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}\b")
+PRIVATE_KEY = re.compile(
+    r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----", re.DOTALL)
 
 
 def utc_now():
@@ -81,14 +86,172 @@ def is_paused():
     return any(path.exists() for path in PAUSE_MARKERS)
 
 
-def show_status():
+def redact_remote_value(value):
+    if isinstance(value, str):
+        value = PRIVATE_KEY.sub("[REDACTED PRIVATE KEY]", value)
+        value = PRIVATE_PATH.sub("[REDACTED PATH]", value)
+        return GPU_UUID.sub("[REDACTED GPU ID]", value)
+    if isinstance(value, list):
+        return [redact_remote_value(item) for item in value]
+    if isinstance(value, dict):
+        return {key: redact_remote_value(item) for key, item in value.items()}
+    return value
+
+
+def read_saved_checkpoints():
     saved = {}
-    if CHECKPOINTS.exists():
-        for path in CHECKPOINTS.glob("s*-w*.json"):
+    for path in CHECKPOINTS.glob("*.json") if CHECKPOINTS.exists() else []:
+        try:
+            saved[path.stem] = json.loads(path.read_text())
+        except (OSError, json.JSONDecodeError) as error:
+            raise SystemExit(f"Cannot inspect saved checkpoint {path.name}; stop before submission.") from error
+    return saved
+
+
+def reconcile_dangling_attempts(saved_records):
+    """Close interrupted local attempts before any retry or checkpoint skip."""
+    ATTEMPTS.mkdir(parents=True, exist_ok=True)
+    for path in sorted(ATTEMPTS.glob("*.json")):
+        try:
+            attempt = json.loads(path.read_text())
+        except (OSError, json.JSONDecodeError) as error:
+            raise SystemExit(f"Cannot inspect prior attempt receipt {path.name}; stop before submission.") from error
+        if attempt.get("outcome") != "started":
+            continue
+        unit = attempt.get("unit")
+        expected_units = {f"s{seed}-w{width}" for seed, width in work_units()}
+        if unit not in expected_units or path.stem != f"{unit}-{attempt.get('attempt_id')}":
+            raise SystemExit(f"Cannot safely reconcile malformed started receipt: {path.name}.")
+        checkpoint_path = CHECKPOINTS / f"{unit}.json"
+        if checkpoint_path.is_file():
             try:
-                saved[path.stem] = json.loads(path.read_text()).get("status")
-            except (OSError, json.JSONDecodeError):
-                saved[path.stem] = "unreadable"
+                record = json.loads(checkpoint_path.read_text())
+            except (OSError, json.JSONDecodeError) as error:
+                raise SystemExit(f"Cannot reconcile checkpoint {checkpoint_path.name}.") from error
+            if record.get("attempt_id") != attempt.get("attempt_id"):
+                raise SystemExit(f"Started attempt and saved checkpoint identity conflict: {unit}.")
+            digest = hashlib.sha256(checkpoint_path.read_bytes()).hexdigest()
+            status = record.get("status")
+            attempt.update(
+                outcome="checkpoint_saved" if status == "complete" else "gate_failed",
+                finished_utc=record.get("finished_utc") or utc_now(),
+                elapsed_seconds=max(0.0, float(record.get("wall_seconds") or 0.0)),
+                checkpoint_status=status,
+                checkpoint_path=str(checkpoint_path.relative_to(ROOT)),
+                checkpoint_sha256=digest,
+                failure=record.get("failure"),
+                reconciled_after_interruption=True)
+            saved_records[unit] = record
+        else:
+            attempt.update(outcome="transport_or_parse_failed", finished_utc=utc_now(),
+                           elapsed_seconds=0.0, error_type="InterruptedError",
+                           error_message="Reconciled an unfinished local attempt before retry.",
+                           reconciled_after_interruption=True)
+        atomic_json(path, attempt)
+
+
+def validate_saved_state(revision, source_digests, saved_records):
+    expected_units = {f"s{seed}-w{width}" for seed, width in work_units()}
+    unexpected = sorted(set(saved_records) - expected_units)
+    if unexpected:
+        raise SystemExit("Unexpected checkpoint file(s) block this source pin: " + ", ".join(unexpected))
+    expected_compute = {name: source_digests[name] for name in COMPUTE_SOURCES}
+    receipts_by_unit = {}
+    receipt_ids = set()
+    allowed_outcomes = {"checkpoint_saved", "gate_failed", "transport_or_parse_failed", "paused_before_submit"}
+    for path in sorted(ATTEMPTS.glob("*.json")) if ATTEMPTS.exists() else []:
+        try:
+            item = json.loads(path.read_text())
+        except (OSError, json.JSONDecodeError) as error:
+            raise SystemExit(f"Cannot inspect attempt receipt {path.name}; stop before submission.") from error
+        attempt_id = item.get("attempt_id")
+        unit = item.get("unit")
+        if (not attempt_id or attempt_id in receipt_ids
+                or path.stem != f"{unit}-{attempt_id}"):
+            raise SystemExit(f"Attempt filename or ID is invalid: {path.name}.")
+        receipt_ids.add(attempt_id)
+        if (item.get("outcome") not in allowed_outcomes
+                or item.get("source_revision") != revision
+                or item.get("source_sha256") != source_digests
+                or item.get("outcome") == "started"):
+            raise SystemExit(f"Attempt receipt does not match the active source pin: {path.name}.")
+        if item.get("unit") != f"s{item.get('seed')}-w{item.get('width')}":
+            raise SystemExit(f"Attempt checkpoint identity mismatch: {path.name}.")
+        if item.get("seed") not in PLAN["seeds"] or item.get("width") not in PLAN["widths"]:
+            raise SystemExit(f"Attempt refers to an unregistered checkpoint: {path.name}.")
+        receipts_by_unit.setdefault(unit, []).append(item)
+
+    for unit, attempts in receipts_by_unit.items():
+        ordered = sorted(attempts, key=lambda item: item.get("started_utc", ""))
+        if len(ordered) > PLAN["max_attempts_per_checkpoint"]:
+            raise SystemExit(f"Attempt limit exceeded for {unit}.")
+        outcomes = [item.get("outcome") for item in ordered]
+        if "gate_failed" in outcomes and outcomes[-1] != "gate_failed":
+            raise SystemExit(f"An attempt followed a blocking gate failure for {unit}.")
+        if "checkpoint_saved" in outcomes and outcomes[-1] != "checkpoint_saved":
+            raise SystemExit(f"An attempt followed a saved successful checkpoint for {unit}.")
+        for item in ordered:
+            if (item.get("outcome") in {"checkpoint_saved", "gate_failed"}
+                    and unit not in saved_records):
+                raise SystemExit(f"Saved-checkpoint receipt has no matching checkpoint: {unit}.")
+
+    for unit, record in saved_records.items():
+        seed, width = record.get("seed"), record.get("width")
+        if (unit != f"s{seed}-w{width}" or seed not in PLAN["seeds"]
+                or width not in PLAN["widths"] or record.get("rows") != PLAN["rows"]):
+            raise SystemExit(f"Checkpoint identity differs from the registered plan: {unit}.")
+        if (record.get("source_revision") != revision
+                or record.get("source_sha256") != expected_compute
+                or record.get("execution_source_sha256") != source_digests):
+            raise SystemExit(f"Saved checkpoint source pin mismatch: {unit}.")
+        matches = [item for item in receipts_by_unit.get(unit, [])
+                   if item.get("attempt_id") == record.get("attempt_id")]
+        if len(matches) != 1:
+            raise SystemExit(f"Saved checkpoint does not have one matching attempt receipt: {unit}.")
+        receipt = matches[0]
+        checkpoint_path = CHECKPOINTS / f"{unit}.json"
+        checkpoint_digest = hashlib.sha256(checkpoint_path.read_bytes()).hexdigest()
+        if (receipt.get("checkpoint_path") != str(checkpoint_path.relative_to(ROOT))
+                or receipt.get("checkpoint_sha256") != checkpoint_digest
+                or receipt.get("checkpoint_status") != record.get("status")):
+            raise SystemExit(f"Checkpoint and receipt status/path/hash do not match: {unit}.")
+        if record.get("status") == "complete":
+            if receipt.get("outcome") != "checkpoint_saved":
+                raise SystemExit(f"Complete checkpoint lacks a successful receipt: {unit}.")
+            successes = [item for item in receipts_by_unit[unit]
+                         if item.get("outcome") == "checkpoint_saved"]
+            if len(successes) != 1:
+                raise SystemExit(f"Checkpoint has an ambiguous successful receipt: {unit}.")
+        else:
+            if record.get("status") not in {"gate_failed", "execution_failed"}:
+                raise SystemExit(f"Checkpoint has an unknown status: {unit}.")
+            if receipt.get("outcome") != "gate_failed":
+                raise SystemExit(f"Failed checkpoint lacks a blocking failure receipt: {unit}.")
+
+
+def refresh_partial_audit():
+    command = [sys.executable, str(ROOT / "experiments/width-dispatch/summarize.py"), "--audit"]
+    try:
+        result = subprocess.run(command, cwd=ROOT, text=True, capture_output=True,
+                                check=False, timeout=60)
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise SystemExit(f"Checkpoint is saved, but its audit could not run ({type(error).__name__}); stop before later work.") from None
+    if result.returncode != 0:
+        raise SystemExit("Checkpoint is saved, but its source/receipt/evidence audit failed; stop before later work.")
+    try:
+        audit = json.loads(result.stdout)
+    except json.JSONDecodeError as error:
+        raise SystemExit("Checkpoint is saved, but the partial audit did not return valid JSON.") from error
+    audit["generated_utc"] = utc_now()
+    atomic_json(RAW / "partial-audit.json", audit)
+
+
+def show_status():
+    STATE.mkdir(parents=True, exist_ok=True)
+    (STATE / ".worker.lock").touch(exist_ok=True)
+    active = lab.worker_active(STATE)
+    records = read_saved_checkpoints()
+    saved = {unit: record.get("status") for unit, record in records.items()}
     units = work_units()
     completed = {unit for unit, status in saved.items() if status == "complete"}
     failed = sorted(unit for unit, status in saved.items() if status != "complete")
@@ -100,7 +263,30 @@ def show_status():
     print(f"Blocking checkpoint(s): {', '.join(failed) if failed else 'none'}")
     next_label = f"blocked by {', '.join(failed)}" if failed else (next_unit or "none")
     print(f"Next: {next_label}")
-    print(f"Paused: {', '.join(markers) if markers else 'no'}")
+    worker_state = ("pausing" if active and is_paused() else "running" if active
+                    else "paused" if is_paused() else "idle")
+    print(f"Worker: {worker_state}")
+    print(f"Pause markers: {', '.join(markers) if markers else 'none'}")
+    phases = [phase for record in records.values() for phase in record.get("sustained_phases", [])]
+    event_seconds = sum(float(phase.get("event_seconds", 0.0)) for phase in phases
+                        if isinstance(phase.get("event_seconds"), (int, float)))
+    samples = [sample for phase in phases for sample in phase.get("telemetry_samples", [])]
+    def values(field):
+        return [sample[field] for sample in samples
+                if isinstance(sample.get(field), (int, float))]
+    print(f"Saved sustained CUDA-event time: {event_seconds / 60:.2f} / 52.80 min")
+    print(f"Saved telemetry rows: {len(samples)}; eligible phases: "
+          f"{sum(phase.get('activity_telemetry_eligible') is True for phase in phases)}/{len(phases)}")
+    if values("gpu_busy_percent"):
+        print(f"GPU busy median/peak: {statistics.median(values('gpu_busy_percent')):.1f}% / "
+              f"{max(values('gpu_busy_percent')):.1f}%")
+    if values("memory_used_mib"):
+        print(f"VRAM used peak: {max(values('memory_used_mib')):.0f} MiB")
+    if values("power_w"):
+        print(f"Power median/peak: {statistics.median(values('power_w')):.1f} / "
+              f"{max(values('power_w')):.1f} W")
+    if values("temperature_c"):
+        print(f"GPU temperature peak: {max(values('temperature_c')):.1f} C")
 
 
 def run_one(lock):
@@ -111,12 +297,9 @@ def run_one(lock):
         raise SystemExit("Source pin is plan-only; H100 execution is not authorized.")
     CHECKPOINTS.mkdir(parents=True, exist_ok=True)
     ATTEMPTS.mkdir(parents=True, exist_ok=True)
-    saved_records = {}
-    for path in CHECKPOINTS.glob("s*-w*.json"):
-        try:
-            saved_records[path.stem] = json.loads(path.read_text())
-        except (OSError, json.JSONDecodeError) as error:
-            raise SystemExit(f"Cannot inspect saved checkpoint {path.name}; stop before submission.") from error
+    saved_records = read_saved_checkpoints()
+    reconcile_dangling_attempts(saved_records)
+    validate_saved_state(revision, source_digests, saved_records)
     failed_checkpoints = sorted(unit for unit, item in saved_records.items()
                                 if item.get("status") != "complete")
     if failed_checkpoints:
@@ -159,9 +342,9 @@ def run_one(lock):
         output = subprocess.check_output(
             command, cwd=ROOT, env={**os.environ, "BENCH_REVISION": revision},
             pass_fds=(lock.fileno(),), timeout=PLAN["remote_timeout_seconds"] + 60)
-        if re.search(rb"/Users/|/root/|/home/|PRIVATE KEY|(?:GPU|MIG)-[0-9a-fA-F]{8}-", output):
-            raise ValueError("Remote output contains an unexpected private path or identifier.")
-        record = json.loads(output)
+        record = redact_remote_value(json.loads(output))
+        if not isinstance(record, dict):
+            raise ValueError("Remote checkpoint output is not a JSON object.")
         expected_sources = {name: source_digests[name] for name in COMPUTE_SOURCES}
         if (record.get("source_revision") != revision
                 or record.get("source_sha256") != expected_sources
@@ -180,6 +363,7 @@ def run_one(lock):
                        checkpoint_status=record.get("status"), checkpoint_path=str(checkpoint_path.relative_to(ROOT)),
                        checkpoint_sha256=checkpoint_sha256, failure=record.get("failure"))
         atomic_json(attempt_path, attempt)
+        refresh_partial_audit()
         print(f"Saved {name}: status={record.get('status')}, "
               f"latency intervals={len(record.get('latency_intervals', []))}, "
               f"sustained phases={len(record.get('sustained_phases', []))}.", flush=True)

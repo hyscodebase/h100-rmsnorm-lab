@@ -57,6 +57,11 @@ def plan_audit():
          "Bounded dispatch-screen groups changed.")
     need(p["candidate"] == "triton_4w_4r" and p["references"] == [*BACKENDS[:2], "torch_compile"],
          "Frozen backend set changed.")
+    need(p["selection"]["minimum_gain_percent"] == 5.0
+         and p["selection"]["must_beat_each"] == ["fastest_one_row_triton", "torch_compile"]
+         and p["selection"]["must_pass_all_seeds"] is True
+         and p["selection"]["throughput_metric"] == "logical_input_plus_output_GB_per_s",
+         "Frozen 5% selection rule or throughput metric changed.")
     need(p["ops_per_graph"] == 4 and p["latency_rounds"] == 401,
          "Frozen latency graph or round count changed.")
     need(p["sustained_graph_calls_per_block"] == 32
@@ -124,189 +129,139 @@ def check_pin():
          and all(isinstance(digest, str) and len(digest) == 64
                  for digest in source_hashes.values()),
          "Frozen source pin manifest is incomplete.")
-    # The audit implementation may be hardened after a run. Verify the immutable
-    # execution snapshot against its Git commit; step.py still blocks submissions
-    # unless the working tree exactly matches the frozen pin.
     for name, digest in source_hashes.items():
         blob = subprocess.check_output(["git", "-C", str(ROOT), "show", f"{revision}:{name}"])
         need(hashlib.sha256(blob).hexdigest() == digest, f"Git source hash mismatch: {name}.")
+        current = hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
+        need(current == digest, f"Working source differs from the frozen source pin: {name}.")
     need(pin.get("research_assistant_model") == json.loads(PLAN_PATH.read_text())["research_assistant_model"],
          "Research-assistant model provenance is missing or changed.")
     return pin
 
 
+def audit_correctness(record, plan, allow_partial_sustained=False):
+    correctness = record.get("correctness", {})
+    fixtures = correctness.get("fixtures", [])
+    expected_fixture_rows = {(fixture, backend) for fixture in plan["fixtures"]
+                             for backend in BACKENDS}
+    actual_fixture_rows = {(item.get("fixture"), item.get("backend")) for item in fixtures}
+    need(len(fixtures) == len(expected_fixture_rows)
+         and actual_fixture_rows == expected_fixture_rows,
+         "Fixture correctness coverage is incomplete, duplicated or unexpected.")
+    for section in ("fixtures", "timed_input", "post_latency_replay"):
+        checks = correctness.get(section, [])
+        need(isinstance(checks, list) and len(checks) == len(BACKENDS)
+             and {item.get("backend") for item in checks} == set(BACKENDS),
+             f"Correctness section has missing, duplicate or unexpected backend checks: {section}.")
+        need(all(item.get("finite") is True and item.get("strict_passed") is True
+                 and item.get("crosscheck_passed") is True for item in checks),
+             f"Correctness section failed or contains non-finite output: {section}.")
+    sustained = correctness.get("post_sustained_replay", [])
+    if allow_partial_sustained:
+        need(len(sustained) == 1 and sustained[0].get("backend") == "triton_4w_4r",
+             "Telemetry-only recovery checkpoint lacks its first candidate output check.")
+    else:
+        need(len(sustained) == len(BACKENDS)
+             and {item.get("backend") for item in sustained} == set(BACKENDS),
+             "Post-sustained correctness is incomplete or duplicated.")
+    need(all(item.get("finite") is True and item.get("strict_passed") is True
+             and item.get("crosscheck_passed") is True for item in sustained),
+         "Post-sustained correctness failed or contains non-finite output.")
+    graph_checks = correctness.get("graph_write_checks", [])
+    expected_graph_checks = {(backend, kind) for backend in BACKENDS
+                             for kind in ("latency", "sustained")}
+    actual_graph_checks = {(item.get("backend"), item.get("graph_kind"))
+                           for item in graph_checks}
+    need(len(graph_checks) == len(expected_graph_checks)
+         and actual_graph_checks == expected_graph_checks,
+         "Captured graph-write verification is incomplete or duplicated.")
+    need(all(item.get("finite") is True and item.get("strict_passed") is True
+             and item.get("crosscheck_passed") is True for item in graph_checks),
+         "A captured graph did not write a complete finite expected output.")
+
+
 def audit_attempts(pin, checkpoint_records, plan):
     receipts = {}
-    per_unit_receipts = defaultdict(list)
+    per_unit = defaultdict(list)
+    allowed = {"checkpoint_saved", "gate_failed", "transport_or_parse_failed", "paused_before_submit"}
     for path in sorted(ATTEMPTS.glob("*.json")) if ATTEMPTS.exists() else []:
         item = json.loads(path.read_text())
         attempt_id = item.get("attempt_id")
-        need(attempt_id and attempt_id not in receipts, f"Missing or duplicate attempt id: {path.name}.")
-        need(path.stem == f"{item.get('unit')}-{attempt_id}", f"Attempt filename/identity mismatch: {path.name}.")
         unit = item.get("unit")
-        expected_unit = f"s{item.get('seed')}-w{item.get('width')}"
-        need(unit == expected_unit, f"Attempt checkpoint identity mismatch: {path.name}.")
-        plan = json.loads(PLAN_PATH.read_text())
+        need(attempt_id and attempt_id not in receipts,
+             f"Missing or duplicate attempt ID: {path.name}.")
+        need(path.stem == f"{unit}-{attempt_id}",
+             f"Attempt filename/identity mismatch: {path.name}.")
+        need(unit == f"s{item.get('seed')}-w{item.get('width')}",
+             f"Attempt checkpoint identity mismatch: {path.name}.")
         need(item.get("seed") in plan["seeds"] and item.get("width") in plan["widths"],
-             f"Attempt contains unregistered checkpoint: {path.name}.")
-        receipt_revision = item.get("source_revision", "")
-        need(len(receipt_revision) == 40, f"Attempt has no full source revision: {path.name}.")
-        need(item.get("outcome") in {"checkpoint_saved", "gate_failed", "transport_or_parse_failed", "paused_before_submit"},
-             f"Unknown attempt outcome: {path.name}.")
-        need(item.get("outcome") != "started", f"Unfinished attempt receipt: {path.name}.")
-        need(item.get("finished_utc") and item.get("elapsed_seconds", -1) >= 0,
-             f"Attempt receipt lacks completion metadata: {path.name}.")
-        source_manifest = item.get("source_sha256")
-        need(isinstance(source_manifest, dict) and set(source_manifest) == set(SOURCES)
-             and all(isinstance(digest, str) and len(digest) == 64
-                     for digest in source_manifest.values()),
-             f"Attempt source hash manifest is malformed: {path.name}.")
-        if receipt_revision == pin["source_revision"]:
-            need(item.get("source_sha256") == pin["source_sha256"],
-                 f"Current attempt source pin mismatch: {path.name}.")
-        else:
-            historical_gate_exception = (
-                item.get("outcome") == "gate_failed"
-                and ((item.get("unit") == plan["manual_telemetry_retry_unit"]
-                      and item.get("manual_transport_retry_override") is True)
-                     or (checkpoint_records.get(item.get("unit"), {}).get("attempt_id") == attempt_id
-                         and item.get("checkpoint_status")
-                            == checkpoint_records.get(item.get("unit"), {}).get("status"))))
-            need(item.get("outcome") in {"transport_or_parse_failed", "paused_before_submit"}
-                 or historical_gate_exception,
-                 f"Executed attempt must use the current source pin: {path.name}.")
-            for source, digest in item["source_sha256"].items():
-                blob = subprocess.check_output(["git", "-C", str(ROOT), "show", f"{receipt_revision}:{source}"])
-                need(hashlib.sha256(blob).hexdigest() == digest,
-                     f"Historical transport attempt source mismatch at {receipt_revision}:{source}.")
+             f"Attempt contains an unregistered checkpoint: {path.name}.")
+        need(item.get("source_revision") == pin["source_revision"]
+             and item.get("source_sha256") == pin["source_sha256"],
+             f"Attempt does not match the current source pin: {path.name}.")
+        need(item.get("outcome") in allowed,
+             f"Unknown or unfinished attempt outcome: {path.name}.")
+        need(item.get("finished_utc")
+             and isinstance(item.get("elapsed_seconds"), (int, float))
+             and math.isfinite(item["elapsed_seconds"]) and item["elapsed_seconds"] >= 0,
+             f"Attempt receipt lacks valid completion metadata: {path.name}.")
+        need(not item.get("manual_transport_retry_override")
+             and not item.get("manual_telemetry_retry_override"),
+             f"Manual retry is not registered in this protocol: {path.name}.")
         receipts[attempt_id] = item
-        per_unit_receipts[unit].append(item)
-    for unit, items in per_unit_receipts.items():
+        per_unit[unit].append(item)
+
+    for unit, items in per_unit.items():
         ordered = sorted(items, key=lambda item: item.get("started_utc", ""))
-        standard_limit = plan["standard_max_attempts_per_checkpoint"]
-        total_limit = plan["max_attempts_per_checkpoint"]
-        need(len(ordered) <= total_limit, f"Attempt receipt limit exceeded for checkpoint: {unit}.")
-        if len(ordered) <= standard_limit:
-            need(not any(item.get("manual_transport_retry_override")
-                         or item.get("manual_telemetry_retry_override") for item in ordered),
-                 f"Manual recovery flags are only valid after the standard attempts: {unit}.")
-        else:
-            need(unit == plan["manual_transport_retry_unit"],
-                 f"Manual recovery is restricted to {plan['manual_transport_retry_unit']}: {unit}.")
-            prior = ordered[:standard_limit]
-            fourth = ordered[standard_limit]
-            need(all(item.get("outcome") == "transport_or_parse_failed" for item in prior),
-                 f"Fourth attempt requires exactly three prior transport failures: {unit}.")
-            need(fourth.get("manual_transport_retry_override") is True
-                 and fourth.get("checkpoint_absent_at_manual_retry") is True
-                 and fourth.get("invocation_flag") == "--retry-transport-failures"
-                 and fourth.get("previous_transport_attempt_ids")
-                    == [item.get("attempt_id") for item in prior],
-                 f"Fourth attempt lacks its explicit transport-only override evidence: {unit}.")
-            if len(ordered) == standard_limit + 1:
-                need(not fourth.get("manual_telemetry_retry_override"),
-                     f"Telemetry-only retry cannot replace the fourth transport recovery: {unit}.")
-            else:
-                need(len(ordered) == plan["max_attempts_per_checkpoint"]
-                     and plan["max_manual_telemetry_retries_per_checkpoint"] == 1,
-                     f"Manual telemetry retry count exceeds the frozen allowance: {unit}.")
-                fifth = ordered[standard_limit + 1]
-                need(fourth.get("outcome") == "gate_failed"
-                     and fourth.get("checkpoint_status") == "gate_failed"
-                     and fifth.get("manual_telemetry_retry_override") is True
-                     and fifth.get("checkpoint_present_at_telemetry_retry") is True
-                     and fifth.get("invocation_flag") == "--retry-telemetry-only"
-                     and fifth.get("outcome") in {"checkpoint_saved", "gate_failed", "transport_or_parse_failed",
-                                                  "paused_before_submit"}
-                     and fifth.get("previous_telemetry_retry_attempt_ids")
-                        == [item.get("attempt_id") for item in ordered[:standard_limit + 1]],
-                     f"Fifth attempt lacks the exact telemetry-only recovery authorization: {unit}.")
-            require_telemetry_archive = len(ordered) == standard_limit + 2
-            if len(ordered) == standard_limit + 1 and fourth.get("outcome") == "gate_failed":
-                saved_summary = checkpoint_records.get(unit, {})
-                require_telemetry_archive = (
-                    saved_summary.get("attempt_id") == fourth.get("attempt_id")
-                    and saved_summary.get("failure_classification") == "telemetry_only")
-            if fourth.get("outcome") == "gate_failed" and require_telemetry_archive:
-                # Preserve and bind the archive only for the exact telemetry-only
-                # recovery trigger or when a fifth attempt claims to use it.
-                archive_dir = RAW / "archives" / unit / f"attempt-{fourth['attempt_id']}"
-                manifest_path = archive_dir / "manifest.json"
-                archived_cp = archive_dir / "checkpoint.json"
-                archived_attempt = archive_dir / "attempt.json"
-                original_attempt_path = ATTEMPTS / f"{unit}-{fourth['attempt_id']}.json"
-                need(manifest_path.is_file() and archived_cp.is_file() and archived_attempt.is_file(),
-                     f"Telemetry-only failure archive is incomplete: {unit}.")
-                need(original_attempt_path.is_file(), f"Original fourth-attempt receipt is missing: {unit}.")
-                manifest_bytes = manifest_path.read_bytes()
-                manifest = json.loads(manifest_bytes)
-                checkpoint_bytes = archived_cp.read_bytes()
-                attempt_bytes = archived_attempt.read_bytes()
-                original_attempt_bytes = original_attempt_path.read_bytes()
-                checkpoint_sha = hashlib.sha256(checkpoint_bytes).hexdigest()
-                attempt_sha = hashlib.sha256(attempt_bytes).hexdigest()
-                original_attempt_sha = hashlib.sha256(original_attempt_bytes).hexdigest()
-                archived_record = json.loads(checkpoint_bytes)
-                archived_receipt = json.loads(attempt_bytes)
-                need(manifest.get("unit") == unit
-                     and manifest.get("attempt_id") == fourth.get("attempt_id")
-                     and manifest.get("original_checkpoint_path") == str((CHECKPOINTS / f"{unit}.json").relative_to(ROOT))
-                     and manifest.get("original_attempt_receipt_path")
-                        == str((ATTEMPTS / f"{unit}-{fourth['attempt_id']}.json").relative_to(ROOT))
-                     and manifest.get("gate_failure_classification") == "telemetry_only"
-                     and manifest.get("original_checkpoint_sha256") == checkpoint_sha
-                     and manifest.get("original_attempt_receipt_sha256") == attempt_sha
-                     and attempt_sha == original_attempt_sha
-                     and fourth.get("checkpoint_sha256") == checkpoint_sha
-                     and archived_receipt.get("attempt_id") == fourth.get("attempt_id")
-                     and archived_receipt.get("checkpoint_sha256") == checkpoint_sha
-                     and archived_receipt.get("outcome") == "gate_failed"
-                     and archived_receipt.get("checkpoint_status") == "gate_failed"
-                     and telemetry_only_failure(archived_record, plan),
-                     f"Telemetry-only archive content/identity verification failed: {unit}.")
-                if len(ordered) == standard_limit + 2:
-                    fifth = ordered[-1]
-                    need(fifth.get("recovery_archive_manifest_path") == str(manifest_path.relative_to(ROOT))
-                         and fifth.get("recovery_archive_manifest_sha256") == hashlib.sha256(manifest_bytes).hexdigest()
-                         and fifth.get("preserved_checkpoint_attempt_id") == fourth.get("attempt_id")
-                         and fifth.get("preserved_checkpoint_sha256") == checkpoint_sha,
-                         f"Telemetry-only retry does not link to the immutable failed artifact: {unit}.")
-    complete_units = set()
-    successful_receipts = defaultdict(list)
+        need(len(ordered) <= plan["max_attempts_per_checkpoint"],
+             f"Attempt limit exceeded for checkpoint: {unit}.")
+        outcomes = [item["outcome"] for item in ordered]
+        if "gate_failed" in outcomes:
+            need(outcomes[-1] == "gate_failed" and outcomes.count("gate_failed") == 1,
+                 f"A retry followed a blocking gate failure: {unit}.")
+        if "checkpoint_saved" in outcomes:
+            need(outcomes[-1] == "checkpoint_saved" and outcomes.count("checkpoint_saved") == 1,
+                 f"A retry followed a successful checkpoint: {unit}.")
+
     for attempt_id, item in receipts.items():
-        if item.get("outcome") == "checkpoint_saved" and item.get("checkpoint_status") == "complete":
-            successful_receipts[item["unit"]].append(attempt_id)
-    for unit, record in checkpoint_records.items():
-        attempt_id = record.get("attempt_id")
-        need(attempt_id in receipts, f"Checkpoint has no attempt receipt: {unit}.")
-        receipt = receipts[attempt_id]
-        need(receipt.get("unit") == unit, f"Checkpoint/receipt unit mismatch: {unit}.")
+        if item["outcome"] not in {"checkpoint_saved", "gate_failed"}:
+            continue
+        unit = item["unit"]
+        need(unit in checkpoint_records,
+             f"Saved-checkpoint receipt has no checkpoint file: {attempt_id}.")
+        record = checkpoint_records[unit]
         checkpoint_path = CHECKPOINTS / f"{unit}.json"
         digest = hashlib.sha256(checkpoint_path.read_bytes()).hexdigest()
-        need(receipt.get("checkpoint_path") == str(checkpoint_path.relative_to(ROOT))
-             and receipt.get("checkpoint_sha256") == digest,
-             f"Attempt receipt checkpoint hash/path mismatch: {unit}.")
-        if record.get("status") == "complete":
-            need(receipt.get("outcome") == "checkpoint_saved"
-                 and receipt.get("checkpoint_status") == "complete",
-                 f"Complete checkpoint lacks a successful attempt receipt: {unit}.")
-            successes = successful_receipts.get(unit, [])
-            need(len(successes) == 1 and successes[0] == attempt_id,
-                 f"Successful checkpoint must have exactly one receipt matching its attempt_id: {unit}.")
-            complete_units.add(unit)
-        else:
-            need(receipt.get("outcome") == "gate_failed"
-                 and receipt.get("checkpoint_status") == record.get("status"),
-                 f"Failed checkpoint/attempt receipt status mismatch: {unit}.")
-    for unit in successful_receipts:
-        need(unit in complete_units, f"Orphan successful attempt receipt for {unit}.")
-    for attempt_id, receipt in receipts.items():
-        if receipt.get("outcome") in {"checkpoint_saved", "gate_failed"}:
-            need(receipt.get("unit") in checkpoint_records,
-                 f"Checkpoint attempt receipt has no saved checkpoint: {attempt_id}.")
-    return {"receipt_count": len(receipts), "saved_checkpoint_receipts": len(checkpoint_records),
-            "successful_checkpoint_receipts": len(complete_units)}
+        need(record.get("attempt_id") == attempt_id
+             and item.get("checkpoint_path") == str(checkpoint_path.relative_to(ROOT))
+             and item.get("checkpoint_sha256") == digest
+             and item.get("checkpoint_status") == record.get("status"),
+             f"Checkpoint/receipt ID, status, path or hash mismatch: {unit}.")
 
+    successful_units = set()
+    for unit, record in checkpoint_records.items():
+        attempt_id = record.get("attempt_id")
+        need(attempt_id in receipts,
+             f"Checkpoint has no matching attempt receipt: {unit}.")
+        receipt = receipts[attempt_id]
+        if record.get("status") == "complete":
+            need(receipt.get("unit") == unit
+                 and receipt.get("outcome") == "checkpoint_saved"
+                 and receipt.get("checkpoint_status") == "complete",
+                 f"Complete checkpoint lacks a matching successful receipt: {unit}.")
+            successes = [item for item in per_unit.get(unit, [])
+                         if item.get("outcome") == "checkpoint_saved"]
+            need(len(successes) == 1 and successes[0].get("attempt_id") == attempt_id,
+                 f"Complete checkpoint has an ambiguous successful receipt: {unit}.")
+            successful_units.add(unit)
+        else:
+            need(receipt.get("unit") == unit
+                 and receipt.get("outcome") == "gate_failed"
+                 and receipt.get("checkpoint_status") == record.get("status"),
+                 f"Failed checkpoint lacks its matching blocking receipt: {unit}.")
+    return {"receipt_count": len(receipts),
+            "saved_checkpoint_receipts": len(checkpoint_records),
+            "successful_checkpoint_receipts": len(successful_units)}
 
 def telemetry_summary(samples, phase, plan):
     good = [sample for sample in samples if "error" not in sample]
@@ -350,7 +305,11 @@ def telemetry_summary(samples, phase, plan):
             "fields": fields,
             "coverage_gate_passed": bool(coverage_pass),
             "query_gate_passed": bool(query_pass),
-            "eligible": bool(coverage_pass and query_pass and phase.get("telemetry_gate_passed"))}
+            "device_mapping_verified": phase.get("telemetry_device_verified") is True
+                and bool(phase.get("telemetry_device_mapping")),
+            "eligible": bool(coverage_pass and query_pass and phase.get("telemetry_gate_passed")
+                              and phase.get("telemetry_device_verified") is True
+                              and phase.get("telemetry_device_mapping"))}
 
 
 def telemetry_only_failure(record, plan):
@@ -377,12 +336,7 @@ def telemetry_only_failure(record, plan):
                 or telemetry["eligible"]
                 or phase.get("telemetry_sample_count") < plan["minimum_active_telemetry_samples"]):
             return False
-        expected = {"fixtures": len(plan["fixtures"]) * 4, "timed_input": 4,
-                    "post_latency_replay": 4, "post_sustained_replay": 1}
-        for section, count in expected.items():
-            rows = record.get("correctness", {}).get(section, [])
-            if len(rows) != count or not all(x.get("strict_passed") and x.get("crosscheck_passed") for x in rows):
-                return False
+        audit_correctness(record, plan, allow_partial_sustained=True)
         if len(record.get("latency_intervals", [])) != plan["latency_rounds"] * len(BACKENDS):
             return False
         memory = record["memory"]
@@ -413,10 +367,17 @@ def audit_checkpoint(path, plan, pin):
         need(r.get("status") in {"gate_failed", "execution_failed"}
              and isinstance(r.get("failure"), dict),
              f"Saved incomplete checkpoint has an unknown status or lacks failure details: {path.name}.")
+        need(revision == pin["source_revision"],
+             f"Failed checkpoint revision mismatch: {path.name}.")
         need(set(expected_execution) == set(SOURCES)
              and all(isinstance(digest, str) and len(digest) == 64
                      for digest in expected_execution.values()),
              f"Failed checkpoint execution-source manifest is incomplete: {path.name}.")
+        need(expected_execution == pin["source_sha256"],
+             f"Failed checkpoint execution-source pin mismatch: {path.name}.")
+        need({key: expected_execution.get(key) for key in COMPUTE_SOURCES}
+             == {key: pin["source_sha256"][key] for key in COMPUTE_SOURCES},
+             f"Failed checkpoint compute-source pin mismatch: {path.name}.")
         verify_source_hashes_at(revision, expected_execution)
         need({key: expected_execution.get(key) for key in COMPUTE_SOURCES} == expected_sources,
              f"Failed checkpoint source manifests disagree: {path.name}.")
@@ -509,12 +470,24 @@ def audit_checkpoint(path, plan, pin):
              "Recomputed logical throughput mismatch.")
         samples = phase.get("telemetry_samples", [])
         telemetry = telemetry_summary(samples, phase, plan)
+        memory_before = phase.get("memory_before_phase", {})
+        need(isinstance(memory_before.get("captured_monotonic_ns"), int)
+             and memory_before["captured_monotonic_ns"] < phase.get("phase_start_monotonic_ns", 0),
+             "Pre-phase memory snapshot was not captured before the measured phase.")
+        milliseconds = round(plan["telemetry_interval_seconds"] * 1000)
+        expected_cadence = (f"--loop={milliseconds // 1000}"
+                            if milliseconds >= 1000 and milliseconds % 1000 == 0
+                            else f"--loop-ms={milliseconds}")
+        need(expected_cadence in phase.get("telemetry_process", ""),
+             "Recorded nvidia-smi cadence does not match the actual sampling interval.")
         need(phase.get("compute_gate_passed") is True
              and phase.get("gate_passed") is True,
              "Sustained compute duration/event-gap gate did not pass.")
         recorded_telemetry_eligibility = phase.get("activity_telemetry_eligible")
         need(isinstance(recorded_telemetry_eligibility, bool),
              "Recorded activity-telemetry eligibility is missing.")
+        need(recorded_telemetry_eligibility is telemetry["eligible"],
+             "Recorded activity eligibility does not match the audited telemetry evidence.")
         phase_results[phase["backend"]] = {
             "logical_input_plus_output_GB_per_s": rate,
             "event_seconds": sum(durations), "total_graph_blocks": total_blocks,
@@ -523,10 +496,7 @@ def audit_checkpoint(path, plan, pin):
             "recorded_activity_telemetry_eligible": recorded_telemetry_eligibility,
             "activity_eligibility_matches_audit": recorded_telemetry_eligibility is telemetry["eligible"],
             "telemetry": telemetry}
-    for section in ("fixtures", "timed_input", "post_latency_replay", "post_sustained_replay"):
-        checks = r.get("correctness", {}).get(section, [])
-        need(checks and all(c.get("strict_passed") and c.get("crosscheck_passed") for c in checks),
-             f"Correctness section failed or absent: {section}.")
+    audit_correctness(r, plan)
     need(r["memory"]["correctness_peak"]["peak_allocated_bytes"] > 0,
          "Measured correctness transient peak is missing.")
     need(r["memory"]["capture_reserved_delta_peak_bytes"] <= 8 * GIB,
@@ -544,7 +514,7 @@ def compare_checkpoints(results, plan):
     by_unit = {item["checkpoint"]: item for item in results if item.get("status") == "complete"}
     by_width = {}
     checkpoint_decisions = []
-    threshold = plan["selection"]["minimum_gain_percent"]
+    threshold = 5.0
     for seed in plan["seeds"]:
         for width in plan["widths"]:
             key = f"s{seed}-w{width}"

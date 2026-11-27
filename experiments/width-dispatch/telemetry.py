@@ -26,20 +26,28 @@ def number(value):
 class InWindowSampler:
     """Start one persistent nvidia-smi loop only for one active replay phase."""
 
-    def __init__(self, interval_seconds=0.25):
+    def __init__(self, interval_seconds=0.25, device_id=None):
         self.interval_seconds = float(interval_seconds)
+        self.device_id = device_id
         self.samples = []
         self.error = None
         self.process = None
         self.thread = None
         self._lock = threading.Lock()
+        milliseconds = round(self.interval_seconds * 1000)
+        self.cadence_arg = (f"--loop={milliseconds // 1000}"
+                            if milliseconds >= 1000 and milliseconds % 1000 == 0
+                            else f"--loop-ms={milliseconds}")
+        self.process_description = (
+            "configured phase-bounded nvidia-smi query; "
+            f"{self.cadence_arg}"
+        )
 
     def start(self):
-        milliseconds = round(self.interval_seconds * 1000)
-        cadence = (f"--loop={milliseconds // 1000}" if milliseconds >= 1000 and milliseconds % 1000 == 0
-                   else f"--loop-ms={milliseconds}")
+        if self.device_id is None:
+            raise RuntimeError("No verified CUDA-visible nvidia-smi device selector.")
         command = ["nvidia-smi", "--query-gpu=" + FIELDS,
-                   "--format=csv,noheader,nounits", "--id=0", cadence]
+                   "--format=csv,noheader,nounits", f"--id={self.device_id}", self.cadence_arg]
         self.process = subprocess.Popen(command, text=True, stdout=subprocess.PIPE,
                                         stderr=subprocess.DEVNULL, bufsize=1)
         if self.process.poll() is not None:

@@ -11,6 +11,7 @@ import statistics
 import subprocess
 import sys
 import time
+import uuid
 from datetime import datetime, timezone
 from functools import partial
 from pathlib import Path
@@ -63,10 +64,61 @@ def sha256_tensor(tensor):
 def driver_version():
     if not shutil.which("nvidia-smi"):
         return None
-    result = subprocess.run(["nvidia-smi", "--query-gpu=driver_version",
-                             "--format=csv,noheader", "--id=0"],
-                            text=True, capture_output=True, check=False, timeout=5)
+    try:
+        result = subprocess.run(["nvidia-smi", "--query-gpu=driver_version",
+                                 "--format=csv,noheader", "--id=0"],
+                                text=True, capture_output=True, check=False, timeout=5)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
     return next(iter(result.stdout.splitlines()), None) if result.returncode == 0 else None
+
+
+def normalized_device_uuid(value):
+    if isinstance(value, (bytes, bytearray)) and len(value) == 16:
+        value = str(uuid.UUID(bytes=bytes(value)))
+    text = str(value or "").strip().lower()
+    if text.startswith("gpu-"):
+        text = text[4:]
+    normalized = "".join(character for character in text if character in "0123456789abcdef")
+    return normalized if len(normalized) == 32 else None
+
+
+def resolve_telemetry_device(expected_name, expected_uuid):
+    """Resolve the first CUDA-visible GPU to a verified nvidia-smi selector."""
+    if not shutil.which("nvidia-smi"):
+        raise RuntimeError("nvidia-smi is unavailable.")
+    expected_uuid = normalized_device_uuid(expected_uuid)
+    if expected_uuid is None:
+        raise RuntimeError("PyTorch did not expose a verifiable CUDA device UUID.")
+    visible = os.environ.get("CUDA_VISIBLE_DEVICES")
+    if visible is not None:
+        selector = visible.split(",", 1)[0].strip()
+        if not selector or selector in {"-1", "NoDevFiles"}:
+            raise RuntimeError("CUDA_VISIBLE_DEVICES does not identify a usable GPU.")
+        mapping = "first CUDA_VISIBLE_DEVICES selector; GPU UUID and name verified"
+    else:
+        try:
+            listed = subprocess.run(["nvidia-smi", "-L"], text=True,
+                                    capture_output=True, check=False, timeout=5)
+        except (OSError, subprocess.TimeoutExpired) as error:
+            raise RuntimeError(f"Cannot enumerate nvidia-smi devices ({type(error).__name__}).") from None
+        visible_gpus = [line for line in listed.stdout.splitlines() if line.startswith("GPU ")]
+        if listed.returncode != 0 or len(visible_gpus) != 1:
+            raise RuntimeError("CUDA_VISIBLE_DEVICES is unset and nvidia-smi does not expose exactly one GPU.")
+        selector = "0"
+        mapping = "single nvidia-smi-visible GPU index; GPU UUID and name verified"
+    try:
+        result = subprocess.run(["nvidia-smi", "--query-gpu=uuid,name", "--format=csv,noheader",
+                                 f"--id={selector}"], text=True, capture_output=True,
+                                check=False, timeout=5)
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise RuntimeError(f"Cannot verify nvidia-smi device ({type(error).__name__}).") from None
+    rows = [line.strip().split(",", 1) for line in result.stdout.splitlines() if line.strip()]
+    if (result.returncode != 0 or len(rows) != 1 or len(rows[0]) != 2
+            or normalized_device_uuid(rows[0][0]) != expected_uuid
+            or rows[0][1].strip() != expected_name):
+        raise RuntimeError("nvidia-smi selector does not resolve to the active CUDA GPU.")
+    return selector, mapping
 
 
 def rmsnorm_reference(x, weight):
@@ -82,18 +134,25 @@ def torch_rmsnorm_into(x, weight, output, eps):
 
 def memory_snapshot(device):
     free, total = torch.cuda.mem_get_info(device)
-    return {"allocated_bytes": int(torch.cuda.memory_allocated(device)),
-            "reserved_bytes": int(torch.cuda.memory_reserved(device)),
-            "free_bytes": int(free), "total_bytes": int(total),
-            "peak_allocated_bytes": int(torch.cuda.max_memory_allocated(device)),
-            "peak_reserved_bytes": int(torch.cuda.max_memory_reserved(device))}
+    snapshot = {"allocated_bytes": int(torch.cuda.memory_allocated(device)),
+                "reserved_bytes": int(torch.cuda.memory_reserved(device)),
+                "free_bytes": int(free), "total_bytes": int(total),
+                "peak_allocated_bytes": int(torch.cuda.max_memory_allocated(device)),
+                "peak_reserved_bytes": int(torch.cuda.max_memory_reserved(device))}
+    snapshot["captured_monotonic_ns"] = time.perf_counter_ns()
+    return snapshot
 
 
 def make_fixture(name, width, seed, weight, device):
     generator = torch.Generator(device=device).manual_seed(
         seed ^ (width << 12) ^ FIXTURE_SEED_OFFSET[name])
     shape = (ROWS, width)
-    if name in ("random", "zero_rows", "tiny", "large", "alternating", "outlier"):
+    if name == "alternating":
+        magnitudes = torch.rand(shape, dtype=torch.bfloat16, device=device, generator=generator)
+        signs = torch.where(torch.arange(ROWS, device=device)[:, None] % 2 == 0, 1.0, -1.0)
+        signs = signs.to(torch.bfloat16)
+        x = magnitudes * signs
+    elif name in ("random", "zero_rows", "tiny", "large", "outlier"):
         x = torch.randn(shape, dtype=torch.bfloat16, device=device, generator=generator)
         if name == "zero_rows":
             x[::2].zero_()
@@ -101,9 +160,6 @@ def make_fixture(name, width, seed, weight, device):
             x.mul_(1e-5)
         elif name == "large":
             x.mul_(1024)
-        elif name == "alternating":
-            signs = torch.where(torch.arange(ROWS, device=device)[:, None] % 2 == 0, 1.0, -1.0)
-            x.mul_(signs)
         elif name == "outlier":
             x[:, width // 2].mul_(1024)
     elif name == "constant":
@@ -113,6 +169,8 @@ def make_fixture(name, width, seed, weight, device):
         x = row[None, :].expand(ROWS, -1).to(torch.bfloat16).contiguous()
     else:
         raise ValueError(f"Unknown fixture {name}.")
+    if x.dtype != torch.bfloat16:
+        raise TypeError(f"Fixture {name} must preserve the registered BF16 input dtype; got {x.dtype}.")
     return x, weight
 
 
@@ -144,13 +202,24 @@ def event_window(graph, replay_count):
 
 def check_output(name, output, reference):
     actual = output.float()
-    strict = bool(torch.isclose(actual, reference, rtol=STRICT_RTOL,
-                                atol=STRICT_ATOL).all().item())
-    cross = bool(torch.isclose(actual, reference, rtol=CROSS_RTOL,
-                               atol=CROSS_ATOL).all().item())
-    max_error = float((actual - reference).abs().max().item())
-    return {"backend": name, "strict_passed": strict, "crosscheck_passed": cross,
-            "max_abs_error": max_error}
+    finite = bool(torch.isfinite(actual).all().item() and torch.isfinite(reference).all().item())
+    strict = finite and bool(torch.isclose(actual, reference, rtol=STRICT_RTOL,
+                                           atol=STRICT_ATOL).all().item())
+    cross = finite and bool(torch.isclose(actual, reference, rtol=CROSS_RTOL,
+                                          atol=CROSS_ATOL).all().item())
+    max_error = float((actual - reference).abs().max().item()) if finite else None
+    return {"backend": name, "finite": finite, "strict_passed": strict,
+            "crosscheck_passed": cross, "max_abs_error": max_error}
+
+
+def validate_captured_graph(name, graph_kind, graph, output, reference, device):
+    output.fill_(float("nan"))
+    torch.cuda.synchronize(device)
+    graph.replay()
+    torch.cuda.synchronize(device)
+    check = check_output(name, output, reference)
+    check["graph_kind"] = graph_kind
+    return check
 
 
 def call_factory(name, x, weight, output, compiled):
@@ -204,7 +273,8 @@ def run_checkpoint(seed, width):
               "source_sha256": source_hashes(), "started_utc": started_utc,
               "checkpoints": [], "latency_intervals": [], "sustained_phases": [],
               "correctness": {"fixtures": [], "timed_input": [],
-                              "post_latency_replay": [], "post_sustained_replay": []},
+                              "post_latency_replay": [], "post_sustained_replay": [],
+                              "graph_write_checks": []},
               "memory": {}}
     current_stage = "preflight"
     device = None
@@ -276,7 +346,7 @@ def run_checkpoint(seed, width):
             del fx, expected
 
         current_stage = "timed_input_correctness"
-        timed_reference = rmsnorm_reference(x, weight)
+        timed_reference = reference
         timed_checks = []
         for name in BACKENDS:
             call = call_factory(name, x, weight, outputs[name], compiled)
@@ -316,6 +386,16 @@ def run_checkpoint(seed, width):
         record["memory"]["capture_reserved_delta_ceiling_bytes"] = PLAN[
             "capture_reserved_delta_ceiling_bytes"]
 
+        current_stage = "captured_graph_write_validation"
+        for name in BACKENDS:
+            for graph_kind, graph in (("latency", latency_graphs[name]),
+                                      ("sustained", sustained_graphs[name])):
+                check = validate_captured_graph(name, graph_kind, graph, outputs[name],
+                                                timed_reference, device)
+                record["correctness"]["graph_write_checks"].append(check)
+                if not check["strict_passed"] or not check["crosscheck_passed"]:
+                    raise GateFailure(f"Captured {graph_kind} graph did not fully write the expected output: {name}.")
+
         current_stage = "latency_phase"
         rng = random.Random(seed ^ (width << 8))
         intervals = []
@@ -344,6 +424,13 @@ def run_checkpoint(seed, width):
         current_stage = "sustained_phase"
         phase_order = list(BACKENDS)
         random.Random(seed ^ (width << 4) ^ 0x6400).shuffle(phase_order)
+        telemetry_device_id, telemetry_device_mapping = None, None
+        telemetry_device_error = None
+        try:
+            telemetry_device_id, telemetry_device_mapping = resolve_telemetry_device(
+                torch.cuda.get_device_name(device), getattr(props, "uuid", None))
+        except Exception as error:
+            telemetry_device_error = f"{type(error).__name__}: {error}"
         for name in phase_order:
             current_stage = f"sustained_preroll:{name}"
             # Warm graph replay before the pilot so replay-count calibration reflects sustained clocks.
@@ -357,10 +444,17 @@ def run_checkpoint(seed, width):
                 raise GateFailure(f"Invalid graph-block calibration for {name}.")
             per_window_replays = math.ceil(PLAN["sustained_target_seconds_per_window"] /
                                            median_block_seconds)
-            sampler = InWindowSampler(PLAN["telemetry_interval_seconds"])
+            sampler = InWindowSampler(PLAN["telemetry_interval_seconds"],
+                                      device_id=telemetry_device_id)
+            telemetry_process_description = sampler.process_description
             telemetry_start_error = None
+            if telemetry_device_error is not None:
+                telemetry_start_error = telemetry_device_error
             try:
-                sampler.start()
+                if telemetry_start_error is None:
+                    sampler.start()
+                else:
+                    raise RuntimeError(telemetry_start_error)
             except Exception as error:
                 # Telemetry failure disqualifies activity claims, not the compute
                 # measurement. Stop any partially started poller and continue.
@@ -374,6 +468,7 @@ def run_checkpoint(seed, width):
             window_starts, window_ends = [], []
             host_gaps = []
             current_stage = f"sustained_enqueue:{name}"
+            memory_before_phase = memory_snapshot(device)
             phase_start_utc = utc_now()
             phase_start_ns = time.perf_counter_ns()
             previous_enqueue_end = None
@@ -432,7 +527,9 @@ def run_checkpoint(seed, width):
                      "phase_start_monotonic_ns": phase_start_ns,
                      "phase_end_monotonic_ns": phase_end_ns,
                      "phase_host_wall_seconds": (phase_end_ns - phase_start_ns) / 1e9,
-                     "telemetry_process": "single nvidia-smi --loop=1 process, phase bounded",
+                     "telemetry_process": telemetry_process_description,
+                     "telemetry_device_verified": telemetry_device_id is not None,
+                     "telemetry_device_mapping": telemetry_device_mapping,
                      "telemetry_start_error": telemetry_start_error,
                      "telemetry_reader_error": telemetry_reader_error,
                      "telemetry_samples": phase_samples,
@@ -447,6 +544,7 @@ def run_checkpoint(seed, width):
                          and len(phase_samples) >= PLAN["minimum_active_telemetry_samples"]
                          and telemetry_max_gap is not None
                          and telemetry_max_gap <= PLAN["maximum_active_telemetry_gap_seconds"]
+                         and telemetry_device_id is not None
                          and all(value >= PLAN["telemetry_required_field_coverage_fraction"]
                                  for value in telemetry_field_coverage.values())),
                      "pilot_replays": pilot_replays, "pilot_event_seconds": pilot_seconds,
@@ -467,7 +565,7 @@ def run_checkpoint(seed, width):
                      "logical_input_plus_output_GB_per_s": (
                          ROWS * width * PLAN["input_element_bytes"] * 2 * SUSTAINED_CALLS
                          * sum([per_window_replays] * len(event_durations)) / phase_seconds / 1e9),
-                     "memory_before_phase": memory_snapshot(device)}
+                     "memory_before_phase": memory_before_phase}
             phase["compute_gate_passed"] = bool(
                 phase_seconds >= PLAN["sustained_min_seconds"]
                 and phase_seconds <= PLAN["sustained_max_seconds"]
