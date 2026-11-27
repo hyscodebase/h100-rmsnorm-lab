@@ -16,6 +16,7 @@ RAW = ROOT / "results/width-dispatch/raw"
 CHECKPOINTS = RAW / "checkpoints"
 ATTEMPTS = RAW / "attempts"
 SOURCE_PIN = RAW / "source-pin.json"
+RUN_ID_PATH = ROOT / ".lab/width-dispatch/run-id.json"
 SOURCES = (
     "kernels.py", "experiments/width-dispatch/run.py",
     "experiments/width-dispatch/telemetry.py",
@@ -33,6 +34,15 @@ GIB = 1024 ** 3
 def need(ok, message):
     if not ok:
         raise ValueError(message)
+
+
+def finite_number(value):
+    """Accept JSON numeric evidence without Python's bool-is-an-int shortcut."""
+    return type(value) in (int, float) and math.isfinite(value)
+
+
+def integer(value):
+    return type(value) is int
 
 
 def median_or_none(values):
@@ -72,6 +82,10 @@ def plan_audit():
          "Frozen 5% selection rule or throughput metric changed.")
     need(p["ops_per_graph"] == 4 and p["latency_rounds"] == 401,
          "Frozen latency graph or round count changed.")
+    need(p["eps"] == 1e-6 and p["dtype"] == "bfloat16"
+         and p["strict_correctness"] == {"rtol": 0.005, "atol": 1e-6}
+         and p["benchmark_crosscheck"] == {"rtol": 0.016, "atol": 1e-5},
+         "Frozen epsilon, dtype or correctness tolerances changed.")
     need(p["sustained_graph_calls_per_block"] == 32
          and p["sustained_event_windows_per_phase"] == 30
          and p["sustained_target_seconds_per_window"] == 1.1
@@ -150,6 +164,18 @@ def check_pin():
          "Research-assistant model provenance is missing or changed.")
     need(pin.get("h100_execution_scope") in {"pilot", "full_matrix"},
          "H100 source pin lacks an explicit pilot/full-matrix execution scope.")
+    has_active_evidence = (any(ATTEMPTS.glob("*.json")) if ATTEMPTS.exists() else False) \
+        or (any(CHECKPOINTS.glob("*.json")) if CHECKPOINTS.exists() else False)
+    if has_active_evidence:
+        need(RUN_ID_PATH.is_file(), "Active evidence lacks a checkout-scoped run identity.")
+        state = json.loads(RUN_ID_PATH.read_text())
+        run_id = state.get("run_id")
+        need(state.get("source_revision") == revision
+             and state.get("source_sha256") == source_hashes
+             and isinstance(run_id, str) and len(run_id) == 32
+             and all(char in "0123456789abcdef" for char in run_id),
+             "Run identity is absent, invalid or bound to a different source pin.")
+        pin["active_run_id"] = run_id
     return pin
 
 
@@ -200,7 +226,8 @@ def audit_correctness(record, plan, allow_partial_sustained=False):
 def audit_attempts(pin, checkpoint_records, plan):
     receipts = {}
     per_unit = defaultdict(list)
-    allowed = {"checkpoint_saved", "gate_failed", "transport_or_parse_failed", "paused_before_submit"}
+    allowed = {"checkpoint_saved", "gate_failed", "transport_or_parse_failed",
+               "local_launch_failed", "paused_before_submit"}
     for path in sorted(ATTEMPTS.glob("*.json")) if ATTEMPTS.exists() else []:
         item = json.loads(path.read_text())
         attempt_id = item.get("attempt_id")
@@ -216,6 +243,8 @@ def audit_attempts(pin, checkpoint_records, plan):
         need(item.get("source_revision") == pin["source_revision"]
              and item.get("source_sha256") == pin["source_sha256"],
              f"Attempt does not match the current source pin: {path.name}.")
+        need(item.get("run_id") == pin.get("active_run_id"),
+             f"Attempt does not match the active checkout run identity: {path.name}.")
         need(item.get("outcome") in allowed,
              f"Unknown or unfinished attempt outcome: {path.name}.")
         need(item.get("finished_utc"),
@@ -226,12 +255,11 @@ def audit_attempts(pin, checkpoint_records, plan):
                  and item.get("local_elapsed_seconds_observed") is False,
                  f"Unknown attempt duration is not marked as interrupted: {path.name}.")
         else:
-            need(isinstance(elapsed, (int, float)) and math.isfinite(elapsed) and elapsed >= 0,
+            need(finite_number(elapsed) and elapsed >= 0,
                  f"Attempt receipt has an invalid local duration: {path.name}.")
         remote_elapsed = item.get("remote_benchmark_wall_seconds")
         need(remote_elapsed is None or
-             (isinstance(remote_elapsed, (int, float)) and math.isfinite(remote_elapsed)
-              and remote_elapsed >= 0),
+             (finite_number(remote_elapsed) and remote_elapsed >= 0),
              f"Attempt receipt has an invalid remote benchmark duration: {path.name}.")
         need(not item.get("manual_transport_retry_override")
              and not item.get("manual_telemetry_retry_override"),
@@ -241,7 +269,8 @@ def audit_attempts(pin, checkpoint_records, plan):
 
     for unit, items in per_unit.items():
         ordered = sorted(items, key=lambda item: item.get("started_utc", ""))
-        submitted = [item for item in ordered if item.get("outcome") != "paused_before_submit"]
+        submitted = [item for item in ordered
+                     if item.get("outcome") not in {"paused_before_submit", "local_launch_failed"}]
         need(len(submitted) <= plan["max_attempts_per_checkpoint"],
              f"Attempt limit exceeded for checkpoint: {unit}.")
         outcomes = [item["outcome"] for item in ordered]
@@ -308,10 +337,10 @@ def telemetry_summary(samples, phase, plan):
     good = [sample for sample in samples if "error" not in sample]
     phase_start = phase.get("phase_start_monotonic_ns")
     phase_end = phase.get("phase_end_monotonic_ns")
-    need(isinstance(phase_start, int) and isinstance(phase_end, int) and phase_start < phase_end,
+    need(integer(phase_start) and integer(phase_end) and phase_start < phase_end,
          "Phase monotonic boundaries are absent or invalid.")
     arrivals = [sample.get("arrival_monotonic_ns") for sample in samples]
-    need(all(isinstance(t, int) for t in arrivals),
+    need(all(integer(t) for t in arrivals),
          "A telemetry row lacks its reader-arrival monotonic timestamp.")
     phase_start_utc = phase.get("phase_start_utc")
     phase_end_utc = phase.get("phase_end_utc")
@@ -321,7 +350,7 @@ def telemetry_summary(samples, phase, plan):
     phase_end_query_ns = utc_epoch_ns(phase_end_utc)
     need(phase_start_query_ns < phase_end_query_ns, "Phase UTC boundaries are invalid.")
     times = [sample.get("query_unix_ns") for sample in good
-             if isinstance(sample.get("query_unix_ns"), int)]
+             if integer(sample.get("query_unix_ns"))]
     need(len(times) == len(good)
          and all(phase_start_query_ns <= value <= phase_end_query_ns for value in times),
          "A valid telemetry query timestamp is missing or outside the measured phase.")
@@ -333,8 +362,7 @@ def telemetry_summary(samples, phase, plan):
     fields = {}
     coverage_pass = True
     for field in plan["telemetry_required_fields"]:
-        values = [s.get(field) for s in good
-                  if isinstance(s.get(field), (int, float)) and math.isfinite(s[field])]
+        values = [s.get(field) for s in good if finite_number(s.get(field))]
         coverage = len(values) / len(samples) if samples else 0.0
         passed = coverage >= plan["telemetry_required_field_coverage_fraction"]
         coverage_pass &= passed
@@ -387,46 +415,198 @@ def telemetry_only_failure(record, plan):
                 or phase.get("telemetry_gate_passed") is not False
                 or phase.get("compute_gate_passed") is not True
                 or phase.get("gate_passed") is not True
-                or phase.get("telemetry_max_gap_seconds", 0) <= plan["maximum_active_telemetry_gap_seconds"]):
+                or not finite_number(phase.get("telemetry_max_gap_seconds"))
+                or phase["telemetry_max_gap_seconds"] <= plan["maximum_active_telemetry_gap_seconds"]):
             return False
-        durations = phase["window_event_seconds"]
-        gaps = phase["window_event_gaps_seconds"]
-        recorded_event_seconds = phase.get("event_seconds")
-        if (len(durations) != plan["sustained_event_windows_per_phase"]
-                or len(gaps) != len(durations) - 1
-                or not all(isinstance(value, (int, float)) and math.isfinite(value)
-                           and 0 < value <= plan["maximum_event_window_seconds"]
-                           for value in durations)
-                or not all(isinstance(gap, (int, float)) and math.isfinite(gap)
-                           and 0 <= gap <= plan["maximum_event_gap_between_windows_seconds"]
-                           for gap in gaps)
-                or not plan["sustained_min_seconds"] <= sum(durations) <= plan["sustained_max_seconds"]
-                or not isinstance(recorded_event_seconds, (int, float))
-                or not math.isfinite(recorded_event_seconds)
-                or abs(sum(durations) - recorded_event_seconds) >= 1e-6):
-            return False
-        memory_before = phase.get("memory_before_phase", {})
-        if (not isinstance(memory_before.get("captured_monotonic_ns"), int)
-                or memory_before["captured_monotonic_ns"] >= phase.get("phase_start_monotonic_ns", 0)
-                or not isinstance(memory_before.get("free_bytes"), int)
-                or memory_before["free_bytes"] < plan["free_memory_guard_bytes"]):
-            return False
+        audit_sustained_phase(phase, record, plan, allow_telemetry_failure=True)
         telemetry = telemetry_summary(phase.get("telemetry_samples", []), phase, plan)
         if (not telemetry["coverage_gate_passed"]
                 or telemetry["eligible"]
-                or phase.get("telemetry_sample_count") < plan["minimum_active_telemetry_samples"]):
+                or telemetry["valid_rows"] < plan["minimum_active_telemetry_samples"]
+                or phase.get("telemetry_sample_count") != telemetry["poll_rows"]
+                or not telemetry["query_timestamps_ordered"]
+                or telemetry["max_query_gap_seconds"]
+                   <= plan["maximum_active_telemetry_gap_seconds"]
+                or not telemetry["device_mapping_verified"]
+                or not telemetry["sampler_error_free"]):
             return False
         audit_correctness(record, plan, allow_partial_sustained=True)
-        if len(record.get("latency_intervals", [])) != plan["latency_rounds"] * len(BACKENDS):
-            return False
-        memory = record["memory"]
-        if (memory["before_allocations"]["free_bytes"] < plan["free_memory_guard_bytes"]
-                or memory["after_persistent_allocation"]["free_bytes"] < plan["free_memory_guard_bytes"]
-                or memory["capture_reserved_delta_peak_bytes"] > plan["capture_reserved_delta_ceiling_bytes"]):
-            return False
+        audit_latency_intervals(record, plan)
+        audit_capture_memory(record, plan)
         return True
     except (KeyError, IndexError, TypeError, ValueError):
         return False
+
+
+def audit_latency_intervals(record, plan):
+    intervals = record.get("latency_intervals", [])
+    rounds = plan["latency_rounds"]
+    need(isinstance(intervals, list) and len(intervals) == rounds * len(BACKENDS),
+         f"Expected {rounds * len(BACKENDS)} latency intervals.")
+    counts = {name: 0 for name in BACKENDS}
+    by_backend = {name: [] for name in BACKENDS}
+    expected_rng = random.Random(record["seed"] ^ (record["width"] << 8))
+    expected_orders = []
+    for _ in range(rounds):
+        order = list(BACKENDS)
+        expected_rng.shuffle(order)
+        expected_orders.append(order)
+    interval_orders = defaultdict(list)
+    for index, item in enumerate(intervals):
+        need(isinstance(item, dict), "Latency row must be an object.")
+        name = item.get("backend")
+        need(name in counts and type(item.get("ops_per_graph")) is int
+             and item["ops_per_graph"] == plan["ops_per_graph"],
+             "Unexpected latency row/backend.")
+        round_id, order_index = item.get("round"), item.get("order_index")
+        need(integer(round_id) and 0 <= round_id < rounds
+             and integer(order_index) and 0 <= order_index < len(BACKENDS),
+             "Latency round/order metadata is invalid.")
+        expected_index = round_id * len(BACKENDS) + order_index
+        need(index == expected_index and expected_orders[round_id][order_index] == name,
+             "Latency rows do not match the frozen randomized round/order schedule.")
+        elapsed = item.get("graph_elapsed_us")
+        per_op = item.get("us_per_op")
+        need(finite_number(elapsed) and elapsed > 0,
+             "Latency graph duration must be finite and positive.")
+        need(finite_number(per_op)
+             and math.isclose(per_op, elapsed / plan["ops_per_graph"], rel_tol=1e-9, abs_tol=1e-12),
+             "Latency per-op value does not match raw graph duration.")
+        counts[name] += 1
+        by_backend[name].append(elapsed)
+        interval_orders[round_id].append(name)
+    need(all(count == rounds for count in counts.values()), "Latency backend interval count mismatch.")
+    need(set(interval_orders) == set(range(rounds))
+         and all(len(order) == len(BACKENDS) and set(order) == set(BACKENDS)
+                 for order in interval_orders.values()),
+         "Latency round coverage/order is incomplete.")
+    return {name: statistics.median(by_backend[name]) / plan["ops_per_graph"]
+            for name in BACKENDS}
+
+
+def audit_capture_memory(record, plan):
+    memory = record.get("memory", {})
+    for key in ("before_allocations", "after_persistent_allocation"):
+        snapshot = memory.get(key, {})
+        free = snapshot.get("free_bytes")
+        need(integer(free) and free >= plan["free_memory_guard_bytes"],
+             f"Free-memory floor failed at {key}.")
+    before_latency = memory.get("before_latency", {})
+    latency_start = record.get("latency_start_monotonic_ns")
+    need(integer(latency_start)
+         and integer(before_latency.get("captured_monotonic_ns"))
+         and before_latency["captured_monotonic_ns"] < latency_start
+         and integer(before_latency.get("free_bytes"))
+         and before_latency["free_bytes"] >= plan["free_memory_guard_bytes"],
+         "Free-memory floor was not verified immediately before latency measurement.")
+    baseline = memory.get("capture_baseline", {})
+    baseline_reserved = baseline.get("reserved_bytes")
+    need(integer(baseline_reserved) and baseline_reserved >= 0,
+         "Capture baseline reserved-memory sample is missing or invalid.")
+    snapshots = memory.get("per_backend_capture", [])
+    need(isinstance(snapshots, list) and len(snapshots) == len(BACKENDS),
+         "Capture-memory snapshots do not cover every backend.")
+    deltas = []
+    seen = set()
+    for snapshot in snapshots:
+        need(isinstance(snapshot, dict), "Capture-memory snapshot must be an object.")
+        backend = snapshot.get("backend")
+        peak = snapshot.get("peak_reserved_bytes")
+        saved_delta = snapshot.get("capture_reserved_delta_bytes")
+        need(backend in BACKENDS and backend not in seen
+             and integer(peak) and peak >= 0
+             and integer(saved_delta) and saved_delta >= 0,
+             "Capture-memory snapshot has invalid backend or byte counts.")
+        seen.add(backend)
+        recomputed_delta = max(0, peak - baseline_reserved)
+        need(saved_delta == recomputed_delta,
+             f"Saved capture-memory delta does not match raw snapshots: {backend}.")
+        deltas.append(recomputed_delta)
+    peak_delta = memory.get("capture_reserved_delta_peak_bytes")
+    need(seen == set(BACKENDS) and integer(peak_delta)
+         and peak_delta == max(deltas)
+         and memory.get("capture_reserved_delta_ceiling_bytes")
+             == plan["capture_reserved_delta_ceiling_bytes"]
+         and peak_delta <= plan["capture_reserved_delta_ceiling_bytes"],
+         "Aggregate capture-memory delta does not match per-backend snapshots or ceiling.")
+    correctness_peak = memory.get("correctness_peak", {})
+    need(integer(correctness_peak.get("peak_allocated_bytes"))
+         and correctness_peak["peak_allocated_bytes"] > 0,
+         "Measured correctness transient peak is missing.")
+
+
+def audit_sustained_phase(phase, record, plan, allow_telemetry_failure=False):
+    need(isinstance(phase, dict), "Sustained phase must be an object.")
+    durations = phase.get("window_event_seconds", [])
+    gaps = phase.get("window_event_gaps_seconds", [])
+    replay_counts = phase.get("window_replay_counts", [])
+    expected_windows = plan["sustained_event_windows_per_phase"]
+    need(isinstance(durations, list) and len(durations) == expected_windows
+         and isinstance(gaps, list) and len(gaps) == expected_windows - 1
+         and isinstance(replay_counts, list) and len(replay_counts) == expected_windows,
+         "Sustained phase window/replay count cardinality mismatch.")
+    need(all(finite_number(value) and 0 < value <= plan["maximum_event_window_seconds"]
+             for value in durations), "Invalid or overlong event window.")
+    need(all(finite_number(gap) and 0 <= gap <= plan["maximum_event_gap_between_windows_seconds"]
+             for gap in gaps), "CUDA event-window gap is negative or exceeds the registered limit.")
+    event_seconds = phase.get("event_seconds")
+    need(plan["sustained_min_seconds"] <= sum(durations) <= plan["sustained_max_seconds"]
+         and finite_number(event_seconds)
+         and abs(sum(durations) - event_seconds) < 1e-6,
+         "Sustained event duration is outside the bound or not reproducible.")
+    calls = phase.get("graph_calls_per_block")
+    pilot_replays = phase.get("pilot_replays")
+    pilot_seconds = phase.get("pilot_event_seconds")
+    need(type(calls) is int and calls == plan["sustained_graph_calls_per_block"]
+         and integer(pilot_replays) and pilot_replays > 0
+         and finite_number(pilot_seconds) and pilot_seconds > 0,
+         "Sustained replay calibration is missing or invalid.")
+    expected_replays = math.ceil(plan["sustained_target_seconds_per_window"]
+                                 / (pilot_seconds / pilot_replays))
+    need(integer(phase.get("replays_per_window"))
+         and phase["replays_per_window"] == expected_replays
+         and all(integer(value) and value == expected_replays for value in replay_counts),
+         "Every sustained window must match the replay count recalibrated from its pilot.")
+    total_calls = sum(replay_counts) * calls
+    raw_bytes = (plan["rows"] * record["width"] * plan["input_element_bytes"]
+                 * 2 * total_calls)
+    need(integer(phase.get("logical_input_plus_output_bytes"))
+         and phase["logical_input_plus_output_bytes"] == raw_bytes,
+         "Recomputed logical bytes mismatch.")
+    rate = raw_bytes / sum(durations) / 1e9
+    saved_rate = phase.get("logical_input_plus_output_GB_per_s")
+    need(finite_number(saved_rate)
+         and abs(rate - saved_rate) <= max(1e-9, rate * 1e-8),
+         "Recomputed logical throughput mismatch.")
+    phase_start = phase.get("phase_start_monotonic_ns")
+    memory_before = phase.get("memory_before_phase", {})
+    need(integer(phase_start) and integer(memory_before.get("captured_monotonic_ns"))
+         and memory_before["captured_monotonic_ns"] < phase_start
+         and integer(memory_before.get("free_bytes"))
+         and memory_before["free_bytes"] >= plan["free_memory_guard_bytes"],
+         "Pre-phase memory sample is invalid or below the registered floor.")
+    expected_cadence = f"--loop-ms={round(plan['telemetry_interval_seconds'] * 1000)}"
+    need(expected_cadence in phase.get("telemetry_process", ""),
+         "Recorded nvidia-smi cadence does not match the sampling interval.")
+    telemetry = telemetry_summary(phase.get("telemetry_samples", []), phase, plan)
+    need(phase.get("telemetry_max_gap_seconds") == telemetry["max_query_gap_seconds"],
+         "Saved telemetry maximum gap does not match raw query timestamps.")
+    compute_pass = (sum(durations) >= plan["sustained_min_seconds"]
+                    and sum(durations) <= plan["sustained_max_seconds"]
+                    and max(durations) <= plan["maximum_event_window_seconds"]
+                    and all(0 <= gap <= plan["maximum_event_gap_between_windows_seconds"]
+                            for gap in gaps))
+    need(phase.get("compute_gate_passed") is compute_pass
+         and phase.get("gate_passed") is compute_pass,
+         "Saved sustained compute gate flags do not match the measured windows.")
+    need(phase.get("activity_telemetry_eligible") is telemetry["eligible"],
+         "Saved activity eligibility does not match raw telemetry.")
+    if not allow_telemetry_failure:
+        need(phase.get("telemetry_gate_passed") is telemetry["eligible"],
+             "Saved telemetry gate does not match raw telemetry.")
+    return {"rate": rate, "event_seconds": sum(durations),
+            "total_graph_blocks": sum(replay_counts), "total_graph_calls": total_calls,
+            "window_replay_counts": replay_counts, "telemetry": telemetry}
 
 
 def verify_source_hashes_at(revision, expected):
@@ -442,6 +622,8 @@ def audit_checkpoint(path, plan, pin):
     need(path.stem == f"s{r['seed']}-w{r['width']}", f"Checkpoint identity mismatch: {path.name}.")
     need(r.get("rows") == plan["rows"],
          f"Checkpoint row count does not match the registered workload: {path.name}.")
+    need(r.get("run_id") == pin.get("active_run_id"),
+         f"Checkpoint does not match the active checkout run identity: {path.name}.")
     revision = r.get("source_revision", "")
     expected_sources = {key: r.get("source_sha256", {}).get(key) for key in COMPUTE_SOURCES}
     expected_execution = r.get("execution_source_sha256", {})
@@ -482,6 +664,8 @@ def audit_checkpoint(path, plan, pin):
                                               "summary_error": "Raw telemetry did not pass its audit."})
         return {"checkpoint": path.stem, "seed": r["seed"], "width": r["width"],
                 "status": r["status"], "attempt_id": r.get("attempt_id"),
+                "producing_attempt_id": r.get("producing_attempt_id", r.get("attempt_id")),
+                "run_id": r.get("run_id"),
                 "failure": r.get("failure"), "failure_classification": classification,
                 "raw_evidence_saved": True, "analysis_eligible": False,
                 "telemetry_activity_eligible": False, "telemetry_phases": telemetry_details}
@@ -489,100 +673,22 @@ def audit_checkpoint(path, plan, pin):
     expected_sources = {key: pin["source_sha256"][key] for key in COMPUTE_SOURCES}
     need(r.get("source_sha256") == expected_sources, f"Checkpoint compute-source hash mismatch: {path.name}.")
     need(r.get("execution_source_sha256") == pin["source_sha256"], f"Checkpoint execution-source hash mismatch: {path.name}.")
-    intervals = r.get("latency_intervals", [])
-    need(len(intervals) == 401 * len(BACKENDS), f"Expected 1,604 latency intervals: {path.name}.")
-    counts = {name: 0 for name in BACKENDS}
-    by_backend = {name: [] for name in BACKENDS}
-    interval_orders = {}
-    expected_rng = random.Random(r["seed"] ^ (r["width"] << 8))
-    expected_orders = []
-    for _ in range(401):
-        order = list(BACKENDS)
-        expected_rng.shuffle(order)
-        expected_orders.append(order)
-    for index, item in enumerate(intervals):
-        name = item["backend"]
-        need(name in counts and item["ops_per_graph"] == 4, "Unexpected latency row/backend.")
-        round_id, order_index = item.get("round"), item.get("order_index")
-        need(isinstance(round_id, int) and 0 <= round_id < 401 and order_index in range(4),
-             "Latency round/order metadata is invalid.")
-        expected_index = round_id * len(BACKENDS) + order_index
-        need(index == expected_index and expected_orders[round_id][order_index] == name,
-             "Latency rows do not match the frozen randomized round/order schedule.")
-        elapsed = item.get("graph_elapsed_us")
-        per_op = item.get("us_per_op")
-        need(isinstance(elapsed, (int, float)) and math.isfinite(elapsed) and elapsed > 0,
-             "Latency graph duration must be finite and positive.")
-        need(isinstance(per_op, (int, float)) and math.isfinite(per_op)
-             and math.isclose(per_op, elapsed / 4, rel_tol=1e-9, abs_tol=1e-12),
-             "Latency per-op value does not match raw graph duration.")
-        counts[name] += 1
-        by_backend[name].append(elapsed)
-        interval_orders.setdefault(round_id, []).append(name)
-    need(all(count == 401 for count in counts.values()), "Latency backend interval count mismatch.")
-    need(set(interval_orders) == set(range(401))
-         and all(len(order) == 4 and set(order) == set(BACKENDS) for order in interval_orders.values()),
-         "Latency round coverage/order is incomplete.")
-    latency_medians = {name: statistics.median(by_backend[name]) / 4 for name in BACKENDS}
+    latency_medians = audit_latency_intervals(r, plan)
     phases = r.get("sustained_phases", [])
     need(len(phases) == 4 and {x.get("backend") for x in phases} == set(BACKENDS),
          "Expected one sustained phase per backend.")
     phase_results = {}
     for phase in phases:
+        audited = audit_sustained_phase(phase, r, plan)
+        rate = audited["rate"]
         durations = phase["window_event_seconds"]
-        gaps = phase["window_event_gaps_seconds"]
-        replay_counts = phase.get("window_replay_counts", [])
-        need(len(durations) == 30 and len(gaps) == 29 and len(replay_counts) == 30,
-             "Sustained phase window/replay count cardinality mismatch.")
-        need(all(isinstance(x, int) and x > 0 for x in replay_counts),
-             "Invalid per-window replay count.")
-        need(all(math.isfinite(x) and 0 < x <= 2 for x in durations), "Invalid or overlong event window.")
-        need(all(math.isfinite(x) and 0 <= x <= plan["maximum_event_gap_between_windows_seconds"]
-                 for x in gaps), "CUDA event-window gap is negative or exceeds the registered limit.")
-        need(30 <= sum(durations) <= 60 and abs(sum(durations) - phase["event_seconds"]) < 1e-6,
-             "Sustained event duration is outside 30–60s or not reproducible.")
-        calls = phase["graph_calls_per_block"]
-        pilot_replays = phase.get("pilot_replays")
-        pilot_seconds = phase.get("pilot_event_seconds")
-        need(isinstance(pilot_replays, int) and pilot_replays > 0
-             and isinstance(pilot_seconds, (int, float))
-             and math.isfinite(pilot_seconds) and pilot_seconds > 0,
-             "Sustained replay calibration is missing or invalid.")
-        expected_replays = math.ceil(plan["sustained_target_seconds_per_window"]
-                                     / (pilot_seconds / pilot_replays))
-        need(calls == 32 and phase.get("replays_per_window") == expected_replays
-             and all(value == expected_replays for value in replay_counts),
-             "Every sustained window must match the replay count recalibrated from its pilot.")
-        total_blocks = sum(replay_counts)
-        total_calls = total_blocks * calls
-        raw_bytes = plan["rows"] * r["width"] * plan["input_element_bytes"] * 2 * total_calls
-        need(raw_bytes == phase["logical_input_plus_output_bytes"], "Recomputed logical bytes mismatch.")
-        rate = raw_bytes / sum(durations) / 1e9
-        need(abs(rate - phase["logical_input_plus_output_GB_per_s"]) <= max(1e-9, rate * 1e-8),
-             "Recomputed logical throughput mismatch.")
-        samples = phase.get("telemetry_samples", [])
-        telemetry = telemetry_summary(samples, phase, plan)
-        memory_before = phase.get("memory_before_phase", {})
-        need(isinstance(memory_before.get("captured_monotonic_ns"), int)
-             and memory_before["captured_monotonic_ns"] < phase.get("phase_start_monotonic_ns", 0),
-             "Pre-phase memory snapshot was not captured before the measured phase.")
-        need(isinstance(memory_before.get("free_bytes"), int)
-             and memory_before["free_bytes"] >= plan["free_memory_guard_bytes"],
-             "A measured phase began below the registered free-memory floor.")
-        milliseconds = round(plan["telemetry_interval_seconds"] * 1000)
-        expected_cadence = (f"--loop={milliseconds // 1000}"
-                            if milliseconds >= 1000 and milliseconds % 1000 == 0
-                            else f"--loop-ms={milliseconds}")
-        need(expected_cadence in phase.get("telemetry_process", ""),
-             "Recorded nvidia-smi cadence does not match the actual sampling interval.")
-        need(phase.get("compute_gate_passed") is True
-             and phase.get("gate_passed") is True,
-             "Sustained compute duration/event-gap gate did not pass.")
+        replay_counts = audited["window_replay_counts"]
+        total_blocks = audited["total_graph_blocks"]
+        total_calls = audited["total_graph_calls"]
+        telemetry = audited["telemetry"]
         recorded_telemetry_eligibility = phase.get("activity_telemetry_eligible")
-        need(isinstance(recorded_telemetry_eligibility, bool),
+        need(type(recorded_telemetry_eligibility) is bool,
              "Recorded activity-telemetry eligibility is missing.")
-        need(recorded_telemetry_eligibility is telemetry["eligible"],
-             "Recorded activity eligibility does not match the audited telemetry evidence.")
         phase_results[phase["backend"]] = {
             "logical_input_plus_output_GB_per_s": rate,
             "event_seconds": sum(durations), "total_graph_blocks": total_blocks,
@@ -592,14 +698,7 @@ def audit_checkpoint(path, plan, pin):
             "activity_eligibility_matches_audit": recorded_telemetry_eligibility is telemetry["eligible"],
             "telemetry": telemetry}
     audit_correctness(r, plan)
-    need(r["memory"]["correctness_peak"]["peak_allocated_bytes"] > 0,
-         "Measured correctness transient peak is missing.")
-    need(r["memory"]["capture_reserved_delta_peak_bytes"] <= 8 * GIB,
-         "Capture reserved-memory delta exceeded 8 GiB.")
-    need(r["memory"]["before_allocations"]["free_bytes"] >= 16 * GIB,
-         "Free-memory floor failed before allocations.")
-    need(r["memory"]["after_persistent_allocation"]["free_bytes"] >= 16 * GIB,
-         "Free-memory floor failed after persistent allocations.")
+    audit_capture_memory(r, plan)
     environment = r.get("environment")
     environment_fields = ("gpu", "compute_capability", "total_memory_bytes", "sm_count",
                           "driver", "cuda_runtime", "torch", "triton", "python")
@@ -609,11 +708,13 @@ def audit_checkpoint(path, plan, pin):
          and environment.get("compute_capability") == [9, 0]
          and all(isinstance(environment.get(field), str) and environment[field]
                  for field in ("gpu", "driver", "cuda_runtime", "torch", "triton", "python"))
-         and isinstance(environment.get("total_memory_bytes"), int)
-         and isinstance(environment.get("sm_count"), int),
+         and integer(environment.get("total_memory_bytes"))
+         and integer(environment.get("sm_count")),
          "Complete checkpoint lacks a verifiable H100/software environment.")
     return {"checkpoint": path.stem, "seed": r["seed"], "width": r["width"], "status": "complete",
             "attempt_id": r.get("attempt_id"),
+            "producing_attempt_id": r.get("producing_attempt_id", r.get("attempt_id")),
+            "run_id": r.get("run_id"),
             "environment": {field: environment[field] for field in environment_fields},
             "latency_median_us_per_op": latency_medians, "phases": phase_results}
 

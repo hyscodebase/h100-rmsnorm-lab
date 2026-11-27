@@ -70,11 +70,12 @@ def driver_version():
         return None
     try:
         result = subprocess.run(["nvidia-smi", "--query-gpu=driver_version",
-                                 "--format=csv,noheader", "--id=0"],
+                                 "--format=csv,noheader"],
                                 text=True, capture_output=True, check=False, timeout=5)
     except (OSError, subprocess.TimeoutExpired):
         return None
-    return next(iter(result.stdout.splitlines()), None) if result.returncode == 0 else None
+    versions = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    return versions[0] if result.returncode == 0 and versions else None
 
 
 def normalized_device_uuid(value):
@@ -274,6 +275,7 @@ def run_checkpoint(seed, width):
     wall_start = time.perf_counter()
     record = {"status": "running", "seed": seed, "rows": ROWS, "width": width,
               "attempt_id": os.environ.get("BENCH_ATTEMPT_ID"),
+              "run_id": os.environ.get("BENCH_RUN_ID"),
               "source_revision": os.environ.get("BENCH_REVISION"),
               "source_sha256": source_hashes(), "started_utc": started_utc,
               "checkpoints": [], "latency_intervals": [], "sustained_phases": [],
@@ -406,6 +408,11 @@ def run_checkpoint(seed, width):
                     raise GateFailure(f"Captured {graph_kind} graph did not fully write the expected output: {name}.")
 
         current_stage = "latency_phase"
+        record["memory"]["before_latency"] = memory_snapshot(device)
+        if record["memory"]["before_latency"]["free_bytes"] < PLAN["free_memory_guard_bytes"]:
+            raise GateFailure("Free-memory floor failed immediately before latency measurement: "
+                              f"{record['memory']['before_latency']['free_bytes']} bytes.")
+        record["latency_start_monotonic_ns"] = time.perf_counter_ns()
         rng = random.Random(seed ^ (width << 8))
         intervals = []
         for round_id in range(LATENCY_ROUNDS):

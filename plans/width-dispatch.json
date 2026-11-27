@@ -93,5 +93,5 @@
     },
     "throughput_metric": "logical_input_plus_output_GB_per_s"
   },
-  "research_assistant_model": "Codex GPT-6; GPT-6 Luna selected for independent protocol review, runtime unverified"
+  "research_assistant_model": "Codex GPT-6; GPT-6 Luna requested for independent protocol review, runtime unverified"
 }

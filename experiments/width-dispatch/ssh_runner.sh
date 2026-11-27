@@ -8,6 +8,8 @@ revision=$(printenv BENCH_REVISION || true)
 [[ "$revision" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]] || exit 2
 attempt_id=$(printenv BENCH_ATTEMPT_ID || true)
 [[ "$attempt_id" =~ ^[0-9a-f]{32}$ ]] || exit 2
+run_id=$(printenv BENCH_RUN_ID || true)
+[[ "$run_id" =~ ^[0-9a-f]{32}$ ]] || exit 2
 host=$(git config --local --get rmsnorm.host)
 setup=$(git config --local --get rmsnorm.setup)
 remote_total_timeout=$(python3 -c 'import json; print(json.load(open("plans/width-dispatch.json"))["remote_total_timeout_seconds"])')
@@ -15,8 +17,10 @@ remote_total_timeout=$(python3 -c 'import json; print(json.load(open("plans/widt
 remote_cleanup_reserve=$(python3 -c 'import json; print(json.load(open("plans/width-dispatch.json"))["remote_timeout_cleanup_reserve_seconds"])')
 [[ "$remote_cleanup_reserve" =~ ^[0-9]+$ ]] || exit 2
 files=(kernels.py experiments/width-dispatch/run.py experiments/width-dispatch/telemetry.py experiments/width-dispatch/PLAN.md plans/width-dispatch.json)
-git diff --quiet "$revision" -- "${files[@]}" || exit 2
-remote=$(cat <<'REMOTE'
+remote=""
+printf -v line 'revision=%q; seed=%q; width=%q; attempt_id=%q; run_id=%q' "$revision" "$seed" "$width" "$attempt_id" "$run_id"
+remote+="$line"$'\n'
+remote+=$(cat <<'REMOTE'
 set -euo pipefail
 umask 077
 SECONDS=0
@@ -28,7 +32,7 @@ cache_root=$(printenv XDG_CACHE_HOME || true)
 if [[ -z "$cache_root" ]]; then cache_root="$HOME/.cache"; fi
 trap 'rm -rf -- "$work"; if [ -n "$candidate" ]; then rm -f -- "$candidate"; fi' EXIT
 tar --no-same-owner -xf - -C "$work"
-cache_dir="$cache_root/h100-rmsnorm-lab/width-dispatch"
+cache_dir="$cache_root/h100-rmsnorm-lab/width-dispatch/$run_id"
 mkdir -p -- "$cache_dir"
 exec 9>"$tmpdir/rmsnorm-vllm-$UID.lock"
 flock -x -n -E 75 9
@@ -38,9 +42,27 @@ printf -v line '. %q >&2' "$setup"
 remote+=$'\n'"$line"
 printf -v line 'record="$cache_dir"/width-dispatch-%q-s%q-w%q.json' "$revision" "$seed" "$width"
 remote+=$'\n'"$line"
-printf -v line 'revision=%q; seed=%q; width=%q; attempt_id=%q' "$revision" "$seed" "$width" "$attempt_id"
-remote+=$'\n'"$line"
-remote+=$'\n''if [ -s "$record" ]; then cat "$record"; exit 0; fi'
+remote+=$'\n'$(cat <<'REMOTE'
+if [ -s "$record" ]; then
+  python3 - "$record" "$revision" "$seed" "$width" "$run_id" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+record = json.loads(Path(sys.argv[1]).read_text())
+expected_revision, expected_seed, expected_width, expected_run_id = sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), sys.argv[5]
+if (record.get("source_revision") != expected_revision
+        or record.get("seed") != expected_seed
+        or record.get("width") != expected_width
+        or record.get("run_id") != expected_run_id
+        or re.fullmatch(r"[0-9a-f]{32}", str(record.get("attempt_id", ""))) is None):
+    raise SystemExit(76)
+PY
+  cat "$record"
+  exit 0
+fi
+REMOTE
+)
 remote+=$'\n''candidate=$(mktemp "$cache_dir/.width-dispatch.XXXXXX")'
 remote+=$'\n''bench_started_utc=$(python3 -c '\''from datetime import datetime, timezone; print(datetime.now(timezone.utc).isoformat())'\'')'
 remote+=$'\n''bench_started_monotonic_ns=$(python3 -c '\''import time; print(time.monotonic_ns())'\'')'
@@ -58,6 +80,8 @@ execution_manifest=$(printenv BENCH_EXECUTION_SOURCE_SHA256 || true)
 printf -v line 'export BENCH_EXECUTION_SOURCE_SHA256=%q' "$execution_manifest"
 remote+=$'\n'"$line"
 printf -v line 'export BENCH_ATTEMPT_ID=%q' "$attempt_id"
+remote+=$'\n'"$line"
+printf -v line 'export BENCH_RUN_ID=%q' "$run_id"
 remote+=$'\n'"$line"
 remote+=$'\n''export BENCH_STARTED_UTC="$bench_started_utc"'
 remote+=$'\n''export BENCH_STARTED_MONOTONIC_NS="$bench_started_monotonic_ns"'
@@ -77,12 +101,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 root = Path(sys.argv[1])
 candidate, record_path, revision, seed, width, status = sys.argv[2], sys.argv[3], sys.argv[4], int(sys.argv[5]), int(sys.argv[6]), sys.argv[7]
-timeout_exit = status in {"124", "137"}
+timeout_exit = status == "124"
 failure = ({"stage": "remote_benchmark_timeout", "type": "TimeoutExpired",
             "message": f"Benchmark exceeded its {os.environ['BENCH_TIMEOUT_SECONDS']}-second budget (timeout exit {status})."}
            if timeout_exit else
            {"stage": "remote_benchmark_exit", "type": "SubprocessError",
-            "message": f"Benchmark process exited with status {status}."})
+            "message": (f"Benchmark process exited with status {status}; termination cause is unconfirmed."
+                        if status == "137" else
+                        f"Benchmark process exited with status {status}.")})
 compute_sources = ("kernels.py", "experiments/width-dispatch/run.py", "experiments/width-dispatch/telemetry.py", "experiments/width-dispatch/PLAN.md", "plans/width-dispatch.json")
 def source_digest(name):
     with open(root / name, "rb") as source:
@@ -90,6 +116,7 @@ def source_digest(name):
 with open(candidate, "w") as output:
     json.dump({"status": "execution_failed", "seed": seed, "rows": 32768, "width": width,
                "attempt_id": os.environ["BENCH_ATTEMPT_ID"],
+               "run_id": os.environ["BENCH_RUN_ID"],
                "source_revision": revision,
                "source_sha256": {name: source_digest(name) for name in compute_sources},
                "execution_source_sha256": json.loads(os.environ["BENCH_EXECUTION_SOURCE_SHA256"]),
@@ -122,6 +149,9 @@ import os
 import sys
 with open(sys.argv[1]) as handle:
     record = json.load(handle)
+if (record.get("run_id") != os.environ["BENCH_RUN_ID"]
+        or record.get("attempt_id") != os.environ["BENCH_ATTEMPT_ID"]):
+    raise SystemExit("Remote benchmark record identity mismatch.")
 record["execution_source_sha256"] = json.loads(os.environ["BENCH_EXECUTION_SOURCE_SHA256"])
 with open(sys.argv[1], "w") as handle:
     json.dump(record, handle, indent=2, allow_nan=False)

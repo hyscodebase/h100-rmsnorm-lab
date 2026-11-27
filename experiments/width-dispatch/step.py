@@ -22,6 +22,7 @@ RAW = ROOT / "results/width-dispatch/raw"
 CHECKPOINTS = RAW / "checkpoints"
 ATTEMPTS = RAW / "attempts"
 SOURCE_PIN = RAW / "source-pin.json"
+RUN_ID_PATH = STATE / "run-id.json"
 RUNNER = ROOT / "experiments/width-dispatch/ssh_runner.sh"
 PLAN = json.loads((ROOT / "plans/width-dispatch.json").read_text())
 COMPUTE_SOURCES = (
@@ -53,6 +54,32 @@ def atomic_json(path, value):
 def hashes():
     return {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
             for name in EXECUTION_SOURCES}
+
+
+def current_run_id(revision, source_digests, create=False):
+    """Keep remote cache reuse local to this checkout's frozen source campaign."""
+    binding = {"source_revision": revision, "source_sha256": source_digests}
+    active_evidence = any(path.is_file() for directory in (ATTEMPTS, CHECKPOINTS)
+                          for path in directory.glob("*.json"))
+    if RUN_ID_PATH.is_file():
+        try:
+            saved = json.loads(RUN_ID_PATH.read_text())
+        except (OSError, json.JSONDecodeError) as error:
+            raise SystemExit("Run identity state is unreadable; stop before H100 submission.") from error
+        run_id = saved.get("run_id")
+        if (saved.get("source_revision") == revision
+                and saved.get("source_sha256") == source_digests
+                and isinstance(run_id, str) and re.fullmatch(r"[0-9a-f]{32}", run_id)):
+            return run_id
+        if active_evidence:
+            raise SystemExit("Run identity is bound to a different source pin while active evidence exists.")
+    elif active_evidence:
+        raise SystemExit("Active evidence lacks its checkout run identity; restore the run-id file before resuming.")
+    if not create:
+        return None
+    run_id = uuid.uuid4().hex
+    atomic_json(RUN_ID_PATH, {**binding, "run_id": run_id, "created_utc": utc_now()})
+    return run_id
 
 
 def validate_runner_prerequisites():
@@ -167,7 +194,7 @@ def reconcile_dangling_attempts(saved_records):
         atomic_json(path, attempt)
 
 
-def validate_saved_state(revision, source_digests, saved_records):
+def validate_saved_state(revision, source_digests, saved_records, run_id):
     expected_units = {f"s{seed}-w{width}" for seed, width in work_units()}
     unexpected = sorted(set(saved_records) - expected_units)
     if unexpected:
@@ -175,7 +202,8 @@ def validate_saved_state(revision, source_digests, saved_records):
     expected_compute = {name: source_digests[name] for name in COMPUTE_SOURCES}
     receipts_by_unit = {}
     receipt_ids = set()
-    allowed_outcomes = {"checkpoint_saved", "gate_failed", "transport_or_parse_failed", "paused_before_submit"}
+    allowed_outcomes = {"checkpoint_saved", "gate_failed", "transport_or_parse_failed",
+                        "local_launch_failed", "paused_before_submit"}
     for path in sorted(ATTEMPTS.glob("*.json")) if ATTEMPTS.exists() else []:
         try:
             item = json.loads(path.read_text())
@@ -190,6 +218,7 @@ def validate_saved_state(revision, source_digests, saved_records):
         if (item.get("outcome") not in allowed_outcomes
                 or item.get("source_revision") != revision
                 or item.get("source_sha256") != source_digests
+                or item.get("run_id") != run_id
                 or item.get("outcome") == "started"):
             raise SystemExit(f"Attempt receipt does not match the active source pin: {path.name}.")
         if item.get("unit") != f"s{item.get('seed')}-w{item.get('width')}":
@@ -200,7 +229,8 @@ def validate_saved_state(revision, source_digests, saved_records):
 
     for unit, attempts in receipts_by_unit.items():
         ordered = sorted(attempts, key=lambda item: item.get("started_utc", ""))
-        submitted = [item for item in ordered if item.get("outcome") != "paused_before_submit"]
+        submitted = [item for item in ordered
+                     if item.get("outcome") not in {"paused_before_submit", "local_launch_failed"}]
         if len(submitted) > PLAN["max_attempts_per_checkpoint"]:
             raise SystemExit(f"Attempt limit exceeded for {unit}.")
         outcomes = [item.get("outcome") for item in ordered]
@@ -220,7 +250,8 @@ def validate_saved_state(revision, source_digests, saved_records):
             raise SystemExit(f"Checkpoint identity differs from the registered plan: {unit}.")
         if (record.get("source_revision") != revision
                 or record.get("source_sha256") != expected_compute
-                or record.get("execution_source_sha256") != source_digests):
+                or record.get("execution_source_sha256") != source_digests
+                or record.get("run_id") != run_id):
             raise SystemExit(f"Saved checkpoint source pin mismatch: {unit}.")
         matches = [item for item in receipts_by_unit.get(unit, [])
                    if item.get("attempt_id") == record.get("attempt_id")]
@@ -233,6 +264,14 @@ def validate_saved_state(revision, source_digests, saved_records):
                 or receipt.get("checkpoint_sha256") != checkpoint_digest
                 or receipt.get("checkpoint_status") != record.get("status")):
             raise SystemExit(f"Checkpoint and receipt status/path/hash do not match: {unit}.")
+        producing_attempt_id = record.get("producing_attempt_id", record.get("attempt_id"))
+        if producing_attempt_id != record.get("attempt_id"):
+            producers = [item for item in receipts_by_unit.get(unit, [])
+                         if item.get("attempt_id") == producing_attempt_id]
+            if (len(producers) != 1
+                    or producers[0].get("outcome") != "transport_or_parse_failed"
+                    or producers[0].get("started_utc", "") > receipt.get("started_utc", "")):
+                raise SystemExit(f"Cached checkpoint has no earlier unresolved producer receipt: {unit}.")
         if record.get("status") == "complete":
             if receipt.get("outcome") != "checkpoint_saved":
                 raise SystemExit(f"Complete checkpoint lacks a successful receipt: {unit}.")
@@ -335,7 +374,8 @@ def show_status():
                 continue
             attempts_by_unit.setdefault(item.get("unit"), []).append(item)
         for unit, items in attempts_by_unit.items():
-            submitted = [item for item in items if item.get("outcome") != "paused_before_submit"]
+            submitted = [item for item in items
+                         if item.get("outcome") not in {"paused_before_submit", "local_launch_failed"}]
             if unit not in saved and len(submitted) >= PLAN["standard_max_attempts_per_checkpoint"]:
                 blockers.append(f"retry limit exhausted for {unit}")
         if scope == "pilot" and completed:
@@ -361,11 +401,11 @@ def show_status():
     print(f"Pause markers: {', '.join(markers) if markers else 'none'}")
     phases = [phase for record in records.values() for phase in record.get("sustained_phases", [])]
     event_seconds = sum(float(phase.get("event_seconds", 0.0)) for phase in phases
-                        if isinstance(phase.get("event_seconds"), (int, float)))
+                        if type(phase.get("event_seconds")) in (int, float))
     samples = [sample for phase in phases for sample in phase.get("telemetry_samples", [])]
     def values(field):
         return [sample[field] for sample in samples
-                if isinstance(sample.get(field), (int, float))]
+                if type(sample.get(field)) in (int, float)]
     print(f"Saved sustained CUDA-event time: {event_seconds / 60:.2f} / 52.80 min")
     print(f"Saved telemetry rows: {len(samples)}; eligible phases: "
           f"{sum(phase.get('activity_telemetry_eligible') is True for phase in phases)}/{len(phases)}")
@@ -390,11 +430,12 @@ def run_one(lock):
     execution_scope = pin.get("h100_execution_scope")
     if execution_scope not in {"pilot", "full_matrix"}:
         raise SystemExit("Source pin must explicitly authorize a pilot or the full checkpoint matrix.")
+    run_id = current_run_id(revision, source_digests, create=True)
     CHECKPOINTS.mkdir(parents=True, exist_ok=True)
     ATTEMPTS.mkdir(parents=True, exist_ok=True)
     saved_records = read_saved_checkpoints()
     reconcile_dangling_attempts(saved_records)
-    validate_saved_state(revision, source_digests, saved_records)
+    validate_saved_state(revision, source_digests, saved_records, run_id)
     refresh_partial_audit()
     failed_checkpoints = sorted(unit for unit, item in saved_records.items()
                                 if item.get("status") != "complete")
@@ -420,7 +461,7 @@ def run_one(lock):
     receipts.sort(key=lambda item: item.get("started_utc", ""))
     standard_limit = PLAN["standard_max_attempts_per_checkpoint"]
     submitted_attempts = [item for item in receipts
-                          if item.get("outcome") != "paused_before_submit"]
+                          if item.get("outcome") not in {"paused_before_submit", "local_launch_failed"}]
     if len(submitted_attempts) >= standard_limit:
         raise SystemExit(f"{name} reached the three-attempt limit; inspect the saved receipts before manual recovery.")
     validate_runner_prerequisites()
@@ -428,6 +469,7 @@ def run_one(lock):
     attempt_path = ATTEMPTS / f"{name}-{attempt_id}.json"
     attempt = {"unit": name, "seed": seed, "width": width,
                "source_revision": revision, "source_sha256": source_digests,
+               "run_id": run_id,
                "attempt_id": attempt_id, "started_utc": utc_now(), "outcome": "started",
                "manual_recovery": False, "invocation_flag": None}
     atomic_json(attempt_path, attempt)
@@ -443,6 +485,7 @@ def run_one(lock):
         output = subprocess.check_output(
             command, cwd=ROOT, env={**os.environ, "BENCH_REVISION": revision,
                                     "BENCH_ATTEMPT_ID": attempt_id,
+                                    "BENCH_RUN_ID": run_id,
                                     "BENCH_EXECUTION_SOURCE_SHA256": json.dumps(
                                         source_digests, sort_keys=True, separators=(",", ":"))},
             pass_fds=(lock.fileno(),), timeout=PLAN["remote_total_timeout_seconds"] + 10)
@@ -453,6 +496,7 @@ def run_one(lock):
         if (record.get("source_revision") != revision
                 or record.get("source_sha256") != expected_sources
                 or record.get("execution_source_sha256") != source_digests
+                or record.get("run_id") != run_id
                 or (record.get("seed"), record.get("rows"), record.get("width"))
                    != (seed, PLAN["rows"], width)):
             raise ValueError("Remote source pin or checkpoint identity mismatch.")
@@ -495,35 +539,6 @@ def run_one(lock):
             latest = json.loads(attempt_path.read_text())
             if latest.get("outcome") == "started":
                 checkpoint_path = CHECKPOINTS / f"{name}.json"
-                remote_deadline_expired = (isinstance(error, subprocess.CalledProcessError)
-                                           and error.returncode in {124, 137})
-                if remote_deadline_expired and not checkpoint_path.exists():
-                    timeout_record = {
-                        "status": "execution_failed", "seed": seed, "rows": PLAN["rows"],
-                        "width": width, "source_revision": revision,
-                        "source_sha256": {key: source_digests[key] for key in COMPUTE_SOURCES},
-                        "execution_source_sha256": source_digests,
-                        "attempt_id": attempt_id,
-                        "research_assistant_model": pin["research_assistant_model"],
-                        "started_utc": latest["started_utc"], "finished_utc": utc_now(),
-                        "wall_seconds": None,
-                        "failure": {"stage": "remote_total_timeout", "type": "TimeoutExpired",
-                                    "message": "The complete remote lock/setup/run deadline expired."}}
-                    atomic_json(checkpoint_path, timeout_record)
-                    checkpoint_sha256 = hashlib.sha256(checkpoint_path.read_bytes()).hexdigest()
-                    latest.update(outcome="gate_failed", finished_utc=utc_now(),
-                                  elapsed_seconds=time.monotonic() - started,
-                                  local_elapsed_seconds_observed=True,
-                                  remote_benchmark_wall_seconds=None,
-                                  checkpoint_status="execution_failed",
-                                  checkpoint_path=str(checkpoint_path.relative_to(ROOT)),
-                                  checkpoint_sha256=checkpoint_sha256,
-                                  failure=timeout_record["failure"],
-                                  producing_attempt_id=attempt_id,
-                                  cache_retrieved=False)
-                    atomic_json(attempt_path, latest)
-                    refresh_partial_audit()
-                    raise
                 published = False
                 if checkpoint_path.is_file():
                     try:
@@ -534,6 +549,12 @@ def run_one(lock):
                 if published:
                     latest["checkpoint_published_before_interruption"] = True
                     atomic_json(attempt_path, latest)
+                elif isinstance(error, OSError) and record is None:
+                    latest.update(outcome="local_launch_failed", error_type=type(error).__name__,
+                                  finished_utc=utc_now(), elapsed_seconds=time.monotonic() - started,
+                                  local_elapsed_seconds_observed=True,
+                                  error_message="The local SSH runner process could not be started.")
+                    atomic_json(attempt_path, latest)
                 else:
                     latest.update(outcome="transport_or_parse_failed", error_type=type(error).__name__,
                                   finished_utc=utc_now(), elapsed_seconds=time.monotonic() - started,
@@ -541,7 +562,7 @@ def run_one(lock):
                                   error_message=(
                                       "Local SSH wrapper timed out; the remote outcome is unknown and may be recovered from its cache."
                                       if isinstance(error, subprocess.TimeoutExpired)
-                                      else str(error)))
+                                      else "SSH returned no verifiable checkpoint record; the remote outcome remains unresolved."))
                     if isinstance(error, subprocess.CalledProcessError):
                         latest["exit_code"] = error.returncode
                     atomic_json(attempt_path, latest)
