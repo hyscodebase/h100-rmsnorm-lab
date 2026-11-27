@@ -4,6 +4,7 @@ import hashlib
 import json
 import math
 import random
+import re
 import statistics
 import subprocess
 from collections import defaultdict
@@ -17,6 +18,11 @@ CHECKPOINTS = RAW / "checkpoints"
 ATTEMPTS = RAW / "attempts"
 SOURCE_PIN = RAW / "source-pin.json"
 RUN_ID_PATH = ROOT / ".lab/width-dispatch/run-id.json"
+PREDECESSOR = RAW / "archives/driver-preflight-d42481a"
+EVIDENCE_COMMIT = "88b3930b4f0796a875e872e1cd4a965a3453541c"
+RESUMED_DRIVER_RUNNER = "d0394d789ada7e284e4878cbb7b1f3e7afa7470d3a3f36f44a940f9ffea2d83b"
+RESUME_UNIT = "s53-w4107"
+CARRIED_UNITS = {"s53-w4102", "s53-w4106"}
 SOURCES = (
     "kernels.py", "experiments/width-dispatch/run.py",
     "experiments/width-dispatch/telemetry.py",
@@ -25,6 +31,7 @@ SOURCES = (
     "experiments/width-dispatch/step.py",
     "experiments/width-dispatch/ssh_runner.sh",
     "experiments/width-dispatch/summarize.py",
+    "experiments/width-dispatch/RESUME.md",
 )
 COMPUTE_SOURCES = SOURCES[:5]
 BACKENDS = ("triton_4w_1r", "triton_8w_1r", "triton_4w_4r", "torch_compile")
@@ -166,16 +173,15 @@ def check_pin():
          "H100 source pin lacks an explicit pilot/full-matrix execution scope.")
     has_active_evidence = (any(ATTEMPTS.glob("*.json")) if ATTEMPTS.exists() else False) \
         or (any(CHECKPOINTS.glob("*.json")) if CHECKPOINTS.exists() else False)
-    if has_active_evidence:
-        need(RUN_ID_PATH.is_file(), "Active evidence lacks a checkout-scoped run identity.")
+    run_id = pin.get("campaign_id")
+    need(isinstance(run_id, str) and re.fullmatch(r"[0-9a-f]{32}", run_id),
+         "The continuation pin lacks its campaign ID.")
+    if has_active_evidence and RUN_ID_PATH.is_file():
         state = json.loads(RUN_ID_PATH.read_text())
-        run_id = state.get("run_id")
         need(state.get("source_revision") == revision
              and state.get("source_sha256") == source_hashes
-             and isinstance(run_id, str) and len(run_id) == 32
-             and all(char in "0123456789abcdef" for char in run_id),
-             "Run identity is absent, invalid or bound to a different source pin.")
-        pin["active_run_id"] = run_id
+             and state.get("run_id") == run_id, "Checkout run identity differs from its pin.")
+    pin["active_run_id"] = run_id
     return pin
 
 
@@ -223,12 +229,12 @@ def audit_correctness(record, plan, allow_partial_sustained=False):
          "A captured graph did not write a complete finite expected output.")
 
 
-def audit_attempts(pin, checkpoint_records, plan):
+def audit_attempts(pin, checkpoint_records, plan, raw=RAW):
     receipts = {}
     per_unit = defaultdict(list)
     allowed = {"checkpoint_saved", "gate_failed", "transport_or_parse_failed",
                "local_launch_failed", "paused_before_submit"}
-    for path in sorted(ATTEMPTS.glob("*.json")) if ATTEMPTS.exists() else []:
+    for path in sorted((raw / "attempts").glob("*.json")):
         item = json.loads(path.read_text())
         attempt_id = item.get("attempt_id")
         unit = item.get("unit")
@@ -289,7 +295,7 @@ def audit_attempts(pin, checkpoint_records, plan):
              f"Saved-checkpoint receipt has no checkpoint file: {attempt_id}.")
         record = checkpoint_records[unit]
         checkpoint_path = CHECKPOINTS / f"{unit}.json"
-        digest = hashlib.sha256(checkpoint_path.read_bytes()).hexdigest()
+        digest = hashlib.sha256((raw / "checkpoints" / checkpoint_path.name).read_bytes()).hexdigest()
         producing_attempt_id = record.get("producing_attempt_id", attempt_id)
         need(record.get("attempt_id") == attempt_id
              and item.get("producing_attempt_id", attempt_id) == producing_attempt_id
@@ -331,7 +337,9 @@ def audit_attempts(pin, checkpoint_records, plan):
                  f"Failed checkpoint lacks its matching blocking receipt: {unit}.")
     return {"receipt_count": len(receipts),
             "saved_checkpoint_receipts": len(checkpoint_records),
-            "successful_checkpoint_receipts": len(successful_units)}
+            "successful_checkpoint_receipts": len(successful_units),
+            "submitted_by_unit": {unit: sum(item["outcome"] not in {"paused_before_submit", "local_launch_failed"}
+                                            for item in items) for unit, items in per_unit.items()}}
 
 def telemetry_summary(samples, phase, plan):
     good = [sample for sample in samples if "error" not in sample]
@@ -617,6 +625,50 @@ def verify_source_hashes_at(revision, expected):
              f"Checkpoint source hash mismatch at {revision}:{source}.")
 
 
+def audit_driver_probes(record):
+    probes = record.get("driver_probes")
+    sources = [p.get("source") for p in probes] if isinstance(probes, list) else []
+    need(sources in (["nvidia-smi"], ["nvidia-smi", "/sys/module/nvidia/version"]),
+         "Missing or unexpected driver provenance queries.")
+    for probe in probes:
+        need(finite_number(probe.get("elapsed_seconds")) and probe["elapsed_seconds"] >= 0,
+             "Driver query lacks an observed duration.")
+    smi = probes[0]
+    status = smi.get("status")
+    need(status in {"ok", "timeout", "os_error", "nonzero_exit", "invalid_output"},
+         "Unknown nvidia-smi driver-query outcome.")
+    if status == "timeout":
+        need(smi.get("timeout_seconds") == 5, "Driver timeout lacks its deadline.")
+    elif status == "os_error":
+        need(integer(smi.get("errno")), "Driver launch error lacks errno.")
+    else:
+        need(integer(smi.get("exit_code")) and (smi["exit_code"] != 0) == (status == "nonzero_exit")
+             and integer(smi.get("rows")) and smi["rows"] >= int(status == "ok"),
+             "Driver query exit status or row count is inconsistent.")
+    if status != "os_error":
+        for stream in ("stdout", "stderr"):
+            need(integer(smi.get(f"{stream}_bytes")) and smi[f"{stream}_bytes"] >= 0
+                 and re.fullmatch(r"[0-9a-f]{64}", smi.get(f"{stream}_sha256", "")),
+                 "Driver query lacks its output length or digest.")
+    need((status == "ok") == (len(probes) == 1), "Driver fallback order is inconsistent.")
+    final = probes[-1]
+    if len(probes) == 2:
+        need(final.get("status") in {"ok", "os_error", "invalid_output"},
+             "Unknown kernel-module version query outcome.")
+        if final["status"] == "os_error":
+            need(integer(final.get("errno")), "Kernel-module read error lacks errno.")
+    if final.get("status") == "ok":
+        version = final.get("version")
+        need(isinstance(version, str) and re.fullmatch(r"[0-9]+(?:\.[0-9]+){1,3}", version)
+             and (record.get("environment") is None or record["environment"].get("driver") == version),
+             "Recorded environment and driver-query result disagree.")
+        return
+    need(record.get("status") == "gate_failed" and record.get("failure", {}).get("stage") == "preflight"
+         and not record.get("latency_intervals") and not record.get("sustained_phases")
+         and not any(record.get("correctness", {}).values()),
+         "A checkpoint without driver provenance reached GPU measurements.")
+
+
 def audit_checkpoint(path, plan, pin):
     r = json.loads(path.read_text())
     need(path.stem == f"s{r['seed']}-w{r['width']}", f"Checkpoint identity mismatch: {path.name}.")
@@ -627,13 +679,16 @@ def audit_checkpoint(path, plan, pin):
     revision = r.get("source_revision", "")
     expected_sources = {key: r.get("source_sha256", {}).get(key) for key in COMPUTE_SOURCES}
     expected_execution = r.get("execution_source_sha256", {})
+    if "campaign_id" in pin and (r.get("status") == "complete" or "driver_probes" in r
+                                 or "driver provenance" in r.get("failure", {}).get("message", "")):
+        audit_driver_probes(r)
     if r.get("status") != "complete":
         need(r.get("status") in {"gate_failed", "execution_failed"}
              and isinstance(r.get("failure"), dict),
              f"Saved incomplete checkpoint has an unknown status or lacks failure details: {path.name}.")
         need(revision == pin["source_revision"],
              f"Failed checkpoint revision mismatch: {path.name}.")
-        need(set(expected_execution) == set(SOURCES)
+        need(set(expected_execution) == set(pin["source_sha256"])
              and all(isinstance(digest, str) and len(digest) == 64
                      for digest in expected_execution.values()),
              f"Failed checkpoint execution-source manifest is incomplete: {path.name}.")
@@ -779,6 +834,56 @@ def compare_checkpoints(results, plan):
                            "the preregistered bounded pattern was not reproduced")}}
 
 
+def read_cohort(raw, plan, pin, expected):
+    records = {}
+    for path in sorted((raw / "checkpoints").glob("*.json")):
+        need(path.stem in expected, f"Unexpected checkpoint file: {path.name}.")
+        record = audit_checkpoint(path, plan, pin)
+        record.update(source_revision=pin["source_revision"], raw_path=str(path.relative_to(ROOT)))
+        records[path.stem] = record
+    return records, audit_attempts(pin, records, plan, raw)
+
+
+def verified_predecessor(plan, pin):
+    """Re-audit the published prefix at its original source, including its stopped attempt."""
+    rel = RAW.relative_to(ROOT)
+    paths = [str(rel / name) for name in ("checkpoints", "attempts", "source-pin.json", "partial-audit.json")]
+    tracked = subprocess.check_output(["git", "-C", str(ROOT), "ls-tree", "-r", "--name-only",
+                                       EVIDENCE_COMMIT, "--", *paths], text=True).splitlines()
+    published = {Path(name).relative_to(rel) for name in tracked}
+    archived = {path.relative_to(PREDECESSOR) for path in PREDECESSOR.rglob("*.json")}
+    need(published == archived and published, "Preflight archive differs from the published file set.")
+    for name in sorted(published):
+        blob = subprocess.check_output(["git", "-C", str(ROOT), "show", f"{EVIDENCE_COMMIT}:{rel / name}"])
+        need((PREDECESSOR / name).read_bytes() == blob, f"Archived evidence differs from Git: {name}.")
+    previous = json.loads((PREDECESSOR / "source-pin.json").read_text())
+    stopped = json.loads((PREDECESSOR / "checkpoints" / f"{RESUME_UNIT}.json").read_text())
+    previous["active_run_id"] = stopped["run_id"]
+    need(previous["active_run_id"] != pin["active_run_id"], "Continuation reuses the predecessor cache ID.")
+    # Only this reviewed change to the benchmark's pre-allocation driver read is compatible.
+    run_path = "experiments/width-dispatch/run.py"
+    need(pin["source_sha256"][run_path] == RESUMED_DRIVER_RUNNER, "Continuation benchmark changed.")
+    for name in (*COMPUTE_SOURCES, "lab.py", "experiments/width-dispatch/ssh_runner.sh"):
+        if name != run_path:
+            need(previous["source_sha256"][name] == pin["source_sha256"][name],
+                 f"Cannot carry predecessor measurements across changed source: {name}.")
+    records, receipts = read_cohort(PREDECESSOR, plan, previous, CARRIED_UNITS | {RESUME_UNIT})
+    need(set(records) == CARRIED_UNITS | {RESUME_UNIT}
+         and all(records[unit]["status"] == "complete" for unit in CARRIED_UNITS),
+         "The two carried measurements must pass their original evidence gates.")
+    failure = records.pop(RESUME_UNIT)
+    need(failure["status"] == "gate_failed" and failure["failure"] == {
+        "stage": "preflight", "type": "GateFailure",
+        "message": "Cannot establish required NVIDIA driver provenance before measurement."}
+         and stopped["latency_intervals"] == [] and stopped["sustained_phases"] == []
+         and not any(stopped["correctness"].values())
+         and all(stopped["memory"]["final"][key] == 0 for key in ("peak_allocated_bytes", "peak_reserved_bytes")),
+         "Only the published driver failure before measurement can be reopened.")
+    return records, {"evidence_commit": EVIDENCE_COMMIT, "source_revision": previous["source_revision"],
+                     "run_id": previous["active_run_id"], "carried_units": sorted(records),
+                     "archived_failure": failure, "receipt_audit": receipts}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check-plan", action="store_true", help="Audit frozen plan and resource/replay arithmetic.")
@@ -789,14 +894,20 @@ def main():
     report = {"plan": "pass", "resource_estimate": estimate}
     if args.audit or args.final:
         pin = check_pin()
-        records = {}
-        files = sorted(CHECKPOINTS.glob("*.json")) if CHECKPOINTS.exists() else []
-        expected = {f"s{s}-w{w}" for s in plan["seeds"] for w in plan["widths"]}
-        for path in files:
-            need(path.stem in expected, f"Unexpected checkpoint file: {path.name}.")
-            need(path.stem not in records, f"Duplicate checkpoint unit: {path.stem}.")
-            records[path.stem] = audit_checkpoint(path, plan, pin)
-        receipt_audit = audit_attempts(pin, records, plan)
+        order = [f"s{s}-w{w}" for s in plan["seeds"] for w in plan["widths"]]
+        expected = set(order)
+        records, predecessor = verified_predecessor(plan, pin)
+        current, receipt_audit = read_cohort(RAW, plan, pin, expected - records.keys())
+        records.update(current)
+        submitted = dict(predecessor["receipt_audit"]["submitted_by_unit"])
+        first_pending = next((i for i, unit in enumerate(order)
+                              if records.get(unit, {}).get("status") != "complete"), len(order))
+        for unit, count in receipt_audit["submitted_by_unit"].items():
+            need(unit not in CARRIED_UNITS and unit in order[:first_pending + 1],
+                 f"Continuation repeated a completed unit or skipped pending work: {unit}.")
+            submitted[unit] = submitted.get(unit, 0) + count
+            need(submitted[unit] <= plan["max_attempts_per_checkpoint"],
+                 f"Cross-campaign attempt limit exceeded: {unit}.")
         comparisons = compare_checkpoints(list(records.values()), plan)
         complete = (set(records) == expected
                     and all(item.get("status") == "complete" for item in records.values()))
@@ -804,6 +915,7 @@ def main():
                       saved_checkpoints=len(records), successful_checkpoints=sum(
                           item.get("status") == "complete" for item in records.values()),
                       expected_checkpoints=len(expected), final_complete=complete, receipt_audit=receipt_audit,
+                      predecessor=predecessor, submitted_by_unit=submitted,
                       checkpoint_results=list(records.values()), **comparisons)
         print(json.dumps(report, indent=2, allow_nan=False))
         need(not args.final or complete, f"Final audit requires all {len(expected)} registered checkpoints.")

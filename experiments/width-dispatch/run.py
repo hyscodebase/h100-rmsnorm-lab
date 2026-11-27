@@ -65,17 +65,56 @@ def sha256_tensor(tensor):
     return hashlib.sha256(raw).hexdigest()
 
 
-def driver_version():
-    if not shutil.which("nvidia-smi"):
-        return None
+def driver_version(record):
+    """Read the loaded driver before allocation and retain bounded diagnostics."""
+    import re
+
+    probes = record["driver_probes"] = []
+    def capture_output(probe, stdout, stderr):
+        for name, data in (("stdout", stdout or b""), ("stderr", stderr or b"")):
+            probe[f"{name}_bytes"] = len(data)
+            probe[f"{name}_sha256"] = hashlib.sha256(data).hexdigest()
+
+    smi = {"source": "nvidia-smi"}
+    probes.append(smi)
+    started = time.monotonic()
     try:
         result = subprocess.run(["nvidia-smi", "--query-gpu=driver_version",
                                  "--format=csv,noheader"],
-                                text=True, capture_output=True, check=False, timeout=5)
-    except (OSError, subprocess.TimeoutExpired):
-        return None
-    versions = [line.strip() for line in result.stdout.splitlines() if line.strip()]
-    return versions[0] if result.returncode == 0 and versions else None
+                                capture_output=True, check=False, timeout=5)
+        rows = [line.strip() for line in result.stdout.decode("ascii", "replace").splitlines()
+                if line.strip()]
+        capture_output(smi, result.stdout, result.stderr)
+        smi.update(exit_code=result.returncode, rows=len(rows))
+        if result.returncode:
+            smi["status"] = "nonzero_exit"
+        elif len(set(rows)) == 1 and re.fullmatch(r"[0-9]+(?:\.[0-9]+){1,3}", rows[0]):
+            smi.update(status="ok", version=rows[0])
+            return rows[0]
+        else:
+            smi["status"] = "invalid_output"
+    except subprocess.TimeoutExpired as error:
+        capture_output(smi, error.stdout, error.stderr)
+        smi.update(status="timeout", timeout_seconds=5)
+    except OSError as error:
+        smi.update(status="os_error", errno=error.errno)
+    finally:
+        smi["elapsed_seconds"] = time.monotonic() - started
+
+    module = {"source": "/sys/module/nvidia/version"}
+    probes.append(module)
+    started = time.monotonic()
+    try:
+        value = Path(module["source"]).read_bytes().decode("ascii", "replace").strip()
+        if re.fullmatch(r"[0-9]+(?:\.[0-9]+){1,3}", value):
+            module.update(status="ok", version=value)
+            return value
+        module["status"] = "invalid_output"
+    except OSError as error:
+        module.update(status="os_error", errno=error.errno)
+    finally:
+        module["elapsed_seconds"] = time.monotonic() - started
+    return None
 
 
 def normalized_device_uuid(value):
@@ -294,7 +333,7 @@ def run_checkpoint(seed, width):
         capability = list(torch.cuda.get_device_capability(device))
         if "H100" not in torch.cuda.get_device_name(device) or capability != [9, 0]:
             raise GateFailure("This registered experiment requires an NVIDIA H100 (CC 9.0).")
-        driver = driver_version()
+        driver = driver_version(record)
         if not driver:
             raise GateFailure("Cannot establish required NVIDIA driver provenance before measurement.")
         estimate = output_pool_estimate()

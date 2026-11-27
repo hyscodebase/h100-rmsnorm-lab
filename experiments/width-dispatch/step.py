@@ -34,7 +34,8 @@ EXECUTION_SOURCES = (*COMPUTE_SOURCES,
     "lab.py",
     "experiments/width-dispatch/step.py",
     "experiments/width-dispatch/ssh_runner.sh",
-    "experiments/width-dispatch/summarize.py")
+    "experiments/width-dispatch/summarize.py",
+    "experiments/width-dispatch/RESUME.md")
 PAUSE_MARKERS = (STATE / "paused", ROOT / ".lab/vllm/paused")
 PRIVATE_PATH = re.compile(r"/(?:Users|home|root)/[^\s\"'<>]+")
 GPU_UUID = re.compile(r"\b(?:GPU|MIG)-[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}\b")
@@ -56,9 +57,11 @@ def hashes():
             for name in EXECUTION_SOURCES}
 
 
-def current_run_id(revision, source_digests, create=False):
+def current_run_id(revision, source_digests, campaign_id):
     """Keep remote cache reuse local to this checkout's frozen source campaign."""
     binding = {"source_revision": revision, "source_sha256": source_digests}
+    if not isinstance(campaign_id, str) or not re.fullmatch(r"[0-9a-f]{32}", campaign_id):
+        raise SystemExit("Continuation pin lacks a valid campaign ID.")
     active_evidence = any(path.is_file() for directory in (ATTEMPTS, CHECKPOINTS)
                           for path in directory.glob("*.json"))
     if RUN_ID_PATH.is_file():
@@ -69,17 +72,14 @@ def current_run_id(revision, source_digests, create=False):
         run_id = saved.get("run_id")
         if (saved.get("source_revision") == revision
                 and saved.get("source_sha256") == source_digests
-                and isinstance(run_id, str) and re.fullmatch(r"[0-9a-f]{32}", run_id)):
+                and run_id == campaign_id):
             return run_id
         if active_evidence:
             raise SystemExit("Run identity is bound to a different source pin while active evidence exists.")
     elif active_evidence:
         raise SystemExit("Active evidence lacks its checkout run identity; restore the run-id file before resuming.")
-    if not create:
-        return None
-    run_id = uuid.uuid4().hex
-    atomic_json(RUN_ID_PATH, {**binding, "run_id": run_id, "created_utc": utc_now()})
-    return run_id
+    atomic_json(RUN_ID_PATH, {**binding, "run_id": campaign_id, "created_utc": utc_now()})
+    return campaign_id
 
 
 def validate_runner_prerequisites():
@@ -301,6 +301,7 @@ def refresh_partial_audit():
         raise SystemExit("Checkpoint is saved, but the partial audit did not return valid JSON.") from error
     audit["generated_utc"] = utc_now()
     atomic_json(RAW / "partial-audit.json", audit)
+    return audit
 
 
 def show_status():
@@ -325,7 +326,8 @@ def show_status():
                 current = hashes()
                 receipt = started_receipts[0]
                 cached = json.loads((RAW / "partial-audit.json").read_text())
-                cached_units = {item.get("checkpoint") for item in cached.get("checkpoint_results", [])}
+                cached_units = {item.get("checkpoint") for item in cached.get("checkpoint_results", [])
+                                if item.get("source_revision") == pin.get("source_revision")}
                 if (pin.get("source_sha256") == current
                         and receipt.get("source_revision") == pin.get("source_revision")
                         and receipt.get("source_sha256") == pin.get("source_sha256")
@@ -365,26 +367,21 @@ def show_status():
         scope = pin.get("h100_execution_scope")
         if scope not in {"pilot", "full_matrix"}:
             blockers.append("source pin lacks an explicit pilot/full-matrix execution scope")
-        attempts_by_unit = {}
-        for path in sorted(ATTEMPTS.glob("*.json")) if ATTEMPTS.exists() else []:
-            try:
-                item = json.loads(path.read_text())
-            except (OSError, json.JSONDecodeError):
-                blockers.append(f"unreadable attempt receipt: {path.name}")
-                continue
-            attempts_by_unit.setdefault(item.get("unit"), []).append(item)
-        for unit, items in attempts_by_unit.items():
-            submitted = [item for item in items
-                         if item.get("outcome") not in {"paused_before_submit", "local_launch_failed"}]
-            if unit not in saved and len(submitted) >= PLAN["standard_max_attempts_per_checkpoint"]:
+        for unit, count in audit["submitted_by_unit"].items():
+            if unit not in saved and count >= PLAN["standard_max_attempts_per_checkpoint"]:
                 blockers.append(f"retry limit exhausted for {unit}")
-        if scope == "pilot" and completed:
+        if scope == "pilot" and any(unit in completed for unit in records):
             blockers.append("pilot checkpoint allowance used; full-matrix review is required")
     next_unit = (None if blockers else next((f"s{seed}-w{width}" for seed, width in units
                                              if f"s{seed}-w{width}" not in completed), None))
     markers = [str(path.relative_to(ROOT)) for path in PAUSE_MARKERS if path.exists()]
     print(f"Accepted completed: {len(completed)}/{len(units)} checkpoints.")
-    print(f"Raw checkpoint files saved: {len(records)}")
+    for item in audited_records:
+        if item["checkpoint"] not in records:
+            records[item["checkpoint"]] = json.loads((ROOT / item["raw_path"]).read_text())
+    print(f"Matrix checkpoint files saved: {len(records)}")
+    if audit and audit.get("predecessor"):
+        print("Archived pre-measurement driver failure: " + audit["predecessor"]["archived_failure"]["checkpoint"])
     print(f"Saved failed/incomplete: {len(failed)}")
     blocker_label = "; ".join(blockers) if blockers else "none"
     if audit_error and audit is None:
@@ -430,21 +427,22 @@ def run_one(lock):
     execution_scope = pin.get("h100_execution_scope")
     if execution_scope not in {"pilot", "full_matrix"}:
         raise SystemExit("Source pin must explicitly authorize a pilot or the full checkpoint matrix.")
-    run_id = current_run_id(revision, source_digests, create=True)
+    run_id = current_run_id(revision, source_digests, pin.get("campaign_id"))
     CHECKPOINTS.mkdir(parents=True, exist_ok=True)
     ATTEMPTS.mkdir(parents=True, exist_ok=True)
     saved_records = read_saved_checkpoints()
     reconcile_dangling_attempts(saved_records)
     validate_saved_state(revision, source_digests, saved_records, run_id)
-    refresh_partial_audit()
+    audit = refresh_partial_audit()
     failed_checkpoints = sorted(unit for unit, item in saved_records.items()
                                 if item.get("status") != "complete")
     if failed_checkpoints:
         raise SystemExit("A saved checkpoint failed; inspect its evidence before continuing: "
                          + ", ".join(failed_checkpoints))
     else:
+        covered = {item["checkpoint"] for item in audit["checkpoint_results"]}
         unit = next(((seed, width) for seed, width in work_units()
-                     if f"s{seed}-w{width}" not in saved_records), None)
+                     if f"s{seed}-w{width}" not in covered), None)
     if execution_scope == "pilot" and saved_records and unit is not None:
         raise SystemExit("Pilot checkpoint is already saved; review and explicitly authorize the full matrix before continuing.")
     if unit is None:
@@ -460,10 +458,8 @@ def run_one(lock):
             raise SystemExit(f"Cannot inspect prior attempt receipt {path.name}; stop before submission.") from error
     receipts.sort(key=lambda item: item.get("started_utc", ""))
     standard_limit = PLAN["standard_max_attempts_per_checkpoint"]
-    submitted_attempts = [item for item in receipts
-                          if item.get("outcome") not in {"paused_before_submit", "local_launch_failed"}]
-    if len(submitted_attempts) >= standard_limit:
-        raise SystemExit(f"{name} reached the three-attempt limit; inspect the saved receipts before manual recovery.")
+    if audit["submitted_by_unit"].get(name, 0) >= standard_limit:
+        raise SystemExit(f"{name} reached the three-attempt limit across both campaigns.")
     validate_runner_prerequisites()
     attempt_id = uuid.uuid4().hex
     attempt_path = ATTEMPTS / f"{name}-{attempt_id}.json"
