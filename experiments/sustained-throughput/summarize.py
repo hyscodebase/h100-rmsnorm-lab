@@ -54,7 +54,8 @@ def plan_audit():
          "Frozen latency graph or round count changed.")
     need(p["sustained_graph_calls_per_block"] == 32
          and p["sustained_event_windows_per_phase"] == 30
-         and p["sustained_target_seconds_per_window"] == 1.0,
+         and p["sustained_target_seconds_per_window"] == 1.1
+         and p["sustained_target_seconds"] == 33.0,
          "Sustained replay block/window protocol changed.")
     need(p["sustained_min_seconds"] == 30 and p["sustained_max_seconds"] == 60,
          "Sustained phase duration bounds changed.")
@@ -88,8 +89,8 @@ def plan_audit():
     need(p["free_memory_guard_bytes"] == 16 * GIB
          and p["capture_reserved_delta_ceiling_bytes"] == 8 * GIB,
          "Memory guard differs from preregistered threshold.")
-    need(p["expected_sustained_event_seconds_total"] == 12 * 4 * 30,
-         "Expected total active CUDA-event time is not 24 minutes.")
+    need(p["expected_sustained_event_seconds_total"] == 12 * 4 * p["sustained_target_seconds"],
+         "Expected active CUDA-event time does not match the headroom target.")
     return p, {"persistent_live_bytes": live, "persistent_live_gib": live / GIB,
                "one_output_bytes": output, "latency_graph_logical_bytes": latency_graph_bytes,
                "sustained_block_logical_bytes": sustained_block_bytes,

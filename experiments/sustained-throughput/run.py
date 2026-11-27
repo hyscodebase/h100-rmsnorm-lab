@@ -345,23 +345,18 @@ def run_checkpoint(seed, width):
         phase_order = list(BACKENDS)
         random.Random(seed ^ (width << 4) ^ 0x6400).shuffle(phase_order)
         for name in phase_order:
+            current_stage = f"sustained_preroll:{name}"
+            # Warm graph replay before the pilot so replay-count calibration reflects sustained clocks.
+            preroll_count = 128
+            preroll_seconds = event_window(sustained_graphs[name], preroll_count)
             current_stage = f"sustained_calibration:{name}"
-            pilot_start = torch.cuda.Event(enable_timing=True)
-            pilot_end = torch.cuda.Event(enable_timing=True)
-            pilot_start.record()
-            for _ in range(128):
-                sustained_graphs[name].replay()
-            pilot_end.record()
-            pilot_end.synchronize()
-            pilot_seconds = pilot_start.elapsed_time(pilot_end) / 1000.0
-            median_block_seconds = pilot_seconds / 128.0
+            pilot_replays = 128
+            pilot_seconds = event_window(sustained_graphs[name], pilot_replays)
+            median_block_seconds = pilot_seconds / pilot_replays
             if not math.isfinite(median_block_seconds) or median_block_seconds <= 0:
                 raise GateFailure(f"Invalid graph-block calibration for {name}.")
             per_window_replays = math.ceil(PLAN["sustained_target_seconds_per_window"] /
                                            median_block_seconds)
-            # Warm the device before the measured phase so telemetry is bounded to active work.
-            preroll_count = math.ceil(1.25 / median_block_seconds)
-            preroll_seconds = event_window(sustained_graphs[name], preroll_count)
             sampler = InWindowSampler(PLAN["telemetry_interval_seconds"])
             sampler.start()
             window_starts, window_ends = [], []
@@ -421,7 +416,7 @@ def run_checkpoint(seed, width):
                          and max(telemetry_gaps) <= PLAN["maximum_active_telemetry_gap_seconds"]
                          and all(value >= PLAN["telemetry_required_field_coverage_fraction"]
                                  for value in telemetry_field_coverage.values())),
-                     "pilot_replays": 128, "pilot_event_seconds": pilot_seconds,
+                     "pilot_replays": pilot_replays, "pilot_event_seconds": pilot_seconds,
                      "pilot_seconds_per_graph_block": median_block_seconds,
                      "unmeasured_preroll_replays": preroll_count,
                      "unmeasured_preroll_event_seconds": preroll_seconds,
