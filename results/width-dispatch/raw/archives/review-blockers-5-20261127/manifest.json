@@ -1,0 +1,51 @@
+{
+  "archive_date": "2026-11-27",
+  "archive_reason": "Preserve the completed pilot and raw telemetry while the cache recovery and evidence audit findings are fixed.",
+  "checkpoint": "s53-w4102",
+  "checkpoint_status": "complete",
+  "attempt_id": "2069e7f640524dd6b4fa1350505a0cc8",
+  "source_revision": "41e623a5772affc8f77ae3c77a882a19bac01b2e",
+  "audit_successful_checkpoints": 1,
+  "inventory": [
+    {
+      "path": "ARCHIVE_NOTE.md",
+      "bytes": 976,
+      "sha256": "635ffeda93d795346e6f0d20a70d7b66623007289c6937c1bd6bc0162b88edef"
+    },
+    {
+      "path": "attempts/s53-w4102-2069e7f640524dd6b4fa1350505a0cc8.json",
+      "bytes": 1861,
+      "sha256": "433cace9786a204def1850b56f749eec7409defe0ee7e7a7fbdcaac4be10413e"
+    },
+    {
+      "path": "checkpoints/s53-w4102.json",
+      "bytes": 596505,
+      "sha256": "2befdf9e4f01538259c5a1254bef09ef479dbd17c75434a5ff0748da13c5f574"
+    },
+    {
+      "path": "monitoring/20261127T104602Z.json",
+      "bytes": 651,
+      "sha256": "d1ff0f1c986d74dfd367aebdaad2d125e7faf09ea383b3b6945e31315c8fdf23"
+    },
+    {
+      "path": "monitoring/20261127T104710Z.json",
+      "bytes": 650,
+      "sha256": "edcb2fcc51ee74351ec7c7caff145db21a266b95dcd80b1beb0b0b3ed3cd299d"
+    },
+    {
+      "path": "monitoring/20261127T104854Z.json",
+      "bytes": 642,
+      "sha256": "af96f6748ef516f9f5235a5702d1b5d0db0929ea4a73e231fb670935a77f2731"
+    },
+    {
+      "path": "partial-audit.json",
+      "bytes": 14570,
+      "sha256": "08557a128d9d472aa019aebbdf6ff4461bbcd13be8f3fa6de0b689fd19beeabd"
+    },
+    {
+      "path": "source-pin.json",
+      "bytes": 1497,
+      "sha256": "d835d5eac3571ecf547d77eaad51038a823b5ff46a98a3108d8a6c5ce18769fe"
+    }
+  ]
+}
