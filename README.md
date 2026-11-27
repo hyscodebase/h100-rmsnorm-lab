@@ -104,7 +104,7 @@ The fresh three-seed neighborhood check retained the 4104 recommendation: its tw
 
 At 32,768 rows, the two-row/four-warp candidate did not reach the preregistered 5% gain over the fastest one-row Triton kernel in any of four widths across three seeds. Widths 4103 and 4105 gained about 3.0% and 1.9%, while 4104 and 4112 were about 1.2% slower. All 12 checkpoints passed both numerical gates and memory guards. The runner recorded 76,992 kernel invocations and 16.67 seconds of CUDA event intervals. Sparse one-second telemetry observed peaks of 99% GPU busy, 100% memory busy, 4,800 MiB VRAM and 583.19 W, but median GPU and memory busy were both 0%, so it does not establish sustained saturation. [Throughput-scale report and raw H100 records](results/throughput-neighborhood/REPORT.md) · [PR #63](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/63).
 
-The next experiment will check whether four rows per program recover a repeatable throughput gain at 32,768 rows. It will compare the four-row/four-warp candidate with the fastest one-row Triton and compiled PyTorch baselines at the same nearby widths; the 5% all-seed rule remains unchanged.
+The next experiment will check whether four rows per program recover a repeatable throughput gain at 32,768 rows. It will compare the four-row/four-warp candidate with the fastest one-row Triton and compiled PyTorch baselines at the same nearby widths; the 5% all-seed rule remains unchanged. [Draft issue #64](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/64) awaits protocol and memory review before code or H100 work begins.
 
 ```bash
 python3 lab.py init --plan plans/width-sweep.json

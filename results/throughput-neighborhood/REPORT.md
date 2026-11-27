@@ -22,3 +22,5 @@ Attempt receipts: 12 total, 0 failed. Model: GPT-6 Luna (delegated runtime).
 Sources were frozen at 0a7efc0137227452b8a3ebee5b25b7530e64fc4d. Raw data and telemetry are in [raw/](raw); audited derivations are in [summary.json](raw/summary.json).
 
 The existing 1,024-row width 4,104 recommendation remains outside this throughput experiment's decision.
+
+Next draft hypothesis: test four rows/program at 32,768 rows with sustained graph replay and graph-safe output reuse. The protocol proposal is registered in [issue #64](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/64); implementation and H100 execution await review.
