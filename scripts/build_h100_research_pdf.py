@@ -9,11 +9,14 @@ and a resource-monitoring page derived from the active checkpoints and partial a
 from __future__ import annotations
 
 import io
+import hashlib
 import json
 import statistics
 import subprocess
 import tempfile
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 from pypdf import PdfReader, PdfWriter
 from reportlab.lib import colors
@@ -29,7 +32,7 @@ from reportlab.platypus import PageBreak, Paragraph, SimpleDocTemplate, Spacer, 
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE_COMMIT = "a74c073"
 BASELINE_PDF = "output/pdf/H100_RMSNorm_연구누적기록_2026-11-27.pdf"
-OUTPUT_PDF = ROOT / BASELINE_PDF
+OUTPUT_PDF = ROOT / "output/pdf/H100_RMSNorm_연구누적기록.pdf"
 RAW_DIR = ROOT / "results/width-dispatch/raw"
 CHECKPOINT_DIR = RAW_DIR / "checkpoints"
 AUDIT_PATH = RAW_DIR / "partial-audit.json"
@@ -125,14 +128,14 @@ def draw_cover(canvas, doc):
     canvas.setFont("NotoKR", 21)
     canvas.drawString(20 * mm, height - 39 * mm, "RMSNorm 연구 누적 기록")
     canvas.setFont("NotoKR", 9)
-    canvas.drawString(20 * mm, height - 48 * mm, "최신 활성 매트릭스 데이터를 반영한 업데이트 · 2026-11-27")
+    canvas.drawString(20 * mm, height - 48 * mm, f"32,768행 BF16 RMSNorm · 실측 기록 {doc.audit_time}")
     canvas.setStrokeColor(colors.HexColor("#44617C"))
     canvas.line(20 * mm, height - 55 * mm, width - 20 * mm, height - 55 * mm)
     canvas.setFillColor(colors.HexColor("#DDEAF2"))
     canvas.setFont("NotoKR", 7)
     canvas.drawString(20 * mm, height - 61 * mm, "저장소: hyscodebase/h100-rmsnorm-lab · PR #67 · Issue #66")
     canvas.setFillColor(MUTED)
-    canvas.drawString(20 * mm, 10 * mm, "최신 활성 상태는 표지와 마지막 두 쪽 · 이전 17쪽은 22:24 KST 기준의 역사적 스냅샷")
+    canvas.drawString(20 * mm, 10 * mm, "2~18쪽은 2026-11-27 22:24 KST의 연구 기록입니다. 이번 폭별 실측은 19쪽부터 이어집니다.")
     canvas.restoreState()
 
 
@@ -143,8 +146,8 @@ def draw_appendix(canvas, doc):
     canvas.line(20 * mm, height - 14 * mm, width - 20 * mm, height - 14 * mm)
     canvas.setFillColor(MUTED)
     canvas.setFont("NotoKR", 7)
-    canvas.drawString(20 * mm, height - 11 * mm, "H100 RMSNorm · 활성 source 추가 기록")
-    canvas.drawRightString(width - 20 * mm, 10 * mm, f"활성 추가 기록 {doc.page - 1}/2 · 2026-11-27")
+    canvas.drawString(20 * mm, height - 11 * mm, "H100 RMSNorm · 폭별 커널 비교")
+    canvas.drawRightString(width - 20 * mm, 10 * mm, f"{doc.page + 17}쪽 · {doc.audit_time}")
     canvas.restoreState()
 
 
@@ -185,8 +188,21 @@ def read_active_data():
     audit = json.loads(AUDIT_PATH.read_text())
     pin = json.loads(PIN_PATH.read_text())
     plan = json.loads((ROOT / "plans/width-dispatch.json").read_text())
-    raw_records = [json.loads(path.read_text()) for path in sorted(CHECKPOINT_DIR.glob("s*-w*.json"))]
-    if audit.get("plan") != "pass" or audit.get("source_pin") != "pass":
+    raw_records = []
+    for item in audit["checkpoint_results"]:
+        path = ROOT / item["raw_path"] if "raw_path" in item else CHECKPOINT_DIR / (item["checkpoint"] + ".json")
+        raw_bytes = path.read_bytes()
+        record = json.loads(raw_bytes)
+        receipt_name = f"{path.stem}-{item['attempt_id']}.json"
+        receipt = json.loads((path.parent.parent / "attempts" / receipt_name).read_text())
+        if hashlib.sha256(raw_bytes).hexdigest() != receipt.get("checkpoint_sha256"):
+            raise SystemExit(f"Checkpoint differs from its receipt: {path.stem}.")
+        if (record["attempt_id"] != item["attempt_id"] or record["status"] != item["status"]
+                or record["source_revision"] != item.get("source_revision", audit["source_revision"])):
+            raise SystemExit(f"Checkpoint changed since the saved audit: {item['checkpoint']}.")
+        raw_records.append(record)
+    if (audit.get("plan") != "pass" or audit.get("source_pin") != "pass"
+            or audit.get("source_revision") != pin.get("source_revision")):
         raise SystemExit("Refusing to publish a PDF from a failed plan or source-pin audit.")
     if len(raw_records) != audit.get("saved_checkpoints"):
         raise SystemExit("Raw checkpoint count differs from the current partial audit.")
@@ -206,13 +222,15 @@ def build_appendix(path, audit, pin, plan, raw_records):
     doc = SimpleDocTemplate(str(path), pagesize=A4, rightMargin=20 * mm, leftMargin=20 * mm,
                             topMargin=18 * mm, bottomMargin=17 * mm,
                             title="H100 RMSNorm Research Record - current active data")
+    latest = max(raw["finished_utc"] for raw in raw_records)
+    doc.audit_time = datetime.fromisoformat(latest).astimezone(timezone(timedelta(hours=9))).strftime("%Y-%m-%d %H:%M KST")
     story = [Spacer(1, 154), P("현재 실험 상태", s["section"])]
 
     card_rows = [
-        [P("활성 체크포인트", s["card_label"]), P("CUDA-event 누적", s["card_label"])],
+        [P("측정 완료 / 계획", s["card_label"]), P("GPU 지속 측정 시간", s["card_label"])],
         [P(f"{status['completed']} / {status['expected']}", s["card_value"]),
          P(f"{status['seconds'] / 60:.2f}분", s["card_value"])],
-        [P("보존 telemetry", s["card_label"]), P("활동 계측 적격", s["card_label"])],
+        [P("자원 사용량 표본", s["card_label"]), P("사용률 표본 기준을 통과한 구간", s["card_label"])],
         [P(f"{status['samples']:,}행", s["card_value"]),
          P(f"{status['eligible']} / {status['phase_count']} 구간", s["card_value"])],
     ]
@@ -230,11 +248,10 @@ def build_appendix(path, audit, pin, plan, raw_records):
         failed = status["failed"][0]
         failure = failed.get("failure", {})
         failed_name = f"s{failed.get('seed')}-w{failed.get('width')}"
-        failure_text = (
-            f"후속 체크포인트 중단: {failed_name}이 {failure.get('stage', 'unknown')} 단계에서 게이트 실패했습니다. "
-            f"{failure.get('message', '원인 정보 없음')} 지연 측정은 0건, 지속 계산 구간은 0개이며, 기록된 CUDA 할당·예약 메모리는 0바이트입니다. "
-            "드라이버 조회가 현재 원격 확인에서는 정상 동작했지만 실패 당시 원인은 확정되지 않았습니다. 저장된 실패 기록을 임의로 건너뛰지 않고 복구 검토 전까지 큐를 멈춥니다."
-        )
+        failure_text = (f"{failed_name}의 실행이 {escape(str(failure.get('stage', 'unknown')))} 단계에서 중단됐습니다. "
+                        f"{escape(str(failure.get('message', '')))} "
+                        f"지연 측정 {len(failed.get('latency_intervals', [])):,}건과 지속 구간 "
+                        f"{len(failed.get('sustained_phases', []))}개가 저장됐습니다.")
         alert = Table([[P(failure_text, s["callout"])]], colWidths=[168 * mm])
         alert.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, -1), RED_PALE),
@@ -244,14 +261,18 @@ def build_appendix(path, audit, pin, plan, raw_records):
         ]))
         story += [alert, Spacer(1, 8)]
 
-    failed_even = [x for x in audit["checkpoint_comparisons"]
-                   if x["width"] % 2 == 0 and x.get("qualifies") is False]
-    if failed_even:
-        gain_text = ", ".join(f"{x['width']}에서 {x['gain_percent']['fastest_one_row']:.2f}%" for x in failed_even)
-        summary_text = (f"현재 seed 53의 두 등록된 짝수 폭에서 4행 후보는 가장 빠른 1행 기준보다 느렸습니다 ({gain_text}). "
-                        "이 결과는 제한된 연구 질문과 맞물리는 실측이지만, 한 시드의 두 폭만으로 홀짝 규칙을 결론내리지 않습니다.")
-    else:
-        summary_text = "아직 등록된 매트릭스가 완성되지 않았습니다. 최종 dispatch 판정은 24개 체크포인트 감사 후에만 계산합니다."
+    summary_text = ("4행 Triton 커널이 가장 빠른 1행 커널과 torch.compile 양쪽보다 처리량을 5% 이상 높이는 폭을 찾고 있습니다. "
+                    "한 폭을 채택하려면 세 시드가 모두 이 기준을 통과해야 합니다. ")
+    if comparisons:
+        last = list(comparisons.values())[-1]
+        gains = last["gain_percent"]
+        summary_text += (f"최근 등록 순서의 완료 항목은 시드 {last['seed']}, 폭 {last['width']:,}입니다. "
+                         f"4행 커널의 지속 처리량 차이는 가장 빠른 1행 대비 {gains['fastest_one_row']:+.2f}%, "
+                         f"torch.compile 대비 {gains['torch_compile']:+.2f}%였습니다.")
+    if audit.get("final_complete"):
+        supported = audit["bounded_dispatch_screen_decision"]["supports_registered_odd_even_split"]
+        summary_text += (" 여덟 폭에서 등록한 홀짝 선택 조건이 재현됐습니다." if supported
+                         else " 여덟 폭의 결과는 등록한 홀짝 선택 조건에 미달했습니다.")
     summary = Table([[P(summary_text, s["callout"])]], colWidths=[168 * mm])
     summary.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), GOLD_PALE),
@@ -259,7 +280,18 @@ def build_appendix(path, audit, pin, plan, raw_records):
         ("LEFTPADDING", (0, 0), (-1, -1), 9), ("RIGHTPADDING", (0, 0), (-1, -1), 9),
         ("TOPPADDING", (0, 0), (-1, -1), 8), ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
     ]))
-    story += [summary, PageBreak(), P("1. 활성 source 체크포인트 결과", s["subsection"])]
+    story += [summary, Spacer(1, 9)]
+    if audit.get("predecessor"):
+        story += [P("초기 두 측정은 기존 커밋에서 원자료와 영수증을 다시 확인했습니다. 폭 4,107의 초기 드라이버 조회 실패는 "
+                    "측정 전에 발생해 당시 지연 표본과 지속 구간이 모두 0개였습니다. 재개 버전은 조회 경로와 오류를 함께 기록합니다.", s["body"])]
+    widths = [[P(x, s["table_white"]) for x in ("폭", "완료 시드", "기준 통과 시드", "1행 대비 중앙값", "compile 대비 중앙값")]]
+    for width, row in audit["per_width_across_seeds"].items():
+        values = [f"{int(width):,}", f"{row['seed_count']} / {len(plan['seeds'])}", str(row["qualifying_seeds"]),
+                  f"{row['median_gain_percent_vs_fastest_one_row']:+.2f}%", f"{row['median_gain_percent_vs_torch_compile']:+.2f}%"]
+        widths.append([P(value, s["table"]) for value in values])
+    if len(widths) > 1:
+        story += [P("폭별 지속 처리량 비교", s["subsection"]), band_table(widths, [25*mm, 28*mm, 35*mm, 39*mm, 41*mm], tiny=True)]
+    story += [PageBreak(), P("1. 시드·폭별 측정 결과", s["section"])]
     story += [P("latency 중앙값은 us/op, 지속 처리량은 논리 입력+출력 GB/s입니다. 각 네 수치는 4w/1r · 8w/1r · 4w/4r · torch.compile 순입니다.", s["small"])]
 
     result_rows = [[P(x, s["table_tiny_white"]) for x in (
@@ -272,7 +304,7 @@ def build_appendix(path, audit, pin, plan, raw_records):
             failure = result.get("failure", {})
             result_rows.append([
                 P(f"{name}<br/>실패: {failure.get('stage', 'unknown')}", s["table_tiny"]),
-                P("측정 전 실패", s["table_tiny"]), P("측정 전 실패", s["table_tiny"]),
+                P("비교 제외", s["table_tiny"]), P("비교 제외", s["table_tiny"]),
                 P("n/a", s["table_tiny"]), P("blocked", s["table_tiny"]),
             ])
             continue
@@ -288,9 +320,7 @@ def build_appendix(path, audit, pin, plan, raw_records):
             P("yes" if comp.get("qualifies") else "no", s["table_tiny"]),
         ])
     story += [band_table(result_rows, [23 * mm, 55 * mm, 55 * mm, 19 * mm, 16 * mm], tiny=True), Spacer(1, 6)]
-    story += [P(
-        "후보 채택에는 가장 빠른 1행 Triton 및 torch.compile을 각각 5% 이상 앞서고, 같은 폭의 세 시드 모두에서 이를 반복해야 합니다. "
-        "현재는 체크포인트별 결과만 공개하며, 24개 결과 전에는 dispatch 결론을 내리지 않습니다.", s["small"])]
+    story += [P("한 폭을 채택하려면 세 시드 모두에서 가장 빠른 1행 Triton과 torch.compile 각각에 대해 지속 처리량이 5% 이상 높아야 합니다.", s["small"])]
     story += [PageBreak()]
 
     story += [P("2. 자원 계측과 다음 실행", s["section"]), P(
@@ -349,10 +379,11 @@ def build_appendix(path, audit, pin, plan, raw_records):
         ("TOPPADDING", (0, 0), (-1, -1), 7), ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
     ]))
     story += [box, Spacer(1, 8)]
-    story += [P(
-        f"상태: source `{pin['source_revision']}` · scope `{status['scope']}` · 다음 상태 `{next_name}`. "
-        "PR #67 코드 검토에서 차단 이슈가 없어 파일럿 뒤 전체 매트릭스를 해제했지만, 현재는 위의 저장된 preflight 게이트 실패가 후속 제출을 막습니다. 원자료, attempt receipt와 감사 요약은 "
-        "`results/width-dispatch/raw/` 아래에 보존합니다. 이전 리뷰-blocked pin의 9개 체크포인트는 앞쪽 17쪽의 역사 기록이며 활성 매트릭스와 합산하지 않습니다.", s["small"])]
+    previous = audit.get("predecessor", {})
+    lineage = f"처음 두 건의 소스 {previous['source_revision'][:12]}. " if previous else ""
+    story += [P(f"{lineage}현재 측정 소스 {pin['source_revision'][:12]}. 실행 범위 {status['scope']}. "
+                f"다음 등록 단위 {next_name}. 원자료와 시도 기록은 저장소의 results/width-dispatch/raw/에 있습니다. "
+                "초기 리뷰에서 제외한 9회의 측정은 2~18쪽의 이력에 남아 있습니다.", s["small"])]
 
     doc.build(story, onFirstPage=draw_cover, onLaterPages=draw_appendix)
 
@@ -380,10 +411,9 @@ def main():
             "/Author": "hyscodebase",
             "/Subject": "H100 kernel experiments, audit evidence, and active width-dispatch matrix",
         })
-        output_temp = temp / "complete.pdf"
-        with output_temp.open("wb") as stream:
+        with tempfile.NamedTemporaryFile(dir=OUTPUT_PDF.parent, suffix=".tmp", delete=False) as stream:
             writer.write(stream)
-        OUTPUT_PDF.write_bytes(output_temp.read_bytes())
+        Path(stream.name).replace(OUTPUT_PDF)
         stats = latest_status(audit, pin, records)
         print(f"updated={OUTPUT_PDF} pages={len(writer.pages)} active={stats['completed']}/{stats['expected']} "
               f"cuda_event_minutes={stats['seconds'] / 60:.2f} telemetry_rows={stats['samples']} "
