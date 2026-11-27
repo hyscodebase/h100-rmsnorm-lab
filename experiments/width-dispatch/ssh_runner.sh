@@ -6,6 +6,8 @@ seed=$2
 width=$3
 revision=$(printenv BENCH_REVISION || true)
 [[ "$revision" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]] || exit 2
+attempt_id=$(printenv BENCH_ATTEMPT_ID || true)
+[[ "$attempt_id" =~ ^[0-9a-f]{32}$ ]] || exit 2
 host=$(git config --local --get rmsnorm.host)
 setup=$(git config --local --get rmsnorm.setup)
 remote_total_timeout=$(python3 -c 'import json; print(json.load(open("plans/width-dispatch.json"))["remote_total_timeout_seconds"])')
@@ -32,11 +34,11 @@ exec 9>"$tmpdir/rmsnorm-vllm-$UID.lock"
 flock -x -n -E 75 9
 REMOTE
 )
-printf -v line '. %q' "$setup"
+printf -v line '. %q >&2' "$setup"
 remote+=$'\n'"$line"
 printf -v line 'record="$cache_dir"/width-dispatch-%q-s%q-w%q.json' "$revision" "$seed" "$width"
 remote+=$'\n'"$line"
-printf -v line 'revision=%q; seed=%q; width=%q' "$revision" "$seed" "$width"
+printf -v line 'revision=%q; seed=%q; width=%q; attempt_id=%q' "$revision" "$seed" "$width" "$attempt_id"
 remote+=$'\n'"$line"
 remote+=$'\n''if [ -s "$record" ]; then cat "$record"; exit 0; fi'
 remote+=$'\n''candidate=$(mktemp "$cache_dir/.width-dispatch.XXXXXX")'
@@ -55,14 +57,16 @@ execution_manifest=$(printenv BENCH_EXECUTION_SOURCE_SHA256 || true)
 [[ -n "$execution_manifest" ]] || exit 2
 printf -v line 'export BENCH_EXECUTION_SOURCE_SHA256=%q' "$execution_manifest"
 remote+=$'\n'"$line"
+printf -v line 'export BENCH_ATTEMPT_ID=%q' "$attempt_id"
+remote+=$'\n'"$line"
 remote+=$'\n''export BENCH_STARTED_UTC="$bench_started_utc"'
 remote+=$'\n''export BENCH_STARTED_MONOTONIC_NS="$bench_started_monotonic_ns"'
 remote+=$'\n''export BENCH_TIMEOUT_SECONDS="$bench_timeout_seconds"'
-printf -v command 'timeout -k 10s "${bench_timeout_seconds}s" env BENCH_REVISION=%q python3 "$work"/experiments/width-dispatch/run.py --seed %q --width %q' \
-    "$revision" "$seed" "$width"
+printf -v command 'timeout -k 10s "${bench_timeout_seconds}s" env BENCH_REVISION=%q BENCH_ATTEMPT_ID=%q python3 "$work"/experiments/width-dispatch/run.py --seed %q --width %q' \
+    "$revision" "$attempt_id" "$seed" "$width"
 remote+=$'\n'"if $command > \"\$candidate\"; then bench_status=0; else bench_status=\$?; fi"
 remote+=$'\n'$(cat <<'REMOTE'
-if (( bench_status == 124 || bench_status == 137 )); then
+if (( bench_status != 0 )); then
   python3 - "$work" "$candidate" "$record" "$revision" "$seed" "$width" "$bench_status" <<'PY'
 import hashlib
 import json
@@ -73,20 +77,26 @@ from datetime import datetime, timezone
 from pathlib import Path
 root = Path(sys.argv[1])
 candidate, record_path, revision, seed, width, status = sys.argv[2], sys.argv[3], sys.argv[4], int(sys.argv[5]), int(sys.argv[6]), sys.argv[7]
+timeout_exit = status in {"124", "137"}
+failure = ({"stage": "remote_benchmark_timeout", "type": "TimeoutExpired",
+            "message": f"Benchmark exceeded its {os.environ['BENCH_TIMEOUT_SECONDS']}-second budget (timeout exit {status})."}
+           if timeout_exit else
+           {"stage": "remote_benchmark_exit", "type": "SubprocessError",
+            "message": f"Benchmark process exited with status {status}."})
 compute_sources = ("kernels.py", "experiments/width-dispatch/run.py", "experiments/width-dispatch/telemetry.py", "experiments/width-dispatch/PLAN.md", "plans/width-dispatch.json")
 def source_digest(name):
     with open(root / name, "rb") as source:
         return hashlib.sha256(source.read()).hexdigest()
 with open(candidate, "w") as output:
     json.dump({"status": "execution_failed", "seed": seed, "rows": 32768, "width": width,
+               "attempt_id": os.environ["BENCH_ATTEMPT_ID"],
                "source_revision": revision,
                "source_sha256": {name: source_digest(name) for name in compute_sources},
                "execution_source_sha256": json.loads(os.environ["BENCH_EXECUTION_SOURCE_SHA256"]),
                "started_utc": os.environ["BENCH_STARTED_UTC"],
                "finished_utc": datetime.now(timezone.utc).isoformat(),
                "wall_seconds": max(0.0, (time.monotonic_ns() - int(os.environ["BENCH_STARTED_MONOTONIC_NS"])) / 1e9),
-               "failure": {"stage": "remote_benchmark_timeout", "type": "TimeoutExpired",
-                           "message": f"Benchmark exceeded its {os.environ['BENCH_TIMEOUT_SECONDS']}-second budget (timeout exit {status})."}},
+               "failure": {**failure, "exit_code": int(status)}},
               output, indent=2, allow_nan=False)
     output.write("\n")
     output.flush()

@@ -258,17 +258,29 @@ def audit_attempts(pin, checkpoint_records, plan):
         record = checkpoint_records[unit]
         checkpoint_path = CHECKPOINTS / f"{unit}.json"
         digest = hashlib.sha256(checkpoint_path.read_bytes()).hexdigest()
+        producing_attempt_id = record.get("producing_attempt_id", attempt_id)
         need(record.get("attempt_id") == attempt_id
+             and item.get("producing_attempt_id", attempt_id) == producing_attempt_id
+             and item.get("cache_retrieved", False) is (producing_attempt_id != attempt_id)
              and item.get("checkpoint_path") == str(checkpoint_path.relative_to(ROOT))
              and item.get("checkpoint_sha256") == digest
              and item.get("checkpoint_status") == record.get("status"),
              f"Checkpoint/receipt ID, status, path or hash mismatch: {unit}.")
+        if producing_attempt_id != attempt_id:
+            producer = receipts.get(producing_attempt_id)
+            need(producer is not None and producer.get("unit") == unit
+                 and producer.get("outcome") == "transport_or_parse_failed"
+                 and producer.get("started_utc", "") <= item.get("started_utc", ""),
+                 f"Cached checkpoint does not link to an earlier unresolved producer attempt: {unit}.")
 
     successful_units = set()
     for unit, record in checkpoint_records.items():
         attempt_id = record.get("attempt_id")
         need(attempt_id in receipts,
              f"Checkpoint has no matching attempt receipt: {unit}.")
+        producing_attempt_id = record.get("producing_attempt_id", attempt_id)
+        need(producing_attempt_id in receipts,
+             f"Checkpoint's producing attempt has no receipt: {unit}.")
         receipt = receipts[attempt_id]
         if record.get("status") == "complete":
             need(receipt.get("unit") == unit
@@ -409,6 +421,8 @@ def verify_source_hashes_at(revision, expected):
 def audit_checkpoint(path, plan, pin):
     r = json.loads(path.read_text())
     need(path.stem == f"s{r['seed']}-w{r['width']}", f"Checkpoint identity mismatch: {path.name}.")
+    need(r.get("rows") == plan["rows"],
+         f"Checkpoint row count does not match the registered workload: {path.name}.")
     revision = r.get("source_revision", "")
     expected_sources = {key: r.get("source_sha256", {}).get(key) for key in COMPUTE_SOURCES}
     expected_execution = r.get("execution_source_sha256", {})
@@ -504,7 +518,8 @@ def audit_checkpoint(path, plan, pin):
         need(all(isinstance(x, int) and x > 0 for x in replay_counts),
              "Invalid per-window replay count.")
         need(all(math.isfinite(x) and 0 < x <= 2 for x in durations), "Invalid or overlong event window.")
-        need(all(math.isfinite(x) and x <= 0.005 for x in gaps), "CUDA event-window gap exceeds 5 ms.")
+        need(all(math.isfinite(x) and 0 <= x <= plan["maximum_event_gap_between_windows_seconds"]
+                 for x in gaps), "CUDA event-window gap is negative or exceeds the registered limit.")
         need(30 <= sum(durations) <= 60 and abs(sum(durations) - phase["event_seconds"]) < 1e-6,
              "Sustained event duration is outside 30–60s or not reproducible.")
         calls = phase["graph_calls_per_block"]
@@ -532,6 +547,9 @@ def audit_checkpoint(path, plan, pin):
         need(isinstance(memory_before.get("captured_monotonic_ns"), int)
              and memory_before["captured_monotonic_ns"] < phase.get("phase_start_monotonic_ns", 0),
              "Pre-phase memory snapshot was not captured before the measured phase.")
+        need(isinstance(memory_before.get("free_bytes"), int)
+             and memory_before["free_bytes"] >= plan["free_memory_guard_bytes"],
+             "A measured phase began below the registered free-memory floor.")
         milliseconds = round(plan["telemetry_interval_seconds"] * 1000)
         expected_cadence = (f"--loop={milliseconds // 1000}"
                             if milliseconds >= 1000 and milliseconds % 1000 == 0

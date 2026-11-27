@@ -273,6 +273,7 @@ def run_checkpoint(seed, width):
     started_utc = utc_now()
     wall_start = time.perf_counter()
     record = {"status": "running", "seed": seed, "rows": ROWS, "width": width,
+              "attempt_id": os.environ.get("BENCH_ATTEMPT_ID"),
               "source_revision": os.environ.get("BENCH_REVISION"),
               "source_sha256": source_hashes(), "started_utc": started_utc,
               "checkpoints": [], "latency_intervals": [], "sustained_phases": [],
@@ -452,6 +453,11 @@ def run_checkpoint(seed, width):
                 raise GateFailure(f"Invalid graph-block calibration for {name}.")
             per_window_replays = math.ceil(PLAN["sustained_target_seconds_per_window"] /
                                            median_block_seconds)
+            current_stage = f"sustained_enqueue:{name}"
+            memory_before_phase = memory_snapshot(device)
+            if memory_before_phase["free_bytes"] < PLAN["free_memory_guard_bytes"]:
+                raise GateFailure(f"Free-memory floor failed before sustained phase {name}: "
+                                  f"{memory_before_phase['free_bytes']} bytes.")
             sampler = InWindowSampler(PLAN["telemetry_interval_seconds"],
                                       device_id=telemetry_device_id)
             telemetry_process_description = sampler.process_description
@@ -475,8 +481,6 @@ def run_checkpoint(seed, width):
                 sampler = None
             window_starts, window_ends = [], []
             host_gaps = []
-            current_stage = f"sustained_enqueue:{name}"
-            memory_before_phase = memory_snapshot(device)
             phase_start_utc = utc_now()
             phase_start_ns = time.perf_counter_ns()
             previous_enqueue_end = None
@@ -591,8 +595,9 @@ def run_checkpoint(seed, width):
                 phase_seconds >= PLAN["sustained_min_seconds"]
                 and phase_seconds <= PLAN["sustained_max_seconds"]
                 and max(event_durations, default=float("inf")) <= PLAN["maximum_event_window_seconds"]
-                and max(event_gaps, default=float("inf"))
-                    <= PLAN["maximum_event_gap_between_windows_seconds"]
+                and all(math.isfinite(gap) and 0 <= gap
+                        <= PLAN["maximum_event_gap_between_windows_seconds"]
+                        for gap in event_gaps)
             )
             # Sparse or delayed NVML polls disqualify activity claims but do not stop
             # correctness/performance measurements for the remaining backends.

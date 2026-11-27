@@ -58,8 +58,8 @@ def hashes():
 def validate_runner_prerequisites():
     if not RUNNER.is_file() or not os.access(RUNNER, os.X_OK):
         raise SystemExit("Local H100 runner is missing or not executable; no attempt was submitted.")
-    if any(shutil.which(command) is None for command in ("ssh", "tar")):
-        raise SystemExit("A local SSH or tar executable is unavailable; no attempt was submitted.")
+    if any(shutil.which(command) is None for command in ("ssh", "tar", "bash", "python3")):
+        raise SystemExit("A local SSH, tar, Bash or Python executable is unavailable; no attempt was submitted.")
     for key in ("rmsnorm.host", "rmsnorm.setup"):
         result = subprocess.run(["git", "-C", str(ROOT), "config", "--local", "--get", key],
                                 text=True, capture_output=True, check=False)
@@ -149,6 +149,9 @@ def reconcile_dangling_attempts(saved_records):
                 elapsed_seconds=None,
                 local_elapsed_seconds_observed=False,
                 remote_benchmark_wall_seconds=record.get("wall_seconds"),
+                producing_attempt_id=record.get("producing_attempt_id", record.get("attempt_id")),
+                cache_retrieved=(record.get("producing_attempt_id", record.get("attempt_id"))
+                                 != attempt.get("attempt_id")),
                 checkpoint_status=status,
                 checkpoint_path=str(checkpoint_path.relative_to(ROOT)),
                 checkpoint_sha256=digest,
@@ -439,6 +442,7 @@ def run_one(lock):
     try:
         output = subprocess.check_output(
             command, cwd=ROOT, env={**os.environ, "BENCH_REVISION": revision,
+                                    "BENCH_ATTEMPT_ID": attempt_id,
                                     "BENCH_EXECUTION_SOURCE_SHA256": json.dumps(
                                         source_digests, sort_keys=True, separators=(",", ":"))},
             pass_fds=(lock.fileno(),), timeout=PLAN["remote_total_timeout_seconds"] + 10)
@@ -452,8 +456,20 @@ def run_one(lock):
                 or (record.get("seed"), record.get("rows"), record.get("width"))
                    != (seed, PLAN["rows"], width)):
             raise ValueError("Remote source pin or checkpoint identity mismatch.")
-        record["research_assistant_model"] = pin["research_assistant_model"]
+        producing_attempt_id = record.get("attempt_id")
+        prior_attempts = {item.get("attempt_id"): item for item in receipts}
+        if (not isinstance(producing_attempt_id, str)
+                or not re.fullmatch(r"[0-9a-f]{32}", producing_attempt_id)):
+            raise ValueError("Remote checkpoint lacks a valid producing attempt ID.")
+        if producing_attempt_id != attempt_id:
+            producer = prior_attempts.get(producing_attempt_id)
+            if (producer is None or producer.get("outcome") != "transport_or_parse_failed"
+                    or producer.get("started_utc", "") > attempt["started_utc"]):
+                raise ValueError("Cached result producer does not match an earlier unresolved transport attempt.")
+        record["producing_attempt_id"] = producing_attempt_id
+        record["cache_retrieved"] = producing_attempt_id != attempt_id
         record["attempt_id"] = attempt_id
+        record["research_assistant_model"] = pin["research_assistant_model"]
         checkpoint_path = CHECKPOINTS / f"{name}.json"
         atomic_json(checkpoint_path, record)
         checkpoint_sha256 = hashlib.sha256(checkpoint_path.read_bytes()).hexdigest()
@@ -463,6 +479,8 @@ def run_one(lock):
                        local_elapsed_seconds_observed=True,
                        remote_checkpoint_finished_utc=record.get("finished_utc"),
                        remote_benchmark_wall_seconds=record.get("wall_seconds"),
+                       producing_attempt_id=producing_attempt_id,
+                       cache_retrieved=record["cache_retrieved"],
                        checkpoint_status=record.get("status"), checkpoint_path=str(checkpoint_path.relative_to(ROOT)),
                        checkpoint_sha256=checkpoint_sha256, failure=record.get("failure"))
         atomic_json(attempt_path, attempt)
@@ -477,10 +495,8 @@ def run_one(lock):
             latest = json.loads(attempt_path.read_text())
             if latest.get("outcome") == "started":
                 checkpoint_path = CHECKPOINTS / f"{name}.json"
-                remote_deadline_expired = (
-                    isinstance(error, subprocess.TimeoutExpired)
-                    or (isinstance(error, subprocess.CalledProcessError)
-                        and error.returncode in {124, 137}))
+                remote_deadline_expired = (isinstance(error, subprocess.CalledProcessError)
+                                           and error.returncode in {124, 137})
                 if remote_deadline_expired and not checkpoint_path.exists():
                     timeout_record = {
                         "status": "execution_failed", "seed": seed, "rows": PLAN["rows"],
@@ -502,7 +518,9 @@ def run_one(lock):
                                   checkpoint_status="execution_failed",
                                   checkpoint_path=str(checkpoint_path.relative_to(ROOT)),
                                   checkpoint_sha256=checkpoint_sha256,
-                                  failure=timeout_record["failure"])
+                                  failure=timeout_record["failure"],
+                                  producing_attempt_id=attempt_id,
+                                  cache_retrieved=False)
                     atomic_json(attempt_path, latest)
                     refresh_partial_audit()
                     raise
@@ -519,7 +537,11 @@ def run_one(lock):
                 else:
                     latest.update(outcome="transport_or_parse_failed", error_type=type(error).__name__,
                                   finished_utc=utc_now(), elapsed_seconds=time.monotonic() - started,
-                                  local_elapsed_seconds_observed=True)
+                                  local_elapsed_seconds_observed=True,
+                                  error_message=(
+                                      "Local SSH wrapper timed out; the remote outcome is unknown and may be recovered from its cache."
+                                      if isinstance(error, subprocess.TimeoutExpired)
+                                      else str(error)))
                     if isinstance(error, subprocess.CalledProcessError):
                         latest["exit_code"] = error.returncode
                     atomic_json(attempt_path, latest)
