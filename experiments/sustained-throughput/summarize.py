@@ -128,14 +128,28 @@ def audit_attempts(pin, checkpoint_records):
         need(per_unit_counts[unit] <= 3, f"More than three attempt receipts for checkpoint: {unit}.")
         need(item.get("seed") in [50, 51, 52] and item.get("width") in [4103, 4104, 4105, 4112],
              f"Attempt contains unregistered checkpoint: {path.name}.")
-        need(item.get("source_revision") == pin["source_revision"]
-             and item.get("source_sha256") == pin["source_sha256"],
-             f"Attempt source pin mismatch: {path.name}.")
+        receipt_revision = item.get("source_revision", "")
+        need(len(receipt_revision) == 40, f"Attempt has no full source revision: {path.name}.")
         need(item.get("outcome") in {"checkpoint_saved", "gate_failed", "transport_or_parse_failed", "paused_before_submit"},
              f"Unknown attempt outcome: {path.name}.")
         need(item.get("outcome") != "started", f"Unfinished attempt receipt: {path.name}.")
         need(item.get("finished_utc") and item.get("elapsed_seconds", -1) >= 0,
              f"Attempt receipt lacks completion metadata: {path.name}.")
+        source_manifest = item.get("source_sha256")
+        need(isinstance(source_manifest, dict) and set(source_manifest) == set(SOURCES)
+             and all(isinstance(digest, str) and len(digest) == 64
+                     for digest in source_manifest.values()),
+             f"Attempt source hash manifest is malformed: {path.name}.")
+        if receipt_revision == pin["source_revision"]:
+            need(item.get("source_sha256") == pin["source_sha256"],
+                 f"Current attempt source pin mismatch: {path.name}.")
+        else:
+            need(item.get("outcome") in {"transport_or_parse_failed", "paused_before_submit"},
+                 f"Executed attempt must use the current source pin: {path.name}.")
+            for source, digest in item["source_sha256"].items():
+                blob = subprocess.check_output(["git", "-C", str(ROOT), "show", f"{receipt_revision}:{source}"])
+                need(hashlib.sha256(blob).hexdigest() == digest,
+                     f"Historical transport attempt source mismatch at {receipt_revision}:{source}.")
         receipts[attempt_id] = item
     complete_units = set()
     successful_receipts = defaultdict(list)
@@ -219,8 +233,8 @@ def audit_checkpoint(path, plan, pin):
     need(r.get("execution_source_sha256") == pin["source_sha256"], f"Checkpoint execution-source hash mismatch: {path.name}.")
     if r.get("status") != "complete":
         return {"checkpoint": path.stem, "seed": r["seed"], "width": r["width"],
-                "status": r.get("status"), "failure": r.get("failure"),
-                "raw_evidence_saved": True, "analysis_eligible": False}
+                "status": r.get("status"), "attempt_id": r.get("attempt_id"),
+                "failure": r.get("failure"), "raw_evidence_saved": True, "analysis_eligible": False}
     intervals = r.get("latency_intervals", [])
     need(len(intervals) == 401 * len(BACKENDS), f"Expected 1,604 latency intervals: {path.name}.")
     counts = {name: 0 for name in BACKENDS}
@@ -304,6 +318,7 @@ def audit_checkpoint(path, plan, pin):
     need(r["memory"]["after_persistent_allocation"]["free_bytes"] >= 16 * GIB,
          "Free-memory floor failed after persistent allocations.")
     return {"checkpoint": path.stem, "seed": r["seed"], "width": r["width"], "status": "complete",
+            "attempt_id": r.get("attempt_id"),
             "latency_median_us_per_op": latency_medians, "phases": phase_results}
 
 

@@ -99,6 +99,17 @@ def run_one(lock):
         raise SystemExit("Source pin is plan-only; H100 execution is not authorized.")
     CHECKPOINTS.mkdir(parents=True, exist_ok=True)
     ATTEMPTS.mkdir(parents=True, exist_ok=True)
+    failed_checkpoints = []
+    for path in CHECKPOINTS.glob("s*-w*.json"):
+        try:
+            saved_status = json.loads(path.read_text()).get("status")
+        except (OSError, json.JSONDecodeError) as error:
+            raise SystemExit(f"Cannot inspect saved checkpoint {path.name}; stop before submission.") from error
+        if saved_status != "complete":
+            failed_checkpoints.append(path.name)
+    if failed_checkpoints:
+        raise SystemExit("A saved checkpoint failed; inspect its evidence before continuing: "
+                         + ", ".join(sorted(failed_checkpoints)))
     unit = next(((seed, width) for seed, width in work_units()
                  if not (CHECKPOINTS / f"s{seed}-w{width}.json").exists()), None)
     if unit is None:
