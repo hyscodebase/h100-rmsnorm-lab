@@ -1,6 +1,6 @@
 # Sustained H100 Throughput: Progress
 
-This is an interim record. The registered study has 12 checkpoints; 6 are complete. No final kernel-adoption decision is supported yet.
+This is an interim record. The registered study has 12 checkpoints; 7 are complete. No final kernel-adoption decision is supported yet.
 
 ## Frozen experiment
 
@@ -24,12 +24,13 @@ Rates below count logical input plus output bytes. They are not measured HBM ban
 | 50 / 4,112 | 2,968.20 | 2,995.34 | 2,892.44 | -0.91% | +2.62% |
 | 51 / 4,103 | 2,624.50 | 2,328.10 | 1,877.28 | +12.73% | +39.80% |
 | 51 / 4,104 | 2,962.78 | 2,995.01 | 2,884.34 | -1.08% | +2.72% |
+| 51 / 4,105 | 2,606.24 | 2,330.23 | 1,870.86 | +11.84% | +39.31% |
 
-The candidate has cleared the registered margin for width 4,103 in seeds 50 and 51, and for width 4,105 in seed 50. At width 4,104 in seeds 50 and 51, and width 4,112 in seed 50, it did not meet the margin against either reference. The full run remains useful for measuring whether these differences persist across seeds; current observations do not support a broad kernel-adoption decision.
+The candidate has cleared the registered margin for widths 4,103 and 4,105 in seeds 50 and 51. At width 4,104 in both seeds and width 4,112 in seed 50, it did not meet the margin against either reference. The full run remains useful for measuring whether these differences persist across seeds; current observations do not support a broad kernel-adoption decision.
 
 ## H100 activity readings
 
-The sustained phases sampled median GPU busy at 100% and roughly 5.58 GiB of GPU memory in use. All required telemetry fields were present, but only 3 of 24 phases met the registered 1.5-second maximum query-gap gate. I checked the full raw records including the start-to-first-sample and last-sample-to-end gaps; only those same 3 phases pass. The audit code currently checks internal sample gaps but not these phase boundaries, a review finding that will be fixed before final reporting. Activity summaries from the other 21 phases are retained as raw observations and are not treated as eligible utilization evidence.
+The sustained phases sampled median GPU busy at 100% and roughly 5.58 GiB of GPU memory in use. All required telemetry fields were present, but only 3 of 28 phases met the registered 1.5-second maximum query-gap gate. I checked the full raw records including the start-to-first-sample and last-sample-to-end gaps; only those same 3 phases pass. The audit code currently checks internal sample gaps but not these phase boundaries, a review finding that will be fixed before final reporting. Activity summaries from the other 25 phases are retained as raw observations and are not treated as eligible utilization evidence.
 
 Eligible phases were width 4,104's candidate and 8-warps / 1-row reference, plus width 4,112's 4-warps / 1-row reference. Each recorded 100% median GPU busy and memory busy; their median power readings were 530.57 W, 583.66 W, and 549.27 W, respectively. This workload saturates compute activity while using a small fraction of H100 memory capacity.
 
@@ -41,5 +42,6 @@ Eligible phases were width 4,104's candidate and 8-warps / 1-row reference, plus
 - [Seed 50, width 4,112 checkpoint](raw/checkpoints/s50-w4112.json) and [attempt receipt](raw/attempts/s50-w4112-2c708404e9d24efca4f53523ee78b0d8.json)
 - [Seed 51, width 4,103 checkpoint](raw/checkpoints/s51-w4103.json) and [attempt receipt](raw/attempts/s51-w4103-e3f1f0bc7aa34941be4632c7271703b2.json)
 - [Seed 51, width 4,104 checkpoint](raw/checkpoints/s51-w4104.json) and [attempt receipt](raw/attempts/s51-w4104-65e141b42d7e499ea6f234894e133550.json)
+- [Seed 51, width 4,105 checkpoint](raw/checkpoints/s51-w4105.json) and [attempt receipt](raw/attempts/s51-w4105-004550ddbab0403bb56707c89a635b73.json)
 
-The raw records contain the per-operation latency samples, event windows, correctness checks, memory snapshots, telemetry rows, source hashes, and attempt receipts. The partial audit passed with 6 of 12 checkpoints complete.
+The raw records contain the per-operation latency samples, event windows, correctness checks, memory snapshots, telemetry rows, source hashes, and attempt receipts. The partial audit passed with 7 of 12 checkpoints complete.
