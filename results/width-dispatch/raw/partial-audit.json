@@ -10,16 +10,62 @@
     "latency_graph_calls_per_checkpoint": 6416,
     "sustained_target_seconds_total": 3168.0
   },
-  "source_revision": "d42481aef66b4be3f7bd2cdd71b93778274a2875",
+  "source_revision": "2a38f189c879105380182e70e6ca99023ae29713",
   "source_pin": "pass",
-  "saved_checkpoints": 3,
+  "saved_checkpoints": 2,
   "successful_checkpoints": 2,
   "expected_checkpoints": 24,
   "final_complete": false,
   "receipt_audit": {
-    "receipt_count": 5,
-    "saved_checkpoint_receipts": 3,
-    "successful_checkpoint_receipts": 2
+    "receipt_count": 0,
+    "saved_checkpoint_receipts": 0,
+    "successful_checkpoint_receipts": 0,
+    "submitted_by_unit": {}
+  },
+  "predecessor": {
+    "evidence_commit": "88b3930b4f0796a875e872e1cd4a965a3453541c",
+    "source_revision": "d42481aef66b4be3f7bd2cdd71b93778274a2875",
+    "run_id": "afe1dc1c33e34210ae6b5c5ca8bc4620",
+    "carried_units": [
+      "s53-w4102",
+      "s53-w4106"
+    ],
+    "archived_failure": {
+      "checkpoint": "s53-w4107",
+      "seed": 53,
+      "width": 4107,
+      "status": "gate_failed",
+      "attempt_id": "503cda281c6f42aea47d49ad9fa85d8c",
+      "producing_attempt_id": "503cda281c6f42aea47d49ad9fa85d8c",
+      "run_id": "afe1dc1c33e34210ae6b5c5ca8bc4620",
+      "failure": {
+        "stage": "preflight",
+        "type": "GateFailure",
+        "message": "Cannot establish required NVIDIA driver provenance before measurement."
+      },
+      "failure_classification": "compute_or_execution_failure",
+      "raw_evidence_saved": true,
+      "analysis_eligible": false,
+      "telemetry_activity_eligible": false,
+      "telemetry_phases": [],
+      "source_revision": "d42481aef66b4be3f7bd2cdd71b93778274a2875",
+      "raw_path": "results/width-dispatch/raw/archives/driver-preflight-d42481a/checkpoints/s53-w4107.json"
+    },
+    "receipt_audit": {
+      "receipt_count": 5,
+      "saved_checkpoint_receipts": 3,
+      "successful_checkpoint_receipts": 2,
+      "submitted_by_unit": {
+        "s53-w4102": 3,
+        "s53-w4106": 1,
+        "s53-w4107": 1
+      }
+    }
+  },
+  "submitted_by_unit": {
+    "s53-w4102": 3,
+    "s53-w4106": 1,
+    "s53-w4107": 1
   },
   "checkpoint_results": [
     {
@@ -427,7 +473,9 @@
             "eligible": false
           }
         }
-      }
+      },
+      "source_revision": "d42481aef66b4be3f7bd2cdd71b93778274a2875",
+      "raw_path": "results/width-dispatch/raw/archives/driver-preflight-d42481a/checkpoints/s53-w4102.json"
     },
     {
       "checkpoint": "s53-w4106",
@@ -834,26 +882,9 @@
             "eligible": false
           }
         }
-      }
-    },
-    {
-      "checkpoint": "s53-w4107",
-      "seed": 53,
-      "width": 4107,
-      "status": "gate_failed",
-      "attempt_id": "503cda281c6f42aea47d49ad9fa85d8c",
-      "producing_attempt_id": "503cda281c6f42aea47d49ad9fa85d8c",
-      "run_id": "afe1dc1c33e34210ae6b5c5ca8bc4620",
-      "failure": {
-        "stage": "preflight",
-        "type": "GateFailure",
-        "message": "Cannot establish required NVIDIA driver provenance before measurement."
       },
-      "failure_classification": "compute_or_execution_failure",
-      "raw_evidence_saved": true,
-      "analysis_eligible": false,
-      "telemetry_activity_eligible": false,
-      "telemetry_phases": []
+      "source_revision": "d42481aef66b4be3f7bd2cdd71b93778274a2875",
+      "raw_path": "results/width-dispatch/raw/archives/driver-preflight-d42481a/checkpoints/s53-w4106.json"
     }
   ],
   "checkpoint_comparisons": [
@@ -941,5 +972,5 @@
     "rule": "all registered odd widths must be at least 5.0% faster than fastest one-row Triton and torch_compile in every seed, and no registered even width may qualify",
     "reason": "awaiting all registered checkpoints"
   },
-  "generated_utc": "2026-11-27T14:34:59.908925+00:00"
+  "generated_utc": "2026-11-27T14:54:01.765066+00:00"
 }
