@@ -1,15 +1,15 @@
 {
   "issue": 64,
-  "source_revision": "eaa9fc779fd6fc03d698794f7628bfadd65ace7a",
+  "source_revision": "2e8907fb6408d2a7fc56411bdedb5efc9e3bf3d6",
   "source_sha256": {
     "kernels.py": "431854a059ff8fa514053b7cdf47c1e32491ffdbf00dfcf37f0589f9811b36e8",
-    "experiments/sustained-throughput/run.py": "2ba3db86a781e5924dad717614b0a773deb349abadce3a41e68bc8b50db981f9",
+    "experiments/sustained-throughput/run.py": "fe9ae314364d236eb18c2772642611ba8581623d0a7dd60aca6726199fa98484",
     "experiments/sustained-throughput/telemetry.py": "c37c289993e4963fb974970e1deb7e96fdb9765a5d9e98ce620508110fdc76cc",
-    "experiments/sustained-throughput/PLAN.md": "638058bf774248fe7215af0fc6328d73609a608a9213e6ba2aad821812c96fdd",
-    "plans/sustained-throughput.json": "8771927e5a83deaf368a478836d4612c11f4eed35e8cf84e49a062f39cdf2c0c",
+    "experiments/sustained-throughput/PLAN.md": "23637b2c4e8b858e1009f9c1c6d756444a77a2bafa4ebe20c4c9ef18747eabba",
+    "plans/sustained-throughput.json": "d84dcce9f0207f14b5b712d2e8d9f2b764bcee263ddf548a33fbe25e628d9238",
     "experiments/sustained-throughput/step.py": "fb1ca43a6c0b4525532510131a2dec53088fc158d4e1cb5a2b51b2183b9cc5af",
     "experiments/sustained-throughput/ssh_runner.sh": "81af5d1add83864a07c07b2363007dcde59a844b44c82257131a846fb883595d",
-    "experiments/sustained-throughput/summarize.py": "b0cbe4dc458f2ef17fb75f520c59a547efd503d6dc6b5c007c69cff9e6fc8dd4"
+    "experiments/sustained-throughput/summarize.py": "29e605c4801afabc5181856c05d026ada062869d838b23588e26fa5c2be8cb17"
   },
   "research_assistant_model": "GPT-6 Luna",
   "frozen_plan_only": true,
