@@ -1,7 +1,7 @@
 # H100 width dispatch measurements
 
 6/24 registered units completed at 32,768 BF16 rows. Latest saved measurement (UTC) `2026-11-27T15:09:21.198224+00:00`.
-The 9 submitted attempts include the two early SSH failures and the initial driver preflight failure at width 4107.
+There were 9 submissions and 6 accepted measurements. Two early SSH submissions and the first driver check at width 4107 ended before timing.
 All completed units passed the numerical, replay and memory checks.
 
 **13.23 minutes** of sustained CUDA-event measurements, 2,633 device samples, and **0/24** phases eligible for activity estimates.
@@ -22,7 +22,8 @@ Rates are logical input plus output GB/s. Gains compare the four-row candidate w
 
 ## Decision
 
-Next registered unit: `s53-w4113`. A width qualifies after the candidate beats both references by at least 5% in all three seeds.
+The queue is paused at a saved checkpoint. The first remaining unit is `s53-w4113` with 18 registered units left.
+A width qualifies after the candidate beats both references by at least 5% in all three seeds.
 
 ## Evidence
 

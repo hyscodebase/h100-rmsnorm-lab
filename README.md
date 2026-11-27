@@ -2,6 +2,8 @@
 
 How much does the thread layout of a BF16 RMSNorm kernel matter on an NVIDIA H100? This inference microbenchmark varies the number of token rows while keeping the math and inputs fixed. The initial experiment compares a single-row Triton kernel with four or eight warps against eager PyTorch and shape-specialized TorchInductor.
 
+The [cumulative research report (PDF, Korean)](output/pdf/H100_RMSNorm_연구누적기록.pdf) covers the experiments, decisions, and H100 usage. At 32,768 rows, the four-row kernel improved sustained throughput over the fastest one-row kernel by 11.84–13.14% at widths 4,103 and 4,105 across three seeds. [Twelve paired measurements](results/sustained-throughput/PROGRESS.md) · [Follow-up at six additional widths](results/width-dispatch/PROGRESS.md)
+
 ![Speed relative to compiled PyTorch at four row counts and two hidden widths](results/warp-comparison.png)
 
 ## Findings

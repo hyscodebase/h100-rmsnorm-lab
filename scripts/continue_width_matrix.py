@@ -32,7 +32,8 @@ def write_report(audit):
     rows = [
         "# H100 width dispatch measurements", "",
         f"{complete}/{expected} registered units completed at 32,768 BF16 rows. Latest saved measurement (UTC) `{last}`.",
-        f"The {submitted} submitted attempts include the two early SSH failures and the initial driver preflight failure at width 4107.",
+        f"There were {submitted} submissions and {complete} accepted measurements. "
+        "Two early SSH submissions and the first driver check at width 4107 ended before timing.",
         "All completed units passed the numerical, replay and memory checks.", "",
         f"**{seconds / 60:.2f} minutes** of sustained CUDA-event measurements, {len(samples):,} device samples, "
         f"and **{eligible}/{len(phases)}** phases eligible for activity estimates.",
@@ -70,7 +71,12 @@ def write_report(audit):
                 rows.append(f"Stopped at `{r['checkpoint']}` during `{r['failure']['stage']}`. {r['failure']['message']}")
     else:
         next_unit = next(f"s{s}-w{w}" for s, w in step.work_units() if f"s{s}-w{w}" not in by_unit)
-        rows.append(f"Next registered unit: `{next_unit}`. A width qualifies after the candidate beats both references by at least 5% in all three seeds.")
+        if step.is_paused():
+            rows.append(f"The queue is paused at a saved checkpoint. The first remaining unit is `{next_unit}` "
+                        f"with {expected - complete} registered units left.")
+        else:
+            rows.append(f"The next registered unit is `{next_unit}`.")
+        rows.append("A width qualifies after the candidate beats both references by at least 5% in all three seeds.")
     revisions = Counter(r["source_revision"][:12] for r in records if r["status"] == "complete")
     rows += ["", "## Evidence", "",
              "Accepted units by benchmark revision: " + ", ".join(f"`{rev}` ({n})" for rev, n in revisions.items()) + ".",

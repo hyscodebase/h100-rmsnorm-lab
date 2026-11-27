@@ -8,9 +8,11 @@ and a resource-monitoring page derived from the active checkpoints and partial a
 
 from __future__ import annotations
 
-import io
+import argparse
 import hashlib
+import io
 import json
+import math
 import statistics
 import subprocess
 import tempfile
@@ -19,6 +21,8 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 from pypdf import PdfReader, PdfWriter
+from reportlab.graphics.charts.barcharts import HorizontalBarChart
+from reportlab.graphics.shapes import Drawing, Line, Rect, String
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
@@ -128,12 +132,12 @@ def draw_cover(canvas, doc):
     canvas.setFont("NotoKR", 21)
     canvas.drawString(20 * mm, height - 39 * mm, "RMSNorm 연구 누적 기록")
     canvas.setFont("NotoKR", 9)
-    canvas.drawString(20 * mm, height - 48 * mm, f"32,768행 BF16 RMSNorm · 실측 기록 {doc.audit_time}")
+    canvas.drawString(20 * mm, height - 48 * mm, f"H100 커널 최적화 실험 · 마지막 폭별 측정 {doc.audit_time}")
     canvas.setStrokeColor(colors.HexColor("#44617C"))
     canvas.line(20 * mm, height - 55 * mm, width - 20 * mm, height - 55 * mm)
     canvas.setFillColor(colors.HexColor("#DDEAF2"))
     canvas.setFont("NotoKR", 7)
-    canvas.drawString(20 * mm, height - 61 * mm, "저장소: hyscodebase/h100-rmsnorm-lab · PR #67 · Issue #66")
+    canvas.drawString(20 * mm, height - 61 * mm, "hyscodebase/h100-rmsnorm-lab · PR #67 · Issue #66")
     canvas.setFillColor(MUTED)
     canvas.drawString(20 * mm, 10 * mm, "2~18쪽은 2026-11-27 22:24 KST의 연구 기록입니다. 이번 폭별 실측은 19쪽부터 이어집니다.")
     canvas.restoreState()
@@ -214,7 +218,40 @@ def median_or_none(values):
     return statistics.median(present) if present else None
 
 
-def build_appendix(path, audit, pin, plan, raw_records):
+def gain_chart(per_width):
+    widths = sorted(per_width, key=int, reverse=True)
+    one_row = [per_width[w]["median_gain_percent_vs_fastest_one_row"] for w in widths]
+    compiled = [per_width[w]["median_gain_percent_vs_torch_compile"] for w in widths]
+    lower = min(-10, 10 * math.floor(min(one_row + compiled) / 10))
+    upper = max(10, 10 * math.ceil(max(one_row + compiled) / 10))
+    height = 23 * len(widths) + 52
+    drawing = Drawing(468, height)
+    chart = HorizontalBarChart()
+    chart.x, chart.y, chart.width, chart.height = 48, 22, 400, height - 47
+    chart.data = [one_row, compiled]
+    chart.categoryAxis.categoryNames = [f"{int(w):,}" for w in widths]
+    chart.categoryAxis.joinAxisMode = "left"
+    chart.valueAxis.valueMin, chart.valueAxis.valueMax, chart.valueAxis.valueStep = lower, upper, 10
+    chart.valueAxis.labelTextFormat = "%d%%"
+    for axis in (chart.categoryAxis, chart.valueAxis):
+        axis.labels.fontName, axis.labels.fontSize, axis.labels.fillColor = "NotoKR", 8, INK
+        axis.strokeColor = GRID
+    chart.valueAxis.visibleGrid, chart.valueAxis.gridStrokeColor = True, GRID
+    chart.bars[0].fillColor, chart.bars[1].fillColor = NAVY, TEAL
+    chart.bars.strokeColor = None
+    chart.barSpacing, chart.groupSpacing = 1, 6
+    drawing.add(chart)
+    gate_x = chart.x + chart.width * (5 - lower) / (upper - lower)
+    drawing.add(Line(gate_x, chart.y, gate_x, chart.y + chart.height,
+                     strokeColor=colors.HexColor("#B7791F"), strokeDashArray=[3, 2]))
+    for x, color, label in [(48, NAVY, "가장 빠른 1행 대비"), (182, TEAL, "torch.compile 대비")]:
+        drawing.add(Rect(x, height - 13, 10, 6, strokeColor=None, fillColor=color))
+        drawing.add(String(x + 14, height - 14, label, fontName="NotoKR", fontSize=8, fillColor=INK))
+    drawing.add(String(325, height - 14, "점선은 +5% 채택 기준", fontName="NotoKR", fontSize=8, fillColor=MUTED))
+    return drawing
+
+
+def build_appendix(path, audit, pin, plan, raw_records, paused):
     s = styles()
     status = latest_status(audit, pin, raw_records)
     comparisons = {f"s{x['seed']}-w{x['width']}": x for x in audit["checkpoint_comparisons"]}
@@ -224,10 +261,10 @@ def build_appendix(path, audit, pin, plan, raw_records):
                             title="H100 RMSNorm Research Record - current active data")
     latest = max(raw["finished_utc"] for raw in raw_records)
     doc.audit_time = datetime.fromisoformat(latest).astimezone(timezone(timedelta(hours=9))).strftime("%Y-%m-%d %H:%M KST")
-    story = [Spacer(1, 154), P("현재 실험 상태", s["section"])]
+    story = [Spacer(1, 148), P("32,768행 BF16 RMSNorm · 폭별 실험 결산", s["section"])]
 
     card_rows = [
-        [P("측정 완료 / 계획", s["card_label"]), P("GPU 지속 측정 시간", s["card_label"])],
+        [P("측정 완료 / 계획 조합", s["card_label"]), P("CUDA 이벤트로 측정한 지속 실행 시간", s["card_label"])],
         [P(f"{status['completed']} / {status['expected']}", s["card_value"]),
          P(f"{status['seconds'] / 60:.2f}분", s["card_value"])],
         [P("자원 사용량 표본", s["card_label"]), P("사용률 표본 기준을 통과한 구간", s["card_label"])],
@@ -261,8 +298,8 @@ def build_appendix(path, audit, pin, plan, raw_records):
         ]))
         story += [alert, Spacer(1, 8)]
 
-    summary_text = ("4행 Triton 커널이 가장 빠른 1행 커널과 torch.compile 양쪽보다 처리량을 5% 이상 높이는 폭을 찾고 있습니다. "
-                    "한 폭을 채택하려면 세 시드가 모두 이 기준을 통과해야 합니다. ")
+    summary_text = ("4행 Triton 커널을 가장 빠른 1행 커널 및 torch.compile과 비교했습니다. "
+                    "폭별 채택 기준은 세 시드에서 두 비교군보다 지속 처리량이 각각 5% 이상 높은 것입니다. ")
     if comparisons:
         last = list(comparisons.values())[-1]
         gains = last["gain_percent"]
@@ -273,6 +310,8 @@ def build_appendix(path, audit, pin, plan, raw_records):
         supported = audit["bounded_dispatch_screen_decision"]["supports_registered_odd_even_split"]
         summary_text += (" 여덟 폭에서 등록한 홀짝 선택 조건이 재현됐습니다." if supported
                          else " 여덟 폭의 결과는 등록한 홀짝 선택 조건에 미달했습니다.")
+    elif paused:
+        summary_text += f" 이 지점에서 실행을 일시정지했습니다. 남은 조합은 {status['expected'] - status['completed']}개입니다."
     summary = Table([[P(summary_text, s["callout"])]], colWidths=[168 * mm])
     summary.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), GOLD_PALE),
@@ -281,6 +320,11 @@ def build_appendix(path, audit, pin, plan, raw_records):
         ("TOPPADDING", (0, 0), (-1, -1), 8), ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
     ]))
     story += [summary, Spacer(1, 9)]
+    story += [P("앞선 실험에서 재현한 결과", s["subsection"]),
+              P("같은 32,768행에서 폭 4,103과 4,105는 세 시드 모두 두 비교군을 5% 이상 앞섰습니다. "
+                "가장 빠른 1행 커널 대비 처리량 이득은 11.84~13.14%였습니다. "
+                "폭 4,104와 4,112에서는 4행 커널이 가장 빠른 1행보다 느렸습니다. "
+                '<link href="https://github.com/hyscodebase/h100-rmsnorm-lab/blob/bdae65ccde99e3b7e8c9e415f942c12151b80f90/results/sustained-throughput/PROGRESS.md" color="#126A72"><u>12개 측정 원자료</u></link>', s["body"])]
     if audit.get("predecessor"):
         story += [P("초기 두 측정은 기존 커밋에서 원자료와 영수증을 다시 확인했습니다. 폭 4,107의 초기 드라이버 조회 실패는 "
                     "측정 전에 발생해 당시 지연 표본과 지속 구간이 모두 0개였습니다. 재개 버전은 조회 경로와 오류를 함께 기록합니다.", s["body"])]
@@ -321,9 +365,15 @@ def build_appendix(path, audit, pin, plan, raw_records):
         ])
     story += [band_table(result_rows, [23 * mm, 55 * mm, 55 * mm, 19 * mm, 16 * mm], tiny=True), Spacer(1, 6)]
     story += [P("한 폭을 채택하려면 세 시드 모두에서 가장 빠른 1행 Triton과 torch.compile 각각에 대해 지속 처리량이 5% 이상 높아야 합니다.", s["small"])]
+    measured_widths = audit["per_width_across_seeds"]
+    if measured_widths:
+        story += [Spacer(1, 10), P("입력 폭에 따른 4행 커널의 처리량 차이", s["subsection"]),
+                  P("가로축은 같은 실행에서 비교군 대비 달라진 처리량(%)이고, 세로축은 입력 폭입니다. "
+                    "각 막대는 해당 폭에서 측정을 마친 시드들의 중앙값입니다. 시드 수는 첫 쪽 표에 표시했습니다.", s["body"]),
+                  gain_chart(measured_widths)]
     story += [PageBreak()]
 
-    story += [P("2. 자원 계측과 다음 실행", s["section"]), P(
+    story += [P("2. 자원 계측과 저장 지점", s["section"]), P(
         "각 sustained phase에서 원시 nvidia-smi 표본과 query timestamp 및 수신 시간을 저장합니다. 1.5초를 넘는 공백이 있으면 해당 phase를 "
         "활동 계측 부적격으로 표시하고 계산 결과와 원시 표본은 보존합니다.", s["body"])]
     telemetry_rows = [[P(x, s["table_tiny_white"]) for x in (
@@ -368,9 +418,10 @@ def build_appendix(path, audit, pin, plan, raw_records):
     all_temp = [sample["temperature_c"] for sample in overall_samples if sample.get("temperature_c") is not None]
     gap = max((phase.get("telemetry_max_gap_seconds", 0) or 0
                for raw in raw_records for phase in raw.get("sustained_phases", [])), default=0)
-    note = (f"누적 표본 {len(overall_samples):,}행: GPU busy 중간/최고 {median_or_none(all_busy):.1f}/{max(all_busy):.1f}%, "
-            f"VRAM peak {max(all_vram):,.0f} MiB, 전력 중간/피크 {median_or_none(all_power):.1f}/{max(all_power):.1f} W, "
-            f"온도 peak {max(all_temp):.0f} C. 최대 timestamp gap {gap:.3f}초로 현재 기준 1.5초를 초과한 구간은 정식 활동 사용률 통계로 인용하지 않습니다.")
+    note = (f"수집된 표본 {len(overall_samples):,}행에서 GPU 사용률 중앙값과 최댓값은 각각 "
+            f"{median_or_none(all_busy):.1f}%와 {max(all_busy):.1f}%입니다. 최고 메모리 사용량 {max(all_vram):,.0f} MiB, "
+            f"전력 중앙값 {median_or_none(all_power):.1f} W, 최고 전력 {max(all_power):.1f} W, 최고 온도 {max(all_temp):.0f} °C를 기록했습니다. "
+            f"최대 관측 공백은 {gap:.3f}초였습니다. 구간 전체의 GPU 사용률을 추정하려면 관측 공백이 1.5초 이하여야 합니다.")
     box = Table([[P(note, s["callout"])]], colWidths=[168 * mm])
     box.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), RED_PALE),
@@ -381,14 +432,24 @@ def build_appendix(path, audit, pin, plan, raw_records):
     story += [box, Spacer(1, 8)]
     previous = audit.get("predecessor", {})
     lineage = f"처음 두 건의 소스 {previous['source_revision'][:12]}. " if previous else ""
-    story += [P(f"{lineage}현재 측정 소스 {pin['source_revision'][:12]}. 실행 범위 {status['scope']}. "
-                f"다음 등록 단위 {next_name}. 원자료와 시도 기록은 저장소의 results/width-dispatch/raw/에 있습니다. "
+    latency_count = sum(len(record.get("latency_intervals", [])) for record in raw_records)
+    next_text = f"다음 등록 단위 {next_name}."
+    if next_name == "complete":
+        next_text = "등록한 모든 조합을 측정했습니다."
+    elif paused:
+        next_text = f"재개 시 첫 조합은 {next_name}입니다."
+    story += [P(f"{lineage}현재 측정 소스 {pin['source_revision'][:12]}. 총 제출 {sum(audit['submitted_by_unit'].values())}건. "
+                f"지연 측정 {latency_count:,}건. {next_text} "
+                '<link href="https://github.com/hyscodebase/h100-rmsnorm-lab/blob/codex/width-dispatch-issue66/results/width-dispatch/PROGRESS.md" color="#126A72"><u>시드별 결과·원자료·실행 기록</u></link>. '
                 "초기 리뷰에서 제외한 9회의 측정은 2~18쪽의 이력에 남아 있습니다.", s["small"])]
 
     doc.build(story, onFirstPage=draw_cover, onLaterPages=draw_appendix)
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--paused", action="store_true", help="Label the PDF as a checkpoint-boundary pause.")
+    args = parser.parse_args()
     audit, pin, plan, records = read_active_data()
     with tempfile.TemporaryDirectory(prefix="h100-research-pdf-") as temp_dir:
         temp = Path(temp_dir)
@@ -397,7 +458,7 @@ def main():
             cwd=ROOT, capture_output=True, check=True,
         )
         appendix_path = temp / "appendix.pdf"
-        build_appendix(appendix_path, audit, pin, plan, records)
+        build_appendix(appendix_path, audit, pin, plan, records, args.paused)
         baseline = PdfReader(io.BytesIO(baseline_result.stdout))
         appendix = PdfReader(str(appendix_path))
         writer = PdfWriter()
@@ -407,9 +468,9 @@ def main():
         for page in appendix.pages[1:]:
             writer.add_page(page)
         writer.add_metadata({
-            "/Title": "H100 RMSNorm 연구 누적 기록 - 최신 활성 데이터",
+            "/Title": "H100 RMSNorm 연구 누적 기록",
             "/Author": "hyscodebase",
-            "/Subject": "H100 kernel experiments, audit evidence, and active width-dispatch matrix",
+            "/Subject": "H100 kernel experiments, audit evidence, and measured width-dispatch results",
         })
         with tempfile.NamedTemporaryFile(dir=OUTPUT_PDF.parent, suffix=".tmp", delete=False) as stream:
             writer.write(stream)
