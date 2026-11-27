@@ -211,5 +211,27 @@
     "seed": 212,
     "started_utc": "2026-11-27T01:35:47.151436+00:00",
     "unit": "s212-p0"
+  },
+  {
+    "attempt_id": "d39ef6e6ecfc4cbc92bbec9dd5a4dadd",
+    "code_revision": "4721ed8ae8602debcdaacb440d6fee7e6889117d",
+    "elapsed_s": 66.39885945804417,
+    "finished_utc": "2026-11-27T01:39:17.954294+00:00",
+    "mode": "compute",
+    "outcome": "checkpoint_saved",
+    "period": {
+      "backend": "triton_8warps_cg_inputs_out_of_place",
+      "index": 1,
+      "order": [
+        "triton_8warps_out_of_place",
+        "triton_8warps_cg_inputs_out_of_place"
+      ],
+      "order_index": 1,
+      "position": 1
+    },
+    "rows": 512,
+    "seed": 212,
+    "started_utc": "2026-11-27T01:38:11.554727+00:00",
+    "unit": "s212-p1"
   }
 ]
