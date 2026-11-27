@@ -42,7 +42,8 @@
 | 512행 BF16 융합 커널의 입력 로드에서 L1 우회 | 완료 | 세 독립 시드에서 `.cg` 처리량 이득은 0.000779~0.007549%로 5% 채택 기준에 못 미쳤다. 두 출력은 비트 단위로 일치했고 H100 자원 표본 133건을 보관했다. 8워프 기준선을 유지한다. [최종 보고서와 원시 기록](experiments/rmsnorm-residual/vllm/input-load-cache-512-results/REPORT.md) · [리뷰 PR](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/59) |
 | RMSNorm 4104 인접 너비 재검증 | 완료 | 4104는 두 기준보다 5.33~5.56% 빨라 새 세 시드에서 권고를 재확인했다. 4103·4105도 각각 세 시드에서 기준을 넘었지만 기본 권고를 넓히지 않았고, 4112는 1행 대비 4.83·4.83·5.04%여서 세 시드 기준을 통과하지 못했다. 두 수치 게이트가 12개 checkpoint에서 모두 통과했다. [보고서·원시 기록](results/width-neighborhood/REPORT.md) · [PR #61](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/61) |
 | 처리량 크기에서 RMSNorm 행 타일 검증 | 완료 | 32,768행의 폭 네 개와 시드 47–49, 총 12 checkpoint에서 양쪽 수치 게이트·메모리 검사가 통과했다. 2행·4워프 후보는 가장 빠른 1행 기준보다 폭 4103에서 2.986–3.083%, 4105에서 1.866–1.895% 빨랐고, 4104·4112에서는 1.156–1.220% 느렸다. 모두 사전 등록한 5% 채택선을 넘지 못했다. [보고서와 원시 기록](results/throughput-neighborhood/REPORT.md) · [PR #63](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/63) |
-| 처리량 크기에서 4행 RMSNorm 타일 조사 | 다음 가설 | 32,768행의 인접 폭에서 4행·4워프가 가장 빠른 1행 기준보다 세 시드 모두 5% 이상 빠른지 확인한다. #62에서 2행 타일 이득이 사라진 형상에 새 시드와 동일한 정확도·메모리 가드를 적용한다. [초안 이슈 #64](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/64) — 코드·계획 고정 전 검토 대기. |
+| 처리량 크기에서 4행 RMSNorm 타일 조사 | 완료 | 32,768행, 폭 4103·4105에서 4행 후보가 세 시드 모두 5% 기준을 통과했다. 폭 4104·4112에서는 약 1.1% 느려 전체 기본 설정 변경은 거부했다. [전체 12 checkpoint 실측·자원 감사](results/sustained-throughput/PROGRESS.md) · [PR #65](https://github.com/hyscodebase/h100-rmsnorm-lab/pull/65) |
+| 32,768행 인접 폭의 제한된 홀수·짝수 타일 선택 조사 | 다음 가설 | 새 폭 8개와 시드 53–55에서 4행 타일의 폭별 이득이 반복되는지 확인한다. 결과는 등록한 여덟 형상에만 적용하고 홀짝 일반 규칙으로 확대하지 않는다. [이슈 #66](https://github.com/hyscodebase/h100-rmsnorm-lab/issues/66) — 계획·코드 리뷰 및 소스 고정 후 체크포인트 단위 실행. |
 
 ## 다음 가설을 고르는 규칙
 
